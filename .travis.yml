@@ -1,0 +1,74 @@
+# Config file for automatic testing at travis-ci.org
+# This file will be regenerated if you run travis_pypi_setup.py
+
+language: python
+python:
+  - 3.5
+  - 3.4
+  - 2.7
+
+env:
+  matrix:
+    - TEST_ENV=tox
+    - TEST_ENV=conda
+
+matrix:
+  allow_failures:
+    - python: 3.4
+      env: TEST_ENV=conda
+
+
+# command to install dependencies, e.g. pip install -r requirements.txt --use-mirrors
+install:
+  - pip install --upgrade pip
+  - if [[ "$TEST_ENV" == "conda" ]]; then
+      if [[ "$TRAVIS_PYTHON_VERSION" == "2.7" ]]; then
+          wget https://repo.continuum.io/miniconda/Miniconda2-latest-Linux-x86_64.sh -O miniconda.sh;
+        else
+          wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh;
+        fi;
+      bash miniconda.sh -b -p $HOME/miniconda;
+      export PATH="$HOME/miniconda/bin:$PATH";
+      hash -r;
+      conda config --set always_yes yes --set changeps1 no;
+      conda update -q conda;
+      conda config --add channels conda-forge;
+      conda info -a;
+
+      conda create -q -n test-env python=$TRAVIS_PYTHON_VERSION;
+      source activate test-env;
+
+      python setup.py install;
+      python -m pip install -r requirements_dev.txt;
+      conda install --yes --file requirements_conda.txt;
+    else
+      pip install -U tox-travis;
+    fi
+
+# command to run tests, e.g. python setup.py test
+script:
+  - if [[ "$TEST_ENV" == "conda" ]]; then
+      export PATH=$HOME/miniconda/bin:$PATH;
+      source activate test-env;
+      python -m pytest;
+      sphinx-apidoc -o docs downscale;
+      sphinx-build -W -b html -d docs/_build/doctrees docs/. docs/_build/html;
+    else
+      tox;
+    fi;
+
+# After you create the Github repo and add it to Travis, run the
+# travis_pypi_setup.py script to finish PyPI deployment setup
+deploy:
+  provider: pypi
+  distributions: sdist bdist_wheel
+  user: delgadom
+  password:
+    secure: PLEASE_REPLACE_ME
+  on:
+    tags: true
+    repo: ClimateImpactLab/downscale
+    python: 2.7
+
+after_success:
+  - coveralls
