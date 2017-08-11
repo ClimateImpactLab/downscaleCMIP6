@@ -9,6 +9,7 @@ from click.testing import CliRunner
 from downscale import downscale
 from downscale import cli
 
+
 @pytest.fixture
 def response():
     """Sample pytest fixture.
