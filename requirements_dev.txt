@@ -1,13 +1,11 @@
 pip==9.0.1
 bumpversion==0.5.3
 wheel==0.30.0
-watchdog==0.8.3
-flake8==3.4.1
+flake8==3.5.0
 tox==2.9.1
 coverage==4.4.1
-Sphinx==1.6.4
-cryptography==2.1.4
+Sphinx==1.7.1
 PyYAML==3.12
-pytest==3.2.2
+pytest==3.4.1
 pytest-cov==2.5.1
-pytest-runner==2.12.1
+pytest-runner==4.0
