@@ -6,6 +6,6 @@ tox==3.0.0
 coverage==4.5.1
 Sphinx==1.7.2
 PyYAML==3.12
-pytest==3.5.0
+pytest==3.5.1
 pytest-cov==2.5.1
 pytest-runner==4.2
