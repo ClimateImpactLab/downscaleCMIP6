@@ -1,1 +1,2 @@
-pandas==0.22.0
+pandas
+xarray
