@@ -21,16 +21,13 @@ install:
 - conda config --add channels conda-forge
 - conda info -a
 
-- conda create -q -n test-env python=$TRAVIS_PYTHON_VERSION
-- source activate test-env
-
-- python setup.py install
-- python -m pip install -r requirements_dev.txt
+- conda install -q python=$TRAVIS_PYTHON_VERSION
 - conda install --yes --file requirements_conda.txt
+- python -m pip install -r requirements_dev.txt
+- python setup.py install
 
 script:
 - export PATH=$HOME/miniconda/bin:$PATH
-- source activate test-env
 - python -m pytest
 - sphinx-apidoc -o docs downscale
 - sphinx-build -W -b html -d docs/_build/doctrees docs/. docs/_build/html
