@@ -2,4 +2,4 @@
 Downscale
 =========
 
-Notebooks/scripts/code for the Cliamte Impact Lab CMIP6 downscaling project
+Notebooks/scripts/code for the Climate Impact Lab CMIP6 downscaling project
