@@ -28,3 +28,13 @@ def compute_daily_climo(da):
     
     return climatology
 
+def calculate_anomaly(ds, climo, var_name):
+    # Necessary workaround to xarray's check with zero dimensions
+    # https://github.com/pydata/xarray/issues/3575
+    da = ds[var_name]
+    if sum(da.shape) == 0:
+        return da
+    groupby_type = ds.time.dt.dayofyear
+    gb = da.groupby(groupby_type)
+
+    return gb - climo
