@@ -10,6 +10,10 @@ def _convert_lons(ds, lon_name='longitude'):
     ds_sort = ds_conv_coords.sel(**{lon_name: np.sort(ds_conv_coords[lon_name].values)})
     return(ds_sort)
 
+def _convert_ds_longitude(ds, lon_name='longitude'):
+    ds_new = ds.assign_coords(lon=(((ds[lon_name] + 180) % 360) - 180)).sortby(lon_name)
+    return ds_new
+
 def _remove_leap_days(ds):
     '''
     removes all leap days from the time dimension of an xarray dataset
@@ -38,3 +42,11 @@ def calculate_anomaly(ds, climo, var_name):
     gb = da.groupby(groupby_type)
 
     return gb - climo
+
+def apply_scale_factor(da, obs_climo, groupby_type):
+
+    '''if sum(ds.shape) == 0:
+        return ds'''
+
+    sff_daily = da.groupby(groupby_type)
+    return sff_daily + obs_climo
