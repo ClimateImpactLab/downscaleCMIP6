@@ -32,7 +32,10 @@ def compute_daily_climo(da):
     
     return climatology
 
-def calculate_anomaly(ds, climo, var_name):
+def calculate_scaling_factor(ds, climo, var_name, var='temperature'):
+    '''
+    compute scaling factor 
+    '''
     # Necessary workaround to xarray's check with zero dimensions
     # https://github.com/pydata/xarray/issues/3575
     da = ds[var_name]
@@ -41,12 +44,17 @@ def calculate_anomaly(ds, climo, var_name):
     groupby_type = ds.time.dt.dayofyear
     gb = da.groupby(groupby_type)
 
-    return gb - climo
+    if var == 'temperature':
+        return gb - climo
+    elif var == 'precipitation':
+        return gb / climo 
 
-def apply_scale_factor(da, obs_climo, groupby_type):
-
-    '''if sum(ds.shape) == 0:
-        return ds'''
-
+def apply_scale_factor(da, climo, groupby_type, var='temperature'):
+    '''
+    apply scaling factor
+    '''
     sff_daily = da.groupby(groupby_type)
-    return sff_daily + obs_climo
+    if var == 'temperature':
+        return sff_daily + climo
+    elif var == 'precipitation':
+        return sff_daily / climo
