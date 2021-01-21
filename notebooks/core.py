@@ -123,3 +123,6 @@ class SpatialDisaggregator:
             return sff_daily + climo
         elif var == 'precipitation':
             return sff_daily * climo
+
+
+## quick test
