@@ -1,0 +1,163 @@
+# Downloads select, raw CMIP6 from GCP to co-located Azure storage for test case.
+apiVersion: argoproj.io/v1alpha1
+kind: Workflow
+metadata:
+  generateName: downloadraw-
+spec:
+  serviceAccountName: workflows-default
+
+  # So workers go on larger, spot, worker node pool.
+  nodeSelector:
+    dedicated: worker
+  tolerations:
+  - key: dedicated
+    operator: "Equal"
+    value: "worker"
+    effect: "NoSchedule"
+  - key: kubernetes.azure.com/scalesetpriority
+    operator: "Equal"
+    value: "spot"
+    effect: "NoSchedule"
+
+  entrypoint: loop-gcmruns
+  arguments:
+    parameters:
+    - name: gcmruns-list
+      value: |
+        [
+          { "activityID": "ScenarioMIP", "experimentID": "ssp370", "tableID": "day", "variableID": "tasmin", "sourceID": "GFDL-ESM4", "institutionID": "NOAA-GFDL", "memberID": "r1i1p1f1", "grid_label": "gr1"},
+          { "activityID": "ScenarioMIP", "experimentID": "ssp370", "tableID": "day", "variableID": "tasmax", "sourceID": "GFDL-ESM4", "institutionID": "NOAA-GFDL", "memberID": "r1i1p1f1", "grid_label": "gr1"},
+          { "activityID": "ScenarioMIP", "experimentID": "ssp370", "tableID": "day", "variableID": "pr", "sourceID": "GFDL-ESM4", "institutionID": "NOAA-GFDL", "memberID": "r1i1p1f1", "grid_label": "gr1"},
+          { "activityID": "ScenarioMIP", "experimentID": "ssp245", "tableID": "day", "variableID": "tasmin", "sourceID": "GFDL-ESM4", "institutionID": "NOAA-GFDL", "memberID": "r1i1p1f1", "grid_label": "gr1"},
+          { "activityID": "ScenarioMIP", "experimentID": "ssp245", "tableID": "day", "variableID": "tasmax", "sourceID": "GFDL-ESM4", "institutionID": "NOAA-GFDL", "memberID": "r1i1p1f1", "grid_label": "gr1"},
+          { "activityID": "ScenarioMIP", "experimentID": "ssp245", "tableID": "day", "variableID": "pr", "sourceID": "GFDL-ESM4", "institutionID": "NOAA-GFDL", "memberID": "r1i1p1f1", "grid_label": "gr1"},
+          { "activityID": "ScenarioMIP", "experimentID": "ssp126", "tableID": "day", "variableID": "tasmin", "sourceID": "GFDL-ESM4", "institutionID": "NOAA-GFDL", "memberID": "r1i1p1f1", "grid_label": "gr1"},
+          { "activityID": "ScenarioMIP", "experimentID": "ssp126", "tableID": "day", "variableID": "tasmax", "sourceID": "GFDL-ESM4", "institutionID": "NOAA-GFDL", "memberID": "r1i1p1f1", "grid_label": "gr1"},
+          { "activityID": "ScenarioMIP", "experimentID": "ssp126", "tableID": "day", "variableID": "pr", "sourceID": "GFDL-ESM4", "institutionID": "NOAA-GFDL", "memberID": "r1i1p1f1", "grid_label": "gr1"},
+          { "activityID": "CMIP", "experimentID": "historical", "tableID": "day", "variableID": "tasmin", "sourceID": "GFDL-ESM4", "institutionID": "NOAA-GFDL", "memberID": "r1i1p1f1", "grid_label": "gr1"},
+          { "activityID": "CMIP", "experimentID": "historical", "tableID": "day", "variableID": "tasmax", "sourceID": "GFDL-ESM4", "institutionID": "NOAA-GFDL", "memberID": "r1i1p1f1", "grid_label": "gr1"},
+          { "activityID": "CMIP", "experimentID": "historical", "tableID": "day", "variableID": "pr", "sourceID": "GFDL-ESM4", "institutionID": "NOAA-GFDL", "memberID": "r1i1p1f1", "grid_label": "gr1"}
+        ]
+
+  templates:
+  - name: loop-gcmruns
+    inputs:
+      parameters:
+      - name: gcmruns-list
+    steps:
+    - - name: download-run
+        template: download
+        arguments:
+          parameters:
+          - name: activity-id
+            value: "{{item.activityID}}"
+          - name: experiment-id
+            value: "{{item.experimentID}}"
+          - name: table-id
+            value: "{{item.tableID}}"
+          - name: variable-id
+            value: "{{item.variableID}}"
+          - name: source-id
+            value: "{{item.sourceID}}"
+          - name: institution-id
+            value: "{{item.institutionID}}"
+          - name: member-id
+            value: "{{item.memberID}}"
+          - name: grid-label
+            value: "{{item.grid_label}}"
+          - name: outpath
+            value: "raw/{{item.sourceID}}/{{item.experimentID}}/{{item.memberID}}/{{item.variableID}}/{{item.grid_label}}.zarr"
+        withParam: "{{inputs.parameters.gcmruns-list}}"
+
+  - name: download
+    inputs:
+      parameters:
+      - name: activity-id
+      - name: experiment-id
+      - name: table-id
+      - name: variable-id
+      - name: source-id
+      - name: institution-id
+      - name: member-id
+      - name: grid-label
+      - name: outpath
+    script:
+      image: pangeo/pangeo-notebook:2021.01.24
+      env:
+      - name: ACTIVITY_ID
+        value: "{{inputs.parameters.activity-id}}"
+      - name: EXPERIMENT_ID
+        value: "{{inputs.parameters.experiment-id}}"
+      - name: TABLE_ID
+        value: "{{inputs.parameters.table-id}}"
+      - name: VARIABLE_ID
+        value: "{{inputs.parameters.variable-id}}"
+      - name: SOURCE_ID
+        value: "{{inputs.parameters.source-id}}"
+      - name: INSTITUTION_ID
+        value: "{{inputs.parameters.institution-id}}"
+      - name: MEMBER_ID
+        value: "{{inputs.parameters.member-id}}"
+      - name: GRID_LABEL
+        value: "{{inputs.parameters.grid-label}}"
+      - name: OUTPATH
+        value: "{{inputs.parameters.outpath}}"
+      # These are automatically grabbed from k8s secrets, internally.
+      - name: AZURE_STORAGE_ACCOUNT
+        valueFrom:
+          secretKeyRef:
+            name: workerstoragecreds-secret
+            key: azurestorageaccount
+      - name: AZURE_STORAGE_KEY
+        valueFrom:
+          secretKeyRef:
+            name: workerstoragecreds-secret
+            key: azurestoragekey
+      command: [/srv/conda/envs/notebook/bin/python]
+      source: |
+        import os
+        import intake
+        from adlfs import AzureBlobFileSystem
+
+        print("Searching catalog")
+        col = intake.open_esm_datastore("https://storage.googleapis.com/cmip6/pangeo-cmip6.json")
+        cat = col.search(
+            activity_id=os.environ.get("ACTIVITY_ID"),
+            experiment_id=os.environ.get("EXPERIMENT_ID"),
+            table_id=os.environ.get("TABLE_ID"),
+            variable_id=os.environ.get("VARIABLE_ID"),
+            source_id=os.environ.get("SOURCE_ID"),
+            member_id=os.environ.get("MEMBER_ID"),
+            grid_label=os.environ.get("GRID_LABEL"),
+        )
+        d = cat.to_dataset_dict(progressbar=False)
+        k = list(d.keys())
+        if len(k) != 1:
+            raise ValueError("catalog does not have one entry, reconsider input IDs so only one entry")
+        print(f"Found one catalog entry {k}")
+
+        print(d)  # DEBUG
+
+        fs = AzureBlobFileSystem(
+            account_name=os.environ.get("AZURE_STORAGE_ACCOUNT", None),
+            account_key=os.environ.get("AZURE_STORAGE_KEY", None),
+            client_id=os.environ.get("AZURE_CLIENT_ID", None),
+            client_secret=os.environ.get("AZURE_CLIENT_SECRET", None),
+            tenant_id=os.environ.get("AZURE_TENANT_ID", None),
+        )
+        print("Authenticated with storage")
+
+        store = fs.get_mapper(os.environ.get("OUTPATH"))
+        d[k[0]].to_zarr(store, mode="w", compute=True)
+        print("Output written to storage")
+      resources:
+        requests:
+          memory: 0.6Gi
+          cpu: "1"
+        limits:
+          memory: 1Gi
+          cpu: "1"
+    activeDeadlineSeconds: 1000
+    retryStrategy:
+      limit: 4
+      retryPolicy: "Always"
