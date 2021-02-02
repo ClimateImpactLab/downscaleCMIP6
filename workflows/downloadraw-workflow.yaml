@@ -152,12 +152,12 @@ spec:
         print("Output written to storage")
       resources:
         requests:
-          memory: 0.6Gi
-          cpu: "1"
+          memory: 0.7Gi
+          cpu: "200m"
         limits:
           memory: 1Gi
-          cpu: "1"
-    activeDeadlineSeconds: 1000
+          cpu: "1000m"
+    activeDeadlineSeconds: 1500
     retryStrategy:
       limit: 4
       retryPolicy: "Always"
