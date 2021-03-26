@@ -301,7 +301,7 @@ def compare_gcm_qdm_quantile_deltas(rawdt, adjustdt, kind, grouper, quantiles=[.
     return fig
 
 
-def plot_quantile_by_group(rawdt, adjustdt, kind, grouper, quantiles=[.01,.05,.17,.25,.5,.75,.83,.95,.99]):
+def plot_quantile_delta_differences_by_group(rawdt, adjustdt, kind, grouper, quantiles=[.01,.05,.17,.25,.5,.75,.83,.95,.99]):
     
 
     fig,axs=plt.subplots(1,3,figsize=(24,6))
