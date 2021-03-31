@@ -165,13 +165,12 @@ def quantile_compare_plot(rawdt, adjustdt, kind, grouper='time', quantiles=[.01,
                          quantile_compare(rawdt['hist'], rawdt['sim'], kind, quantiles=quantiles,
                          grouper=grouper),
                          c=grouper.apply("mean", rawdt['sim'])[subgroup], cmap='Reds')# @@ will this cmap work?
-        
-#         ret = ax.scatter((grouper.apply("quantile", adjustdt['sim'], q=quantiles)
-#                           -grouper.apply("quantile", adjustdt['hist'], q=quantiles)),
-#                          (grouper.apply("quantile", rawdt['sim'], q=quantiles)
-#                           -grouper.apply("quantile", rawdt['hist'], q=quantiles)),
-#                          c=grouper.apply("mean", rawdt['sim'])[subgroup], cmap='Reds')
-        # plt.colorbar(ret)
+
+        xlims = ax.get_xlim()
+        ylims = ax.get_ylim()
+        ax.plot(np.arange(xlims[0],xlims[1]),np.arange(xlims[0],xlims[1]),linewidth=.5, color='k' )
+        ax.set_xlim(xlims)
+        ax.set_ylim(ylims)
         ax.set_title('Quantile deltas colored by {} ({})'.format(subgroup,quantstr))
         ax.set_ylabel('GCM Future - GCM Hist')
         ax.set_xlabel('QDM Future - QDM Hist')
@@ -183,13 +182,6 @@ def quantile_compare_plot(rawdt, adjustdt, kind, grouper='time', quantiles=[.01,
              - quantile_compare(rawdt['hist'], rawdt['sim'], kind, quantiles=quantiles,grouper=grouper)).squeeze(),
             bins=25
         )
-#         ret = ax.hist(
-#             ((grouper.apply("quantile", adjustdt['sim'], q=quantiles)
-#               -grouper.apply("quantile", adjustdt['hist'], q=quantiles))
-#              - (grouper.apply("quantile", rawdt['sim'], q=quantiles)
-#                 -grouper.apply("quantile", rawdt['hist'], q=quantiles))
-#             ).squeeze(),
-#             bins=25)
         ax.set_title('QDM-GCM Difference in quantile deltas for all {} ({})'.format(subgroup,quantstr))
         ax.set_ylabel('Count')
         ax.set_xlabel('(QDM-GCM) Difference')
@@ -236,11 +228,11 @@ def compare_quantile_deltas_scatter_hist(rawdt, adjustdt, grouper, kind, quantil
                          quantile_compare(rawdt['hist'], rawdt['sim'], kind, quantiles=quant,
                          grouper=grouper),
                          c=grouper.apply("mean", rawdt['sim'])[subgroup], cmap='Reds')
-#         ret = ax.scatter(
-#             (adjustdt['sim'].groupby(grouper).quantile(quant)-adjustdt['hist'].groupby(grouper).quantile(quant)),
-#                   (rawdt['sim'].groupby(grouper).quantile(quant)-rawdt['hist'].groupby(grouper).quantile(quant)),
-#                   c=rawdt['sim'].groupby(grouper).mean()[subgroup], cmap='Reds')
-
+        xlims = ax.get_xlim()
+        ylims = ax.get_ylim()
+        ax.plot(np.arange(xlims[0],xlims[1]),np.arange(xlims[0],xlims[1]),linewidth=.5, color='k' )
+        ax.set_xlim(xlims)
+        ax.set_ylim(ylims)
         ax.set_title(quant)
     plt.colorbar(ret)
 
@@ -253,9 +245,6 @@ def compare_quantile_deltas_scatter_hist(rawdt, adjustdt, grouper, kind, quantil
              - quantile_compare(rawdt['hist'], rawdt['sim'], kind, quantiles=quant,grouper=grouper)).squeeze(),
             bins=25
         )
-#         ret = ax.hist(((adjustdt['sim'].groupby(grouper).quantile(quant)-adjustdt['hist'].groupby(grouper).quantile(quant))
-#                        - (rawdt['sim'].groupby(grouper).quantile(quant)-rawdt['hist'].groupby(grouper).quantile(quant))).squeeze(),
-#                      bins=25)
         ax.set_title(quant)
 
     return fig
@@ -309,4 +298,29 @@ def compare_gcm_qdm_quantile_deltas(rawdt, adjustdt, kind, grouper, quantiles=[.
     ax.legend()
 
     _ = fig.suptitle('Compare Future Quantiles Deltas by {} with window {}'.format(grouper.name, grouper.window))
+    return fig
+
+
+def plot_quantile_delta_differences_by_group(rawdt, adjustdt, kind, grouper, quantiles=[.01,.05,.17,.25,.5,.75,.83,.95,.99]):
+    
+
+    fig,axs=plt.subplots(1,3,figsize=(24,6))
+    ax=axs[0]
+    quantile_compare(adjustdt['hist'], adjustdt['sim'], kind, quantiles=quantiles,
+                         grouper=grouper).plot(ax=ax, cmap='Reds')
+    _ = ax.set_xticks(quantiles)
+    ax.set_title('QDM (future - hist)')
+    ax=axs[1]
+    quantile_compare(rawdt['hist'], rawdt['sim'], kind, quantiles=quantiles,
+                         grouper=grouper).plot(ax=ax, cmap='Reds')
+    _ = ax.set_xticks(quantiles)
+    ax.set_title('Raw (future - hist)')
+    ax=axs[2]
+    (quantile_compare(adjustdt['hist'], adjustdt['sim'], kind, quantiles=quantiles,
+                         grouper=grouper) 
+     - quantile_compare(rawdt['hist'], rawdt['sim'], kind, quantiles=quantiles,
+                         grouper=grouper)).plot(ax=ax,vmin=-1,vmax=1,cmap='RdBu')
+    _ = ax.set_xticks(quantiles)
+    ax.set_title('QDM diff - Raw diff')
+
     return fig
