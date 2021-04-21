@@ -410,12 +410,12 @@ spec:
         value: "{{ inputs.parameters.future-zarr }}"
       - name: HALFWINDOW_LENGTH
         value: "{{ inputs.parameters.halfwindow-length }}"
-      - name: AZURE_STORAGE_ACCOUNT
+      - name: AZURE_STORAGE_ACCOUNT_NAME
         valueFrom:
           secretKeyRef:
             name: workerstoragecreds-secret
             key: azurestorageaccount
-      - name: AZURE_STORAGE_KEY
+      - name: AZURE_STORAGE_ACCOUNT_KEY
         valueFrom:
           secretKeyRef:
             name: workerstoragecreds-secret
@@ -429,10 +429,7 @@ spec:
         from adlfs import AzureBlobFileSystem
         
         n = int(os.environ.get("HALFWINDOW_LENGTH"))
-        fs = AzureBlobFileSystem(
-            account_name=os.environ.get("AZURE_STORAGE_ACCOUNT"),
-            account_key=os.environ.get("AZURE_STORAGE_KEY"),
-        )
+        fs = AzureBlobFileSystem()
         d = xr.open_zarr(fs.get_mapper(os.environ.get("FUTURE_ZARR")))
         firstyear = d["time"].dt.year.values[0] + n
         lastyear = d["time"].dt.year.values[-1] - n - 1  # -1 because argo has inclusive ranges.
@@ -690,12 +687,12 @@ spec:
         value: "{{ inputs.parameters.in-dir }}"
       - name: OUT
         value: "{{ inputs.parameters.out-zarr }}"
-      - name: AZURE_STORAGE_ACCOUNT
+      - name: AZURE_STORAGE_ACCOUNT_NAME
         valueFrom:
           secretKeyRef:
             name: workerstoragecreds-secret
             key: azurestorageaccount
-      - name: AZURE_STORAGE_KEY
+      - name: AZURE_STORAGE_ACCOUNT_KEY
         valueFrom:
           secretKeyRef:
             name: workerstoragecreds-secret
@@ -709,10 +706,7 @@ spec:
         from adlfs import AzureBlobFileSystem
         
 
-        fs = AzureBlobFileSystem(
-            account_name=os.environ.get("AZURE_STORAGE_ACCOUNT", None),
-            account_key=os.environ.get("AZURE_STORAGE_KEY", None),
-        )
+        fs = AzureBlobFileSystem()
         # Grab dir of yearly NetCDFs, read into single remote Zarr.
         local_stash = "/mnt/in/"
         fs.get(rpath=os.environ.get("IN"), lpath=local_stash, recursive=True)
@@ -756,12 +750,12 @@ spec:
       env:
       - name: IN_ZARR
         value: "{{ inputs.parameters.in-zarr }}"
-      - name: AZURE_STORAGE_ACCOUNT
+      - name: AZURE_STORAGE_ACCOUNT_NAME
         valueFrom:
           secretKeyRef:
             name: workerstoragecreds-secret
             key: azurestorageaccount
-      - name: AZURE_STORAGE_KEY
+      - name: AZURE_STORAGE_ACCOUNT_KEY
         valueFrom:
           secretKeyRef:
             name: workerstoragecreds-secret
@@ -774,10 +768,7 @@ spec:
         from adlfs import AzureBlobFileSystem
         
 
-        fs = AzureBlobFileSystem(
-            account_name=os.environ.get("AZURE_STORAGE_ACCOUNT", None),
-            account_key=os.environ.get("AZURE_STORAGE_KEY", None),
-        )
+        fs = AzureBlobFileSystem()
 
         target = os.environ.get("IN_ZARR")
         print(f"opening {target}")
