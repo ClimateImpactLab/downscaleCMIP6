@@ -1,0 +1,294 @@
+# Commented out dodola standardized tasks until https://github.com/ClimateImpactLab/dodola/issues/58 is closed.
+apiVersion: argoproj.io/v1alpha1
+kind: Workflow
+metadata:
+  generateName: clean-cmip6-dev-
+  labels:
+    env: dev
+spec:
+  serviceAccountName: workflows-default
+  nodeSelector:
+    dedicated: worker
+  tolerations:
+  - key: dedicated
+    operator: "Equal"
+    value: "worker"
+    effect: "NoSchedule"
+  - key: kubernetes.azure.com/scalesetpriority
+    operator: "Equal"
+    value: "spot"
+    effect: "NoSchedule"
+  entrypoint: main
+  arguments:
+    parameters:
+    - name: gcm-historical-zarr
+      value: "clean-dev/ACCESS-ESM1-5.historical.zarr"
+    - name: gcm-future-zarr
+      value: "clean-dev/ACCESS-ESM1-5.ssp370.zarr"
+    - name: slicehist-from-time
+      value: "1995"
+    - name: slicehist-to-time
+      value: "2015"
+    - name: out-hist-zarr
+      value: "scratch/cleancmip6-dev/ACCESS-ESM1-5.hist.zarr"
+    - name: out-future-zarr
+      value: "scratch/cleancmip6-dev/ACCESS-ESM1-5.future.zarr"
+  templates:
+
+
+  - name: main
+    inputs:
+      parameters:
+      - name: gcm-historical-zarr
+        value: "{{ workflow.parameters.gcm-historical-zarr }}"
+      - name: gcm-future-zarr
+        value: "{{ workflow.parameters.gcm-future-zarr }}"
+      - name: slicehist-from-time
+        value: "{{ workflow.parameters.slicehist-from-time }}"
+      - name: slicehist-to-time
+        value: "{{ workflow.parameters.slicehist-to-time }}"
+      - name: out-hist-zarr
+        value: "{{ workflow.parameters.out-hist-zarr }}"
+      - name: out-future-zarr
+        value: "{{ workflow.parameters.out-future-zarr }}"
+    dag:
+      tasks:
+      - name: standardize-historical-run
+        template: standardize-cmip6
+        arguments:
+          parameters:
+          - name: in-zarr
+            value: "{{ inputs.parameters.gcm-historical-zarr }}"
+          - name: out-zarr
+            value: "scratch/{{ workflow.name }}/historical-standardized.zarr"
+      - name: standardize-future-run
+        template: standardize-cmip6
+        arguments:
+          parameters:
+          - name: in-zarr
+            value: "{{ inputs.parameters.gcm-future-zarr }}"
+          - name: out-zarr
+            value: "scratch/{{ workflow.name }}/future-standardized.zarr"
+      - name: slice-historical-to-reference
+        dependencies: [standardize-historical-run]
+        template: timeslicezarr
+        arguments:
+          parameters:
+          - name: in-zarr
+            value: "{{ tasks.standardize-historical-run.outputs.parameters.out-zarr }}"
+          - name: out-zarr
+            value: "scratch/{{ workflow.name }}/historical-sliced.zarr"
+          - name: from-time
+            value: "{{ inputs.parameters.slicehist-from-time }}"
+          - name: to-time
+            value: "{{ inputs.parameters.slicehist-to-time }}"
+      - name: concat-histfuture
+        dependencies: [slice-historical-to-reference, standardize-future-run]
+        template: timeconcatzarrs
+        arguments:
+          parameters:
+          - name: in1-zarr
+            value: "{{ tasks.slice-historical-to-reference.outputs.parameters.out-zarr }}"
+          - name: in2-zarr
+            value: "{{ tasks.standardize-future-run.outputs.parameters.out-zarr }}"
+          - name: out-zarr
+            value: "{{ inputs.parameters.out-future-zarr }}"
+
+
+  - name: standardize-cmip6
+    inputs:
+      parameters:
+      - name: in-zarr
+      - name: out-zarr
+    outputs:
+      parameters:
+      - name: out-zarr
+        value: "{{  inputs.parameters.out-zarr }}"
+    container:
+      image: downscalecmip6.azurecr.io/dodola:0.1.0
+      env:
+      - name: IN_ZARR
+        value: "{{  inputs.parameters.in-zarr }}"
+      - name: OUT_ZARR
+        value: "{{  inputs.parameters.out-zarr }}"
+      - name: PYTHONUNBUFFERED
+        value: "FALSE"
+      # - name: AZURE_STORAGE_ACCOUNT_NAME
+      - name: AZURE_STORAGE_ACCOUNT
+        valueFrom:
+          secretKeyRef:
+            name: workerstoragecreds-secret
+            key: azurestorageaccount
+      # - name: AZURE_STORAGE_ACCOUNT_KEY
+      - name: AZURE_STORAGE_KEY
+        valueFrom:
+          secretKeyRef:
+            name: workerstoragecreds-secret
+            key: azurestoragekey
+      command: ["dodola"]
+      args:
+      - "cleancmip6"
+      - "{{ inputs.parameters.in-zarr }}"
+      - "{{ inputs.parameters.out-zarr }}"
+      resources:
+        requests:
+          memory: 8Gi
+          cpu: "2000m"
+        limits:
+          memory: 8Gi
+          cpu: "2000m"
+    activeDeadlineSeconds: 3600
+    retryStrategy:
+      limit: 2
+      retryPolicy: "Always"
+
+
+  - name: timeslicezarr
+    inputs:
+      parameters:
+      - name: in-zarr
+      - name: from-time
+      - name: to-time
+      - name: out-zarr
+    outputs:
+      parameters:
+      - name: out-zarr
+        value: "{{ inputs.parameters.out-zarr }}"
+    script:
+      image: downscalecmip6.azurecr.io/dodola:0.1.0
+      env:
+      - name: IN_ZARR
+        value: "{{ inputs.parameters.in-zarr }}"
+      - name: FROM_TIME
+        value: "{{ inputs.parameters.from-time }}"
+      - name: TO_TIME
+        value: "{{ inputs.parameters.to-time }}"
+      - name: OUT_ZARR
+        value: "{{ inputs.parameters.out-zarr }}"
+      - name: AZURE_STORAGE_ACCOUNT_NAME
+        valueFrom:
+          secretKeyRef:
+            name: workerstoragecreds-secret
+            key: azurestorageaccount
+      - name: AZURE_STORAGE_ACCOUNT_KEY
+        valueFrom:
+          secretKeyRef:
+            name: workerstoragecreds-secret
+            key: azurestoragekey
+      command: [python]
+      source: |
+        import os
+        import xarray as xr
+        from adlfs import AzureBlobFileSystem
+        
+        fs = AzureBlobFileSystem()
+
+        ds = xr.open_dataset(
+            fs.get_mapper(os.environ.get("IN_ZARR")),
+            chunks="auto",
+            engine="zarr"
+        )
+
+        from_time = os.environ.get("FROM_TIME")
+        to_time = os.environ.get("TO_TIME")
+        print(f"slicing {from_time} : {to_time}")
+        ds = ds.sel(time=slice(from_time, to_time))
+
+        ds = ds.chunk({"time": 365})
+
+        # Hack to get around issue with writing chunks to zarr in xarray v0.17.0
+        for v in ds.data_vars.keys():
+            del ds[v].encoding["chunks"]
+
+        ds.to_zarr(
+            fs.get_mapper(os.environ.get("OUT_ZARR")),
+            mode="w",
+            compute=True
+        )
+      resources:
+        requests:
+          memory: 4Gi
+          cpu: "1000m"
+        limits:
+          memory: 4Gi
+          cpu: "2000m"
+    activeDeadlineSeconds: 3600
+    retryStrategy:
+      limit: 2
+      retryPolicy: "Always"
+
+
+  - name: timeconcatzarrs
+    inputs:
+      parameters:
+      - name: in1-zarr
+      - name: in2-zarr
+      - name: out-zarr
+    script:
+      image: downscalecmip6.azurecr.io/dodola:0.1.0
+      env:
+      - name: IN1_ZARR
+        value: "{{ inputs.parameters.in1-zarr }}"
+      - name: IN2_ZARR
+        value: "{{ inputs.parameters.in2-zarr }}"
+      - name: OUT_ZARR
+        value: "{{ inputs.parameters.out-zarr }}"
+      - name: AZURE_STORAGE_ACCOUNT_NAME
+        valueFrom:
+          secretKeyRef:
+            name: workerstoragecreds-secret
+            key: azurestorageaccount
+      - name: AZURE_STORAGE_ACCOUNT_KEY
+        valueFrom:
+          secretKeyRef:
+            name: workerstoragecreds-secret
+            key: azurestoragekey
+      command: [python]
+      source: |
+        import os
+        import xarray as xr
+        from adlfs import AzureBlobFileSystem
+        
+        fs = AzureBlobFileSystem()
+
+        print(os.environ.get("IN1_ZARR"))  # DEBUG
+        print(os.environ.get("IN2_ZARR"))  # DEBUG
+
+        ds = xr.open_mfdataset(
+            [
+                fs.get_mapper(os.environ.get("IN1_ZARR")), 
+                fs.get_mapper(os.environ.get("IN2_ZARR"))
+            ],
+            concat_dim="time",
+            engine="zarr",
+            chunks={
+                "time": 365,
+                "lat": 10,
+                "lon": 10,
+                "bnds": 2,
+            }
+        )
+        # More kosher to append to an existing zarr but been
+        # getting KeyError: '_ARRAY_DIMENSIONS.
+
+        # Hack to get around issue with writing chunks to zarr in xarray v0.17.0
+        for v in ds.data_vars.keys():
+            del ds[v].encoding["chunks"]
+
+        print(os.environ.get("OUT_ZARR"))  # DEBUG
+        ds.to_zarr(
+            fs.get_mapper(os.environ.get("OUT_ZARR")),
+            mode="w",
+            compute=True
+        )
+      resources:
+        requests:
+          memory: 48Gi
+          cpu: "1000m"
+        limits:
+          memory: 48Gi
+          cpu: "2000m"
+    activeDeadlineSeconds: 1800
+    retryStrategy:
+      limit: 1
+      retryPolicy: "Always"
