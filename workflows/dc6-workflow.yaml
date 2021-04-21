@@ -11,11 +11,9 @@ spec:
     - name: reference-zarr
       value: "scratch/clean-dev/ERA-5/tasmax.1995-2014.0p25.zarr"
     - name: gcm-historical-zarr
-      # value: "scratch/cleancmip6-dev/ACCESS-ESM1-5.hist.zarr"
       value: "scratch/clean-cmip6-dev-2phms/historical-sliced.zarr"
     - name: gcm-future-zarr
       value: "scratch/clean-cmip6-dev-2phms/future-standardized.zarr"
-      # value: "scratch/cleancmip6-dev/ACCESS-ESM1-5.future.zarr"
     - name: out-zarr
       value: "scratch/{{ workflow.name }}/biascorrected.zarr"
     - name: target-variable
