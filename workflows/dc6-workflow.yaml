@@ -316,17 +316,6 @@ spec:
     activeDeadlineSeconds: 10800
 
 
-  - name: whalesay
-    container:
-      image: docker/whalesay
-      command: [cowsay]
-      args: ["this is a placeholder"]
-      resources:
-        limits:
-          memory: 32Mi
-          cpu: 100m
-
-
   - name: biascorrect-qdm
     inputs:
       parameters:
