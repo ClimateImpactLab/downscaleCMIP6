@@ -47,8 +47,6 @@ spec:
       #       value: "{{ tasks.drop-leapdays.outputs.parameters.out-zarr }}"
       #     - name: out-zarr
       #       value: "scratch/{{ workflow.name }}/rechunked.zarr"
-      #     - name: variable
-      #       value: tmax
       #     - name: time-chunk
       #       value: 365
       #     - name: lat-chunk
@@ -286,69 +284,45 @@ spec:
   #     retryPolicy: "Always"
 
 
+
   - name: rechunk
     inputs:
       parameters:
-      - name: in-zarr
-      - name: variable
-      - name: out-zarr
-      - name: time-chunk
-      - name: lat-chunk
-      - name: lon-chunk
+        - name: in-zarr
+        - name: out-zarr
+        - name: time-chunk
+        - name: lat-chunk
+        - name: lon-chunk
     outputs:
       parameters:
-      - name: out-zarr
-        value: "{{ inputs.parameters.out-zarr }}"
-    script:
-      image: downscalecmip6.azurecr.io/dodola:0.1.0
+        - name: out-zarr
+          value: "{{ inputs.parameters.out-zarr }}"
+    container:
+      image: downscalecmip6.azurecr.io/dodola:dev
+      imagePullPolicy: Always
       env:
-      - name: VARIABLE
-        value: "{{  inputs.parameters.variable }}"
-      - name: IN_ZARR
-        value: "{{  inputs.parameters.in-zarr }}"
-      - name: OUT_ZARR
-        value: "{{ inputs.parameters.out-zarr }}"
-      - name: TIME_CHUNK
-        value: "{{ inputs.parameters.time-chunk }}"
-      - name: LAT_CHUNK
-        value: "{{ inputs.parameters.lat-chunk }}"
-      - name: LON_CHUNK
-        value: "{{ inputs.parameters.lon-chunk }}"
-      - name: AZURE_STORAGE_ACCOUNT_NAME
-        valueFrom:
-          secretKeyRef:
-            name: workerstoragecreds-secret
-            key: azurestorageaccount
-      - name: AZURE_STORAGE_ACCOUNT_KEY
-        valueFrom:
-          secretKeyRef:
-            name: workerstoragecreds-secret
-            key: azurestoragekey
-      command: [python]
-      source: |
-        import os
-        import xarray as xr
-        from adlfs import AzureBlobFileSystem
-        
-        fs = AzureBlobFileSystem()
-        target_variable = os.environ.get("VARIABLE")
-
-        ds = xr.open_zarr(
-            fs.get_mapper(os.environ.get("IN_ZARR")),
-            chunks="auto",
-        )
-
-        ds=ds.chunk({
-                "time": int(os.environ.get("TIME_CHUNK")),
-                "latitude": int(os.environ.get("LAT_CHUNK")),
-                "longitude": int(os.environ.get("LON_CHUNK")),
-            }
-        )
-        # Hack to get around issue with writing chunks to zarr in xarray v0.17.0
-        for v in ds.data_vars.keys():
-            del ds[v].encoding["chunks"]
-
-        ds.to_zarr(fs.get_mapper(os.environ.get("OUT_ZARR")), mode="w")
+        - name: AZURE_STORAGE_ACCOUNT_NAME
+          valueFrom:
+            secretKeyRef:
+              name: workerstoragecreds-secret
+              key: azurestorageaccount
+        - name: AZURE_STORAGE_ACCOUNT_KEY
+          valueFrom:
+            secretKeyRef:
+              name: workerstoragecreds-secret
+              key: azurestoragekey
+      command: [dodola]
+      args:
+        - "rechunk"
+        - "az://{{ inputs.parameters.in-zarr }}"
+        - "--out"
+        - "az://{{ inputs.parameters.out-zarr }}"
+        - "--chunk"
+        - "time={{ inputs.parameters.time-chunk }}"
+        - "--chunk"
+        - "lat={{ inputs.parameters.lat-chunk }}"
+        - "--chunk"
+        - "lon={{ inputs.parameters.lon-chunk }}"
       resources:
         requests:
           memory: 48Gi
