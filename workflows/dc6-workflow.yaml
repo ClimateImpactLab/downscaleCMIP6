@@ -422,7 +422,6 @@ spec:
             key: azurestoragekey
       command: [python]
       source: |
-        # Real workflow begins here:
         import os
         import numpy as np
         import xarray as xr
@@ -431,8 +430,11 @@ spec:
         n = int(os.environ.get("HALFWINDOW_LENGTH"))
         fs = AzureBlobFileSystem()
         d = xr.open_zarr(fs.get_mapper(os.environ.get("FUTURE_ZARR")))
-        firstyear = d["time"].dt.year.values[0] + n
-        lastyear = d["time"].dt.year.values[-1] - n - 1  # -1 because argo has inclusive ranges.
+
+        # +1 yr because we need 15 days from end of the first year:
+        firstyear = d["time"].dt.year.values[0] + n + 1
+        # -2 yrs broken down: -1 because argo has inclusive ranges & -1 because we need 15 days from final year:
+        lastyear = d["time"].dt.year.values[-1] - n - 2
         print(f"output 'firstyear': {firstyear}")
         print(f"output 'lastyear': {lastyear}")
 
@@ -630,8 +632,9 @@ spec:
             )
         )
         print("Created QDM model")
-
-        timeslice = slice(str(yr - roll), str(yr + roll))
+        # Slice to get 15 days before and after our target year. This accounts
+        # for the rolling 31 day rolling window.
+        timeslice = slice(f"{yr - roll - 1}-12-17", f"{yr + roll + 1}-01-15")
 
         print("Setup I/O for data-to-adjust")
         simdf = xr.open_dataset(
