@@ -644,7 +644,7 @@ spec:
         )
         simdf = simdf[target_variable].sel(time=timeslice)
 
-        y = QDMdg.adjust(simdf).sel(time=str(yr))
+        y = QDMdg.adjust(simdf, interp="nearest").sel(time=str(yr))
         print("Simulation adjusted")
         local_path = f"/mnt/out/{yr}.nc"
         y.to_netcdf(local_path)
