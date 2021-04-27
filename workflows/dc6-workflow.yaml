@@ -9,19 +9,21 @@ spec:
   arguments:
     parameters:
     - name: reference-zarr
-      value: "scratch/clean-dev/ERA-5/tasmax.1995-2014.0p25.zarr"
+      value: "az://scratch/clean-dev/ERA-5/tasmax.1995-2014.0p25.zarr"
     - name: gcm-historical-zarr
-      value: "scratch/clean-cmip6-dev-2phms/historical-sliced.zarr"
+      value: "az://scratch/clean-cmip6-dev-2phms/historical-sliced.zarr"
     - name: gcm-future-zarr
-      value: "scratch/clean-cmip6-dev-2phms/future-standardized.zarr"
+      value: "az://scratch/clean-cmip6-dev-2phms/future-standardized.zarr"
     - name: out-zarr
-      value: "scratch/{{ workflow.name }}/biascorrected.zarr"
+      value: "az://scratch/{{ workflow.name }}/biascorrected.zarr"
     - name: target-variable
       value: tasmax
     - name: halfwindow-length
       value: 10
     - name: n-quantiles
       value: 100
+    - name: domainfile1x1
+      value: "az://support/domain.1x1.zarr"
 
   serviceAccountName: workflows-default
 
@@ -52,20 +54,20 @@ spec:
           - name: in-zarr
             value: "{{ workflow.parameters.reference-zarr }}"
           - name: out-zarr
-            value: "scratch/{{ workflow.name }}/reference-regrid.zarr"
+            value: "az://scratch/{{ workflow.name }}/reference-regrid.zarr"
           - name: regrid-method
             value: "bilinear"
-          - name: target-resolution
-            value: "1.0"
+          - name: domain-file
+            value: "{{ workflow.parameters.domainfile1x1 }}"
       - name: reference-rechunk
         dependencies: [reference-regrid]
         template: rechunk
         arguments:
           parameters:
           - name: in-zarr
-            value: "scratch/{{ workflow.name }}/reference-regrid.zarr"
+            value: "{{ tasks.reference-regrid.outputs.parameters.out-zarr }}"
           - name: out-zarr
-            value: "scratch/{{ workflow.name }}/reference-rechunk.zarr"
+            value: "az://scratch/{{ workflow.name }}/reference-rechunk.zarr"
           - name: time-chunk
             value: "-1"
           - name: lat-chunk
@@ -79,20 +81,20 @@ spec:
           - name: in-zarr
             value: "{{ workflow.parameters.gcm-historical-zarr }}"
           - name: out-zarr
-            value: "scratch/{{ workflow.name }}/gcm-historical-regrid.zarr"
+            value: "az://scratch/{{ workflow.name }}/gcm-historical-regrid.zarr"
           - name: regrid-method
             value: "bilinear"
-          - name: target-resolution
-            value: "1.0"
+          - name: domain-file
+            value: "{{ workflow.parameters.domainfile1x1 }}"
       - name: gcm-historical-rechunk
         dependencies: [gcm-historical-regrid]
         template: rechunk
         arguments:
           parameters:
           - name: in-zarr
-            value: "scratch/{{ workflow.name }}/gcm-historical-regrid.zarr"
+            value: "{{ tasks.gcm-historical-regrid.outputs.parameters.out-zarr }}"
           - name: out-zarr
-            value: "scratch/{{ workflow.name }}/gcm-historical-rechunk.zarr"
+            value: "az://scratch/{{ workflow.name }}/gcm-historical-rechunk.zarr"
           - name: time-chunk
             value: "-1"
           - name: lat-chunk
@@ -106,20 +108,20 @@ spec:
           - name: in-zarr
             value: "{{ workflow.parameters.gcm-future-zarr }}"
           - name: out-zarr
-            value: "scratch/{{ workflow.name }}/gcm-future-regrid.zarr"
+            value: "az://scratch/{{ workflow.name }}/gcm-future-regrid.zarr"
           - name: regrid-method
             value: "bilinear"
-          - name: target-resolution
-            value: "1.0"
+          - name: domain-file
+            value: "{{ workflow.parameters.domainfile1x1 }}"
       - name: gcm-future-rechunk
         dependencies: [gcm-future-regrid]
         template: rechunk
         arguments:
           parameters:
           - name: in-zarr
-            value: "scratch/{{ workflow.name }}/gcm-future-regrid.zarr"
+            value: "{{ tasks.gcm-future-regrid.outputs.parameters.out-zarr }}"
           - name: out-zarr
-            value: "scratch/{{ workflow.name }}/gcm-future-rechunk.zarr"
+            value: "az://scratch/{{ workflow.name }}/gcm-future-rechunk.zarr"
           - name: time-chunk
             value: "-1"
           - name: lat-chunk
@@ -134,11 +136,11 @@ spec:
             - name: variable
               value: "{{ workflow.parameters.target-variable }}"
             - name: ref-zarr
-              value: "scratch/{{ workflow.name }}/reference-rechunk.zarr"
+              value: "{{ tasks.reference-rechunk.outputs.parameters.out-zarr }}"
             - name: hist-zarr
-              value: "scratch/{{ workflow.name }}/gcm-historical-rechunk.zarr"
+              value: "{{ tasks.gcm-historical-rechunk.outputs.parameters.out-zarr }}"
             - name: future-zarr
-              value: "scratch/{{ workflow.name }}/gcm-future-rechunk.zarr"
+              value: "{{ tasks.gcm-future-rechunk.outputs.parameters.out-zarr }}"
             - name: out-zarr
               value: "{{ workflow.parameters.out-zarr }}"
             - name: n-quantiles
@@ -147,22 +149,26 @@ spec:
               value: "{{ workflow.parameters.halfwindow-length }}"
 
 
-  - name: regrid-dodola
+  - name: regrid
     inputs:
       parameters:
       - name: in-zarr
       - name: out-zarr
       - name: regrid-method
-      - name: target-resolution
+      - name: domain-file
+    outputs:
+      parameters:
+        - name: out-zarr
+          value: "{{ inputs.parameters.out-zarr }}"
     container:
-      image: downscalecmip6.azurecr.io/dodola:0.1.0
+      image: downscalecmip6.azurecr.io/dodola:0.2.0
       env:
-      - name: AZURE_STORAGE_ACCOUNT
+      - name: AZURE_STORAGE_ACCOUNT_NAME
         valueFrom:
           secretKeyRef:
             name: workerstoragecreds-secret
             key: azurestorageaccount
-      - name: AZURE_STORAGE_KEY
+      - name: AZURE_STORAGE_ACCOUNT_KEY
         valueFrom:
           secretKeyRef:
             name: workerstoragecreds-secret
@@ -175,86 +181,8 @@ spec:
       - "{{ inputs.parameters.out-zarr }}"
       - "--method"
       - "{{ inputs.parameters.regrid-method }}" 
-      - "--targetresolution"
-      - "{{ inputs.parameters.target-resolution }}"
-      resources:
-        requests:
-          memory: 8Gi
-          cpu: "1000m"
-        limits:
-          memory: 8Gi
-          cpu: "2000m"
-    activeDeadlineSeconds: 900
-    retryStrategy:
-      limit: 4
-      retryPolicy: "Always"
-
-
-  - name: regrid
-    # This is a work around until https://github.com/ClimateImpactLab/dodola/issues/38 is cleared.
-    inputs:
-      parameters:
-      - name: in-zarr
-      - name: out-zarr
-      - name: regrid-method
-      - name: target-resolution
-    outputs:
-      parameters:
-      - name: out-zarr
-        value: "{{ inputs.parameters.out-zarr }}"
-    script:
-      image: downscalecmip6.azurecr.io/dodola:0.1.0
-      env:
-      - name: IN_ZARR
-        value: "{{ inputs.parameters.in-zarr }}"
-      - name: OUT_ZARR
-        value: "{{ inputs.parameters.out-zarr }}"
-      - name: REGRID_METHOD
-        value: "{{ inputs.parameters.regrid-method }}"
-      - name: TARGET_RESOLUTION
-        value: "{{ inputs.parameters.target-resolution }}"
-      - name: AZURE_STORAGE_ACCOUNT_NAME
-        valueFrom:
-          secretKeyRef:
-            name: workerstoragecreds-secret
-            key: azurestorageaccount
-      - name: AZURE_STORAGE_ACCOUNT_KEY
-        valueFrom:
-          secretKeyRef:
-            name: workerstoragecreds-secret
-            key: azurestoragekey
-      command: [python]
-      source: |
-        import os
-        import xesmf as xe
-        import numpy as np
-        import xarray as xr
-        from adlfs import AzureBlobFileSystem
-        
-        fs = AzureBlobFileSystem()
-        in_ds = xr.open_zarr(fs.get_mapper(os.environ.get("IN_ZARR")), chunks="auto")
-        target_resolution = np.float(os.environ.get("TARGET_RESOLUTION"))
-        target = xe.util.grid_global(target_resolution, target_resolution)
-        weights_path = None
-
-        # Convert 2D -> 1D dimensions in target coordinates so
-        # output coordinate dimensions are 1D.
-        target["lat"] = np.unique(target["lat"].values)
-        target["lon"] = np.unique(target["lon"].values)
-
-        regridder = xe.Regridder(
-            in_ds,
-            target,
-            method=os.environ.get("REGRID_METHOD", None),
-            filename=weights_path,
-        )
-        out = regridder(in_ds)
-
-        out.to_zarr(
-            fs.get_mapper(os.environ.get("OUT_ZARR")),
-            mode="w",
-            compute=True
-        )
+      - "--domain-file"
+      - "{{ inputs.parameters.domain-file }}"
       resources:
         requests:
           memory: 48Gi
@@ -281,8 +209,7 @@ spec:
         - name: out-zarr
           value: "{{ inputs.parameters.out-zarr }}"
     container:
-      image: downscalecmip6.azurecr.io/dodola:dev
-      imagePullPolicy: Always
+      image: downscalecmip6.azurecr.io/dodola:0.2.0
       env:
       - name: AZURE_STORAGE_ACCOUNT_NAME
         valueFrom:
@@ -297,9 +224,9 @@ spec:
       command: [dodola]
       args: 
       - "rechunk"
-      - "az://{{ inputs.parameters.in-zarr }}"
+      - "{{ inputs.parameters.in-zarr }}"
       - "--out"
-      - "az://{{ inputs.parameters.out-zarr }}"
+      - "{{ inputs.parameters.out-zarr }}"
       - "--chunk"
       - "time={{ inputs.parameters.time-chunk }}"
       - "--chunk"
@@ -323,7 +250,7 @@ spec:
       - name: ref-zarr
       - name: hist-zarr
       - name: future-zarr
-      - name: out-zarr
+      - name: out-zarr  # Needs to be az://... format
       - name: n-quantiles
       - name: halfwindow-length
     outputs:
@@ -344,7 +271,7 @@ spec:
           - name: hist-zarr
             value: "{{ inputs.parameters.hist-zarr }}"
           - name: out-zarr
-            value: "scratch/{{workflow.name}}/qdm-model.zarr"
+            value: "az://scratch/{{workflow.name}}/qdm-model.zarr"
           - name: n-quantiles
             value: "{{ inputs.parameters.n-quantiles }}"
       - name: get-rollingyearwindow-range
@@ -371,7 +298,7 @@ spec:
           - name: year
             value: "{{item}}"
           - name: qdm-model-zarr
-            value: "scratch/{{workflow.name}}/qdm-model.zarr"
+            value: "{{ tasks.train-qdm.outputs.parameters.out-zarr }}"
           - name: halfwindow-length
             value: "{{ inputs.parameters.halfwindow-length }}"
         withSequence:
@@ -392,7 +319,7 @@ spec:
     # Extracts the first and last year we can use for rolling-window QDM from input file time dim.
     inputs:
       parameters:
-      - name: future-zarr
+      - name: future-zarr  # Needs to be az://... format
       - name: halfwindow-length
         value: 10
     outputs:
@@ -428,8 +355,7 @@ spec:
         from adlfs import AzureBlobFileSystem
         
         n = int(os.environ.get("HALFWINDOW_LENGTH"))
-        fs = AzureBlobFileSystem()
-        d = xr.open_zarr(fs.get_mapper(os.environ.get("FUTURE_ZARR")))
+        d = xr.open_zarr(os.environ.get("FUTURE_ZARR"))
 
         # +1 yr because we need 15 days from end of the first year:
         firstyear = d["time"].dt.year.values[0] + n + 1
@@ -472,9 +398,9 @@ spec:
     inputs:
       parameters:
       - name: variable
-      - name: ref-zarr
-      - name: hist-zarr
-      - name: out-zarr
+      - name: ref-zarr  # Needs to be az://... format
+      - name: hist-zarr  # Needs to be az://... format
+      - name: out-zarr  # Needs to be az://... format
       - name: n-quantiles
         value: 100
     outputs:
@@ -482,7 +408,7 @@ spec:
       - name: out-zarr
         value: "{{ inputs.parameters.out-zarr }}"
     script:
-      image: downscalecmip6.azurecr.io/dodola:0.1.0
+      image: downscalecmip6.azurecr.io/dodola:0.2.0
       env:
       - name: VARIABLE
         value: "{{  inputs.parameters.variable }}"
@@ -525,9 +451,8 @@ spec:
         from adlfs import AzureBlobFileSystem
         
         target_variable = os.environ.get("VARIABLE")
-        fs = AzureBlobFileSystem()
-        refdf = xr.open_zarr(fs.get_mapper(os.environ.get("REF_PATH")), chunks="auto")
-        histdf = xr.open_zarr(fs.get_mapper(os.environ.get("HIST_PATH")), chunks="auto")
+        refdf = xr.open_zarr(os.environ.get("REF_PATH"), chunks="auto")
+        histdf = xr.open_zarr(os.environ.get("HIST_PATH"), chunks="auto")
 
         QDMdg = sdba.adjustment.QuantileDeltaMapping(
             kind="+",   # <- ONLY FOR TEMPERATURE, NOT PRECIPITATION!
@@ -543,7 +468,7 @@ spec:
         print(QDMdg._hist_calendar)  # DEBUG
 
         QDMdg.ds.to_zarr(
-            store=fs.get_mapper(os.environ.get("OUT")),
+            store=os.environ.get("OUT"),
             mode="w"
         )
       resources:
@@ -562,7 +487,7 @@ spec:
   - name: qdm-adjust-year
     inputs:
       parameters:
-      - name: future-zarr
+      - name: future-zarr  # Needs to be az://... format
       - name: year
       - name: out
       - name: qdm-model-zarr
@@ -625,8 +550,8 @@ spec:
 
         print("Loaded QDM model data")
         QDMdg = sdba.adjustment.QuantileDeltaMapping.from_dataset(
-            xr.open_dataset(
-                fs.get_mapper(os.environ.get("QDM_MODEL_ZARR")),
+            xr.open_dataset(  # TODO: Better memory with IO via open_zarr(), chunks=auto
+                os.environ.get("QDM_MODEL_ZARR"),
                 engine="zarr",
                 chunks="auto"
             )
@@ -637,8 +562,8 @@ spec:
         timeslice = slice(f"{yr - roll - 1}-12-17", f"{yr + roll + 1}-01-15")
 
         print("Setup I/O for data-to-adjust")
-        simdf = xr.open_dataset(
-            fs.get_mapper(os.environ.get("SIM_PATH")),
+        simdf = xr.open_dataset(  # TODO: Better memory with IO via open_zarr(), chunks=auto
+            os.environ.get("SIM_PATH"),
             engine="zarr",
             chunks="auto"
         )
@@ -678,7 +603,7 @@ spec:
     inputs:
       parameters:
       - name: in-dir
-      - name: out-zarr
+      - name: out-zarr  # Needs to have "az://..." format
     outputs:
       parameters:
       - name: out-zarr
@@ -719,7 +644,7 @@ spec:
             concat_dim="time"
         )
         d.to_zarr(
-            fs.get_mapper(os.environ.get("OUT")),
+            os.environ.get("OUT"),
             mode="w",
             compute=True
         )
