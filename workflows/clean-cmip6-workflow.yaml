@@ -225,7 +225,7 @@ spec:
       - name: in2-zarr
       - name: out-zarr
     script:
-      image: downscalecmip6.azurecr.io/dodola:0.1.0
+      image: downscalecmip6.azurecr.io/dodola:0.2.0
       env:
       - name: IN1_ZARR
         value: "{{ inputs.parameters.in1-zarr }}"
@@ -248,38 +248,34 @@ spec:
         import os
         import xarray as xr
         from adlfs import AzureBlobFileSystem
-        
+
         fs = AzureBlobFileSystem()
 
         print(os.environ.get("IN1_ZARR"))  # DEBUG
         print(os.environ.get("IN2_ZARR"))  # DEBUG
 
-        ds = xr.open_mfdataset(
-            [
-                fs.get_mapper(os.environ.get("IN1_ZARR")), 
-                fs.get_mapper(os.environ.get("IN2_ZARR"))
-            ],
-            concat_dim="time",
-            engine="zarr",
-            chunks={
-                "time": 365,
-                "lat": 10,
-                "lon": 10,
-                "bnds": 2,
-            }
-        )
-        # More kosher to append to an existing zarr but been
-        # getting KeyError: '_ARRAY_DIMENSIONS.
+        ds1 = xr.open_zarr(fs.get_mapper(os.environ.get("IN1_ZARR")))
+        ds2 = xr.open_zarr(fs.get_mapper(os.environ.get("IN2_ZARR")))
+
+        print("ds1:")  # DEBUG
+        print(ds1)  # DEBUG
+        print("ds2:")  # DEBUG
+        print(ds2)  # DEBUG
+
+        ds = xr.concat([ds1, ds2], dim="time")
+        ds = ds.chunk({"time": 365, "lat": 10, "lon": 10, "bnds": 2})
 
         # Hack to get around issue with writing chunks to zarr in xarray v0.17.0
         for v in ds.data_vars.keys():
             del ds[v].encoding["chunks"]
+        # TODO: For whatever reason these where not removed in the above loop, even if iter over ds.keys()...
+        del ds["lat_bnds"].encoding["chunks"]
+        del ds["lon_bnds"].encoding["chunks"]
 
         print(os.environ.get("OUT_ZARR"))  # DEBUG
         ds.to_zarr(
             fs.get_mapper(os.environ.get("OUT_ZARR")),
             mode="w",
-            compute=True
         )
       resources:
         requests:
