@@ -3,38 +3,43 @@ apiVersion: argoproj.io/v1alpha1
 kind: Workflow
 metadata:
   generateName: downloadraw-
+  labels:
+    env: prod
 spec:
+  entrypoint: main
+  arguments:
+    parameters:
+    - name: gcmruns-url
+      value: "https://gist.githubusercontent.com/brews/3c1555dc640f0ec03bfa0680847950c5/raw/8ed547b3f951453c3a4dc9ba0d83a6c529d2906b/testlist.json"
   serviceAccountName: workflows-default
-
-  # So workers go on larger, spot, worker node pool.
   nodeSelector:
     dedicated: worker
   tolerations:
-  - key: dedicated
-    operator: "Equal"
-    value: "worker"
-    effect: "NoSchedule"
-  - key: kubernetes.azure.com/scalesetpriority
-    operator: "Equal"
-    value: "spot"
-    effect: "NoSchedule"
-
-  entrypoint: loop-gcmruns
+    - key: dedicated
+      operator: "Equal"
+      value: "worker"
+      effect: "NoSchedule"
+    - key: kubernetes.azure.com/scalesetpriority
+      operator: "Equal"
+      value: "spot"
+      effect: "NoSchedule"
   parallelism: 50  # Limit number of parallel jobs.
-  arguments:
-    parameters:
-    - name: gcmruns-list
-      value: |
-        [{"activity_id":"ScenarioMIP","experiment_id":"ssp370","table_id":"day","variable_id":"tasmin","source_id":"GFDL-ESM4","institution_id":"NOAA-GFDL","member_id":"r1i1p1f1","grid_label":"gr1","version":20180701},{"activity_id":"ScenarioMIP","experiment_id":"ssp370","table_id":"day","variable_id":"tasmax","source_id":"GFDL-ESM4","institution_id":"NOAA-GFDL","member_id":"r1i1p1f1","grid_label":"gr1","version":20180701},{"activity_id":"ScenarioMIP","experiment_id":"ssp370","table_id":"day","variable_id":"pr","source_id":"GFDL-ESM4","institution_id":"NOAA-GFDL","member_id":"r1i1p1f1","grid_label":"gr1","version":20180701},{"activity_id":"ScenarioMIP","experiment_id":"ssp245","table_id":"day","variable_id":"tasmin","source_id":"GFDL-ESM4","institution_id":"NOAA-GFDL","member_id":"r1i1p1f1","grid_label":"gr1","version":20180701},{"activity_id":"ScenarioMIP","experiment_id":"ssp245","table_id":"day","variable_id":"tasmax","source_id":"GFDL-ESM4","institution_id":"NOAA-GFDL","member_id":"r1i1p1f1","grid_label":"gr1","version":20180701},{"activity_id":"ScenarioMIP","experiment_id":"ssp245","table_id":"day","variable_id":"pr","source_id":"GFDL-ESM4","institution_id":"NOAA-GFDL","member_id":"r1i1p1f1","grid_label":"gr1","version":20180701},{"activity_id":"ScenarioMIP","experiment_id":"ssp126","table_id":"day","variable_id":"tasmin","source_id":"GFDL-ESM4","institution_id":"NOAA-GFDL","member_id":"r1i1p1f1","grid_label":"gr1","version":20180701},{"activity_id":"ScenarioMIP","experiment_id":"ssp126","table_id":"day","variable_id":"tasmax","source_id":"GFDL-ESM4","institution_id":"NOAA-GFDL","member_id":"r1i1p1f1","grid_label":"gr1","version":20180701},{"activity_id":"ScenarioMIP","experiment_id":"ssp126","table_id":"day","variable_id":"pr","source_id":"GFDL-ESM4","institution_id":"NOAA-GFDL","member_id":"r1i1p1f1","grid_label":"gr1","version":20180701},{"activity_id":"CMIP","experiment_id":"historical","table_id":"day","variable_id":"tasmin","source_id":"GFDL-ESM4","institution_id":"NOAA-GFDL","member_id":"r1i1p1f1","grid_label":"gr1","version":20190726},{"activity_id":"CMIP","experiment_id":"historical","table_id":"day","variable_id":"tasmax","source_id":"GFDL-ESM4","institution_id":"NOAA-GFDL","member_id":"r1i1p1f1","grid_label":"gr1","version":20190726},{"activity_id":"CMIP","experiment_id":"historical","table_id":"day","variable_id":"pr","source_id":"GFDL-ESM4","institution_id":"NOAA-GFDL","member_id":"r1i1p1f1","grid_label":"gr1","version":20190726},{"activity_id":"ScenarioMIP","institution_id":"CSIRO","source_id":"ACCESS-ESM1-5","experiment_id":"ssp245","member_id":"r1i1p1f1","table_id":"day","variable_id":"tasmin","grid_label":"gn","version":20191115},{"activity_id":"ScenarioMIP","institution_id":"CSIRO","source_id":"ACCESS-ESM1-5","experiment_id":"ssp245","member_id":"r1i1p1f1","table_id":"day","variable_id":"tasmax","grid_label":"gn","version":20191115},{"activity_id":"ScenarioMIP","institution_id":"CSIRO","source_id":"ACCESS-ESM1-5","experiment_id":"ssp245","member_id":"r1i1p1f1","table_id":"day","variable_id":"pr","grid_label":"gn","version":20191115},{"activity_id":"ScenarioMIP","institution_id":"CSIRO","source_id":"ACCESS-ESM1-5","experiment_id":"ssp126","member_id":"r1i1p1f1","table_id":"day","variable_id":"tasmin","grid_label":"gn","version":20191115},{"activity_id":"ScenarioMIP","institution_id":"CSIRO","source_id":"ACCESS-ESM1-5","experiment_id":"ssp126","member_id":"r1i1p1f1","table_id":"day","variable_id":"tasmax","grid_label":"gn","version":20191115},{"activity_id":"ScenarioMIP","institution_id":"CSIRO","source_id":"ACCESS-ESM1-5","experiment_id":"ssp126","member_id":"r1i1p1f1","table_id":"day","variable_id":"pr","grid_label":"gn","version":20191115},{"activity_id":"CMIP","institution_id":"CSIRO","source_id":"ACCESS-ESM1-5","experiment_id":"historical","member_id":"r1i1p1f1","table_id":"day","variable_id":"tasmax","grid_label":"gn","version":20191115},{"activity_id":"CMIP","institution_id":"CSIRO","source_id":"ACCESS-ESM1-5","experiment_id":"historical","member_id":"r1i1p1f1","table_id":"day","variable_id":"tasmin","grid_label":"gn","version":20191115},{"activity_id":"CMIP","institution_id":"CSIRO","source_id":"ACCESS-ESM1-5","experiment_id":"historical","member_id":"r1i1p1f1","table_id":"day","variable_id":"pr","grid_label":"gn","version":20191115}]
-
   templates:
-  - name: loop-gcmruns
+
+
+  - name: main
     inputs:
       parameters:
-      - name: gcmruns-list
+      - name: gcmruns-url
     steps:
-    - - name: download-run
-        template: download
+    - - name: fetch-gcmruns-list
+        template: fetch-gcmruns-list
+        arguments:
+          parameters:
+          - name: url
+            value: "{{ inputs.parameters.gcmruns-url }}"
+    - - name: download-gcm
+        template: download-gcm
         arguments:
           parameters:
           - name: activity-id
@@ -57,10 +62,42 @@ spec:
             value: "{{item.version}}"
           - name: outpath
             value: "raw/{{item.source_id}}/{{item.experiment_id}}/{{item.member_id}}/{{item.variable_id}}/{{item.grid_label}}/{{item.version}}.zarr"
-        withParam: "{{inputs.parameters.gcmruns-list}}"
+        withParam: "{{ steps.fetch-gcmruns-list.outputs.parameters.gcm-runs }}"
 
 
-  - name: download
+  - name: fetch-gcmruns-list
+    inputs:
+      parameters:
+      - name: url
+    script:
+      image: appropriate/curl
+      command: [sh]
+      source: |
+        curl -s "{{ inputs.parameters.url }}" > /mnt/out/gcmruns.json
+      volumeMounts:
+      - name: out
+        mountPath: /mnt/out
+      resources:
+        requests:
+          memory: 5Mi
+          cpu: "100m"
+        limits:
+          memory: 10Mi
+          cpu: "500m"
+    outputs:
+      parameters:
+      - name: gcm-runs
+        valueFrom:
+          path: /mnt/out/gcmruns.json
+    volumes:
+    - name: out
+      emptyDir: { }
+    activeDeadlineSeconds: 300
+    retryStrategy:
+      limit: 3
+
+
+  - name: download-gcm
     inputs:
       parameters:
       - name: activity-id
@@ -96,7 +133,6 @@ spec:
         value: "{{inputs.parameters.version}}"
       - name: OUTPATH
         value: "{{inputs.parameters.outpath}}"
-      # These are automatically grabbed from k8s secrets, internally.
       - name: AZURE_STORAGE_ACCOUNT
         valueFrom:
           secretKeyRef:
@@ -144,7 +180,7 @@ spec:
 
         store = fs.get_mapper(os.environ.get("OUTPATH"))
         d[k[0]].to_zarr(store, mode="w", compute=True)
-        print("Output written to storage")
+        print(f"Output written to {os.environ.get('OUTPATH')}")
       resources:
         requests:
           memory: 0.7Gi
