@@ -15,14 +15,14 @@ spec:
   nodeSelector:
     dedicated: worker
   tolerations:
-    - key: dedicated
-      operator: "Equal"
-      value: "worker"
-      effect: "NoSchedule"
-    - key: kubernetes.azure.com/scalesetpriority
-      operator: "Equal"
-      value: "spot"
-      effect: "NoSchedule"
+  - key: dedicated
+    operator: "Equal"
+    value: "worker"
+    effect: "NoSchedule"
+  - key: kubernetes.azure.com/scalesetpriority
+    operator: "Equal"
+    value: "spot"
+    effect: "NoSchedule"
   parallelism: 50  # Limit number of parallel jobs.
   templates:
 
