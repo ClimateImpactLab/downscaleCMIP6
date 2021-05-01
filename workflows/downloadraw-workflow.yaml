@@ -20,24 +20,12 @@ spec:
     effect: "NoSchedule"
 
   entrypoint: loop-gcmruns
+  parallelism: 50  # Limit number of parallel jobs.
   arguments:
     parameters:
     - name: gcmruns-list
       value: |
-        [
-          { "activityID": "ScenarioMIP", "experimentID": "ssp370", "tableID": "day", "variableID": "tasmin", "sourceID": "GFDL-ESM4", "institutionID": "NOAA-GFDL", "memberID": "r1i1p1f1", "grid_label": "gr1"},
-          { "activityID": "ScenarioMIP", "experimentID": "ssp370", "tableID": "day", "variableID": "tasmax", "sourceID": "GFDL-ESM4", "institutionID": "NOAA-GFDL", "memberID": "r1i1p1f1", "grid_label": "gr1"},
-          { "activityID": "ScenarioMIP", "experimentID": "ssp370", "tableID": "day", "variableID": "pr", "sourceID": "GFDL-ESM4", "institutionID": "NOAA-GFDL", "memberID": "r1i1p1f1", "grid_label": "gr1"},
-          { "activityID": "ScenarioMIP", "experimentID": "ssp245", "tableID": "day", "variableID": "tasmin", "sourceID": "GFDL-ESM4", "institutionID": "NOAA-GFDL", "memberID": "r1i1p1f1", "grid_label": "gr1"},
-          { "activityID": "ScenarioMIP", "experimentID": "ssp245", "tableID": "day", "variableID": "tasmax", "sourceID": "GFDL-ESM4", "institutionID": "NOAA-GFDL", "memberID": "r1i1p1f1", "grid_label": "gr1"},
-          { "activityID": "ScenarioMIP", "experimentID": "ssp245", "tableID": "day", "variableID": "pr", "sourceID": "GFDL-ESM4", "institutionID": "NOAA-GFDL", "memberID": "r1i1p1f1", "grid_label": "gr1"},
-          { "activityID": "ScenarioMIP", "experimentID": "ssp126", "tableID": "day", "variableID": "tasmin", "sourceID": "GFDL-ESM4", "institutionID": "NOAA-GFDL", "memberID": "r1i1p1f1", "grid_label": "gr1"},
-          { "activityID": "ScenarioMIP", "experimentID": "ssp126", "tableID": "day", "variableID": "tasmax", "sourceID": "GFDL-ESM4", "institutionID": "NOAA-GFDL", "memberID": "r1i1p1f1", "grid_label": "gr1"},
-          { "activityID": "ScenarioMIP", "experimentID": "ssp126", "tableID": "day", "variableID": "pr", "sourceID": "GFDL-ESM4", "institutionID": "NOAA-GFDL", "memberID": "r1i1p1f1", "grid_label": "gr1"},
-          { "activityID": "CMIP", "experimentID": "historical", "tableID": "day", "variableID": "tasmin", "sourceID": "GFDL-ESM4", "institutionID": "NOAA-GFDL", "memberID": "r1i1p1f1", "grid_label": "gr1"},
-          { "activityID": "CMIP", "experimentID": "historical", "tableID": "day", "variableID": "tasmax", "sourceID": "GFDL-ESM4", "institutionID": "NOAA-GFDL", "memberID": "r1i1p1f1", "grid_label": "gr1"},
-          { "activityID": "CMIP", "experimentID": "historical", "tableID": "day", "variableID": "pr", "sourceID": "GFDL-ESM4", "institutionID": "NOAA-GFDL", "memberID": "r1i1p1f1", "grid_label": "gr1"}
-        ]
+        [{"activity_id":"ScenarioMIP","experiment_id":"ssp370","table_id":"day","variable_id":"tasmin","source_id":"GFDL-ESM4","institution_id":"NOAA-GFDL","member_id":"r1i1p1f1","grid_label":"gr1","version":20180701},{"activity_id":"ScenarioMIP","experiment_id":"ssp370","table_id":"day","variable_id":"tasmax","source_id":"GFDL-ESM4","institution_id":"NOAA-GFDL","member_id":"r1i1p1f1","grid_label":"gr1","version":20180701},{"activity_id":"ScenarioMIP","experiment_id":"ssp370","table_id":"day","variable_id":"pr","source_id":"GFDL-ESM4","institution_id":"NOAA-GFDL","member_id":"r1i1p1f1","grid_label":"gr1","version":20180701},{"activity_id":"ScenarioMIP","experiment_id":"ssp245","table_id":"day","variable_id":"tasmin","source_id":"GFDL-ESM4","institution_id":"NOAA-GFDL","member_id":"r1i1p1f1","grid_label":"gr1","version":20180701},{"activity_id":"ScenarioMIP","experiment_id":"ssp245","table_id":"day","variable_id":"tasmax","source_id":"GFDL-ESM4","institution_id":"NOAA-GFDL","member_id":"r1i1p1f1","grid_label":"gr1","version":20180701},{"activity_id":"ScenarioMIP","experiment_id":"ssp245","table_id":"day","variable_id":"pr","source_id":"GFDL-ESM4","institution_id":"NOAA-GFDL","member_id":"r1i1p1f1","grid_label":"gr1","version":20180701},{"activity_id":"ScenarioMIP","experiment_id":"ssp126","table_id":"day","variable_id":"tasmin","source_id":"GFDL-ESM4","institution_id":"NOAA-GFDL","member_id":"r1i1p1f1","grid_label":"gr1","version":20180701},{"activity_id":"ScenarioMIP","experiment_id":"ssp126","table_id":"day","variable_id":"tasmax","source_id":"GFDL-ESM4","institution_id":"NOAA-GFDL","member_id":"r1i1p1f1","grid_label":"gr1","version":20180701},{"activity_id":"ScenarioMIP","experiment_id":"ssp126","table_id":"day","variable_id":"pr","source_id":"GFDL-ESM4","institution_id":"NOAA-GFDL","member_id":"r1i1p1f1","grid_label":"gr1","version":20180701},{"activity_id":"CMIP","experiment_id":"historical","table_id":"day","variable_id":"tasmin","source_id":"GFDL-ESM4","institution_id":"NOAA-GFDL","member_id":"r1i1p1f1","grid_label":"gr1","version":20190726},{"activity_id":"CMIP","experiment_id":"historical","table_id":"day","variable_id":"tasmax","source_id":"GFDL-ESM4","institution_id":"NOAA-GFDL","member_id":"r1i1p1f1","grid_label":"gr1","version":20190726},{"activity_id":"CMIP","experiment_id":"historical","table_id":"day","variable_id":"pr","source_id":"GFDL-ESM4","institution_id":"NOAA-GFDL","member_id":"r1i1p1f1","grid_label":"gr1","version":20190726},{"activity_id":"ScenarioMIP","institution_id":"CSIRO","source_id":"ACCESS-ESM1-5","experiment_id":"ssp245","member_id":"r1i1p1f1","table_id":"day","variable_id":"tasmin","grid_label":"gn","version":20191115},{"activity_id":"ScenarioMIP","institution_id":"CSIRO","source_id":"ACCESS-ESM1-5","experiment_id":"ssp245","member_id":"r1i1p1f1","table_id":"day","variable_id":"tasmax","grid_label":"gn","version":20191115},{"activity_id":"ScenarioMIP","institution_id":"CSIRO","source_id":"ACCESS-ESM1-5","experiment_id":"ssp245","member_id":"r1i1p1f1","table_id":"day","variable_id":"pr","grid_label":"gn","version":20191115},{"activity_id":"ScenarioMIP","institution_id":"CSIRO","source_id":"ACCESS-ESM1-5","experiment_id":"ssp126","member_id":"r1i1p1f1","table_id":"day","variable_id":"tasmin","grid_label":"gn","version":20191115},{"activity_id":"ScenarioMIP","institution_id":"CSIRO","source_id":"ACCESS-ESM1-5","experiment_id":"ssp126","member_id":"r1i1p1f1","table_id":"day","variable_id":"tasmax","grid_label":"gn","version":20191115},{"activity_id":"ScenarioMIP","institution_id":"CSIRO","source_id":"ACCESS-ESM1-5","experiment_id":"ssp126","member_id":"r1i1p1f1","table_id":"day","variable_id":"pr","grid_label":"gn","version":20191115},{"activity_id":"CMIP","institution_id":"CSIRO","source_id":"ACCESS-ESM1-5","experiment_id":"historical","member_id":"r1i1p1f1","table_id":"day","variable_id":"tasmax","grid_label":"gn","version":20191115},{"activity_id":"CMIP","institution_id":"CSIRO","source_id":"ACCESS-ESM1-5","experiment_id":"historical","member_id":"r1i1p1f1","table_id":"day","variable_id":"tasmin","grid_label":"gn","version":20191115},{"activity_id":"CMIP","institution_id":"CSIRO","source_id":"ACCESS-ESM1-5","experiment_id":"historical","member_id":"r1i1p1f1","table_id":"day","variable_id":"pr","grid_label":"gn","version":20191115}]
 
   templates:
   - name: loop-gcmruns
@@ -50,24 +38,27 @@ spec:
         arguments:
           parameters:
           - name: activity-id
-            value: "{{item.activityID}}"
+            value: "{{item.activity_id}}"
           - name: experiment-id
-            value: "{{item.experimentID}}"
+            value: "{{item.experiment_id}}"
           - name: table-id
-            value: "{{item.tableID}}"
+            value: "{{item.table_id}}"
           - name: variable-id
-            value: "{{item.variableID}}"
+            value: "{{item.variable_id}}"
           - name: source-id
-            value: "{{item.sourceID}}"
+            value: "{{item.source_id}}"
           - name: institution-id
-            value: "{{item.institutionID}}"
+            value: "{{item.institution_id}}"
           - name: member-id
-            value: "{{item.memberID}}"
+            value: "{{item.member_id}}"
           - name: grid-label
             value: "{{item.grid_label}}"
+          - name: version
+            value: "{{item.version}}"
           - name: outpath
-            value: "raw/{{item.sourceID}}/{{item.experimentID}}/{{item.memberID}}/{{item.variableID}}/{{item.grid_label}}.zarr"
+            value: "raw/{{item.source_id}}/{{item.experiment_id}}/{{item.member_id}}/{{item.variable_id}}/{{item.grid_label}}/{{item.version}}.zarr"
         withParam: "{{inputs.parameters.gcmruns-list}}"
+
 
   - name: download
     inputs:
@@ -80,6 +71,7 @@ spec:
       - name: institution-id
       - name: member-id
       - name: grid-label
+      - name: version
       - name: outpath
     script:
       image: pangeo/pangeo-notebook:2021.01.24
@@ -100,6 +92,8 @@ spec:
         value: "{{inputs.parameters.member-id}}"
       - name: GRID_LABEL
         value: "{{inputs.parameters.grid-label}}"
+      - name: INTAKE_VERSION
+        value: "{{inputs.parameters.version}}"
       - name: OUTPATH
         value: "{{inputs.parameters.outpath}}"
       # These are automatically grabbed from k8s secrets, internally.
@@ -129,6 +123,7 @@ spec:
             source_id=os.environ.get("SOURCE_ID"),
             member_id=os.environ.get("MEMBER_ID"),
             grid_label=os.environ.get("GRID_LABEL"),
+            version=int(os.environ.get("INTAKE_VERSION")),
         )
         d = cat.to_dataset_dict(progressbar=False)
         k = list(d.keys())
