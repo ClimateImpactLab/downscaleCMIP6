@@ -3,10 +3,15 @@ apiVersion: argoproj.io/v1alpha1
 kind: Workflow
 metadata:
   generateName: downloadraw-
+  labels:
+    env: prod
 spec:
+  entrypoint: main
+  arguments:
+    parameters:
+    - name: gcmruns-url
+      value: "https://gist.githubusercontent.com/brews/3c1555dc640f0ec03bfa0680847950c5/raw/8ed547b3f951453c3a4dc9ba0d83a6c529d2906b/testlist.json"
   serviceAccountName: workflows-default
-
-  # So workers go on larger, spot, worker node pool.
   nodeSelector:
     dedicated: worker
   tolerations:
@@ -18,58 +23,81 @@ spec:
     operator: "Equal"
     value: "spot"
     effect: "NoSchedule"
-
-  entrypoint: loop-gcmruns
-  arguments:
-    parameters:
-    - name: gcmruns-list
-      value: |
-        [
-          { "activityID": "ScenarioMIP", "experimentID": "ssp370", "tableID": "day", "variableID": "tasmin", "sourceID": "GFDL-ESM4", "institutionID": "NOAA-GFDL", "memberID": "r1i1p1f1", "grid_label": "gr1"},
-          { "activityID": "ScenarioMIP", "experimentID": "ssp370", "tableID": "day", "variableID": "tasmax", "sourceID": "GFDL-ESM4", "institutionID": "NOAA-GFDL", "memberID": "r1i1p1f1", "grid_label": "gr1"},
-          { "activityID": "ScenarioMIP", "experimentID": "ssp370", "tableID": "day", "variableID": "pr", "sourceID": "GFDL-ESM4", "institutionID": "NOAA-GFDL", "memberID": "r1i1p1f1", "grid_label": "gr1"},
-          { "activityID": "ScenarioMIP", "experimentID": "ssp245", "tableID": "day", "variableID": "tasmin", "sourceID": "GFDL-ESM4", "institutionID": "NOAA-GFDL", "memberID": "r1i1p1f1", "grid_label": "gr1"},
-          { "activityID": "ScenarioMIP", "experimentID": "ssp245", "tableID": "day", "variableID": "tasmax", "sourceID": "GFDL-ESM4", "institutionID": "NOAA-GFDL", "memberID": "r1i1p1f1", "grid_label": "gr1"},
-          { "activityID": "ScenarioMIP", "experimentID": "ssp245", "tableID": "day", "variableID": "pr", "sourceID": "GFDL-ESM4", "institutionID": "NOAA-GFDL", "memberID": "r1i1p1f1", "grid_label": "gr1"},
-          { "activityID": "ScenarioMIP", "experimentID": "ssp126", "tableID": "day", "variableID": "tasmin", "sourceID": "GFDL-ESM4", "institutionID": "NOAA-GFDL", "memberID": "r1i1p1f1", "grid_label": "gr1"},
-          { "activityID": "ScenarioMIP", "experimentID": "ssp126", "tableID": "day", "variableID": "tasmax", "sourceID": "GFDL-ESM4", "institutionID": "NOAA-GFDL", "memberID": "r1i1p1f1", "grid_label": "gr1"},
-          { "activityID": "ScenarioMIP", "experimentID": "ssp126", "tableID": "day", "variableID": "pr", "sourceID": "GFDL-ESM4", "institutionID": "NOAA-GFDL", "memberID": "r1i1p1f1", "grid_label": "gr1"},
-          { "activityID": "CMIP", "experimentID": "historical", "tableID": "day", "variableID": "tasmin", "sourceID": "GFDL-ESM4", "institutionID": "NOAA-GFDL", "memberID": "r1i1p1f1", "grid_label": "gr1"},
-          { "activityID": "CMIP", "experimentID": "historical", "tableID": "day", "variableID": "tasmax", "sourceID": "GFDL-ESM4", "institutionID": "NOAA-GFDL", "memberID": "r1i1p1f1", "grid_label": "gr1"},
-          { "activityID": "CMIP", "experimentID": "historical", "tableID": "day", "variableID": "pr", "sourceID": "GFDL-ESM4", "institutionID": "NOAA-GFDL", "memberID": "r1i1p1f1", "grid_label": "gr1"}
-        ]
-
+  parallelism: 50  # Limit number of parallel jobs.
   templates:
-  - name: loop-gcmruns
+
+
+  - name: main
     inputs:
       parameters:
-      - name: gcmruns-list
+      - name: gcmruns-url
     steps:
-    - - name: download-run
-        template: download
+    - - name: fetch-gcmruns-list
+        template: fetch-gcmruns-list
+        arguments:
+          parameters:
+          - name: url
+            value: "{{ inputs.parameters.gcmruns-url }}"
+    - - name: download-gcm
+        template: download-gcm
         arguments:
           parameters:
           - name: activity-id
-            value: "{{item.activityID}}"
+            value: "{{item.activity_id}}"
           - name: experiment-id
-            value: "{{item.experimentID}}"
+            value: "{{item.experiment_id}}"
           - name: table-id
-            value: "{{item.tableID}}"
+            value: "{{item.table_id}}"
           - name: variable-id
-            value: "{{item.variableID}}"
+            value: "{{item.variable_id}}"
           - name: source-id
-            value: "{{item.sourceID}}"
+            value: "{{item.source_id}}"
           - name: institution-id
-            value: "{{item.institutionID}}"
+            value: "{{item.institution_id}}"
           - name: member-id
-            value: "{{item.memberID}}"
+            value: "{{item.member_id}}"
           - name: grid-label
             value: "{{item.grid_label}}"
+          - name: version
+            value: "{{item.version}}"
           - name: outpath
-            value: "raw/{{item.sourceID}}/{{item.experimentID}}/{{item.memberID}}/{{item.variableID}}/{{item.grid_label}}.zarr"
-        withParam: "{{inputs.parameters.gcmruns-list}}"
+            value: "raw/{{item.source_id}}/{{item.experiment_id}}/{{item.member_id}}/{{item.variable_id}}/{{item.grid_label}}/{{item.version}}.zarr"
+        withParam: "{{ steps.fetch-gcmruns-list.outputs.parameters.gcm-runs }}"
 
-  - name: download
+
+  - name: fetch-gcmruns-list
+    inputs:
+      parameters:
+      - name: url
+    script:
+      image: appropriate/curl
+      command: [sh]
+      source: |
+        curl -s "{{ inputs.parameters.url }}" > /mnt/out/gcmruns.json
+      volumeMounts:
+      - name: out
+        mountPath: /mnt/out
+      resources:
+        requests:
+          memory: 5Mi
+          cpu: "100m"
+        limits:
+          memory: 10Mi
+          cpu: "500m"
+    outputs:
+      parameters:
+      - name: gcm-runs
+        valueFrom:
+          path: /mnt/out/gcmruns.json
+    volumes:
+    - name: out
+      emptyDir: { }
+    activeDeadlineSeconds: 300
+    retryStrategy:
+      limit: 3
+
+
+  - name: download-gcm
     inputs:
       parameters:
       - name: activity-id
@@ -80,6 +108,7 @@ spec:
       - name: institution-id
       - name: member-id
       - name: grid-label
+      - name: version
       - name: outpath
     script:
       image: pangeo/pangeo-notebook:2021.01.24
@@ -100,9 +129,10 @@ spec:
         value: "{{inputs.parameters.member-id}}"
       - name: GRID_LABEL
         value: "{{inputs.parameters.grid-label}}"
+      - name: INTAKE_VERSION
+        value: "{{inputs.parameters.version}}"
       - name: OUTPATH
         value: "{{inputs.parameters.outpath}}"
-      # These are automatically grabbed from k8s secrets, internally.
       - name: AZURE_STORAGE_ACCOUNT
         valueFrom:
           secretKeyRef:
@@ -129,6 +159,7 @@ spec:
             source_id=os.environ.get("SOURCE_ID"),
             member_id=os.environ.get("MEMBER_ID"),
             grid_label=os.environ.get("GRID_LABEL"),
+            version=int(os.environ.get("INTAKE_VERSION")),
         )
         d = cat.to_dataset_dict(progressbar=False)
         k = list(d.keys())
@@ -149,7 +180,7 @@ spec:
 
         store = fs.get_mapper(os.environ.get("OUTPATH"))
         d[k[0]].to_zarr(store, mode="w", compute=True)
-        print("Output written to storage")
+        print(f"Output written to {os.environ.get('OUTPATH')}")
       resources:
         requests:
           memory: 0.7Gi
