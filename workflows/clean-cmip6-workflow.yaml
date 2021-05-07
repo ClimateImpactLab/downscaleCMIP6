@@ -112,7 +112,7 @@ spec:
       - name: OUT_ZARR
         value: "{{  inputs.parameters.out-zarr }}"
       - name: PYTHONUNBUFFERED
-        value: "FALSE"
+        value: "1"
       # - name: AZURE_STORAGE_ACCOUNT_NAME
       - name: AZURE_STORAGE_ACCOUNT
         valueFrom:
@@ -175,6 +175,8 @@ spec:
           secretKeyRef:
             name: workerstoragecreds-secret
             key: azurestoragekey
+      - name: PYTHONUNBUFFERED
+        value: "1"
       command: [python]
       source: |
         import os
@@ -243,6 +245,8 @@ spec:
           secretKeyRef:
             name: workerstoragecreds-secret
             key: azurestoragekey
+      - name: PYTHONUNBUFFERED
+        value: "1"
       command: [python]
       source: |
         import os
