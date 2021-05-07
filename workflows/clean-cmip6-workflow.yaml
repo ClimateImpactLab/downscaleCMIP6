@@ -77,7 +77,7 @@ spec:
           - name: in-zarr
             value: "{{ tasks.standardize-historical-run.outputs.parameters.out-zarr }}"
           - name: out-zarr
-            value: "scratch/{{ workflow.name }}/historical-sliced.zarr"
+            value: "{{ inputs.parameters.out-hist-zarr }}"
           - name: from-time
             value: "{{ inputs.parameters.slicehist-from-time }}"
           - name: to-time
@@ -260,6 +260,9 @@ spec:
 
         ds1 = xr.open_zarr(fs.get_mapper(os.environ.get("IN1_ZARR")))
         ds2 = xr.open_zarr(fs.get_mapper(os.environ.get("IN2_ZARR")))
+        # Seems a bit more reliable this week if we pre-load:
+        ds1.load()
+        ds2.load()
 
         print("ds1:")  # DEBUG
         print(ds1)  # DEBUG
@@ -281,6 +284,7 @@ spec:
             fs.get_mapper(os.environ.get("OUT_ZARR")),
             mode="w",
         )
+        print("Output written")  # DEBUG
       resources:
         requests:
           memory: 48Gi
