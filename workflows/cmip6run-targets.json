@@ -229,5 +229,38 @@
     "variable_id": "pr",
     "grid_label": "gn",
     "version": 20191115
+  },
+  {
+    "activity_id": "ScenarioMIP",
+    "institution_id": "CSIRO",
+    "source_id": "ACCESS-ESM1-5",
+    "experiment_id": "ssp370",
+    "member_id": "r1i1p1f1",
+    "table_id": "day",
+    "variable_id": "tasmin",
+    "grid_label": "gn",
+    "version": 20191115
+  },
+  {
+    "activity_id": "ScenarioMIP",
+    "institution_id": "CSIRO",
+    "source_id": "ACCESS-ESM1-5",
+    "experiment_id": "ssp370",
+    "member_id": "r1i1p1f1",
+    "table_id": "day",
+    "variable_id": "tasmax",
+    "grid_label": "gn",
+    "version": 20191115
+  },
+  {
+    "activity_id": "ScenarioMIP",
+    "institution_id": "CSIRO",
+    "source_id": "ACCESS-ESM1-5",
+    "experiment_id": "ssp370",
+    "member_id": "r1i1p1f1",
+    "table_id": "day",
+    "variable_id": "pr",
+    "grid_label": "gn",
+    "version": 20191115
   }
 ]
