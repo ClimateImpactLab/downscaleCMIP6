@@ -199,11 +199,16 @@ spec:
   - name: rechunk
     inputs:
       parameters:
-      - name: in-zarr
-      - name: out-zarr
-      - name: time-chunk
-      - name: lat-chunk
-      - name: lon-chunk
+        - name: in-zarr
+        - name: out-zarr
+        - name: time-chunk
+          value: 365
+        - name: lat-chunk
+          value: 10
+        - name: lon-chunk
+          value: 10
+        - name: time-dim-name
+          value: time
     outputs:
       parameters:
         - name: out-zarr
@@ -228,7 +233,7 @@ spec:
       - "--out"
       - "{{ inputs.parameters.out-zarr }}"
       - "--chunk"
-      - "time={{ inputs.parameters.time-chunk }}"
+      - "{{ inputs.parameters.time-dim-name }}={{ inputs.parameters.time-chunk }}"
       - "--chunk"
       - "lat={{ inputs.parameters.lat-chunk }}"
       - "--chunk" 
