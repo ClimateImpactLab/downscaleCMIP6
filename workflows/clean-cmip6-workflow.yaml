@@ -32,6 +32,8 @@ spec:
       value: "1995"
     - name: referenceslicehist-to-time
       value: "2015"
+    - name: out-train-zarr
+      value: "az://scratch/cleancmip6-dev/ACCESS-ESM1-5.train.zarr"
     - name: out-hist-zarr
       value: "az://scratch/cleancmip6-dev/ACCESS-ESM1-5.hist.zarr"
     - name: out-future-zarr
@@ -56,6 +58,8 @@ spec:
         value: "{{ workflow.parameters.referenceslicehist-from-time }}"
       - name: referenceslicehist-to-time
         value: "{{ workflow.parameters.referenceslicehist-to-time }}"
+      - name: out-train-zarr
+        value: "{{ workflow.parameters.out-train-zarr }}"
       - name: out-hist-zarr
         value: "{{ workflow.parameters.out-hist-zarr }}"
       - name: out-future-zarr
@@ -79,7 +83,7 @@ spec:
             - name: in-zarr
               value: "{{ inputs.parameters.gcm-historical-zarr }}"
             - name: out-zarr
-              value: "{{ inputs.parameters.out-hist-zarr }}"
+              value: "{{ inputs.parameters.scratch }}historical-standardized.zarr"
       - name: slice-historical-to-reference
         template: timeslicezarr
         dependencies: [ standardize-historical-run ]
@@ -88,7 +92,7 @@ spec:
           - name: in-zarr
             value: "{{ tasks.standardize-historical-run.outputs.parameters.out-zarr }}"
           - name: out-zarr
-            value: "{{ inputs.parameters.scratch }}historical-referencesliced.zarr"
+            value: "{{ inputs.parameters.out-train-zarr }}"
           - name: from-time
             value: "{{ inputs.parameters.referenceslicehist-from-time }}"
           - name: to-time
@@ -101,7 +105,7 @@ spec:
             - name: in-zarr
               value: "{{ tasks.standardize-historical-run.outputs.parameters.out-zarr }}"
             - name: out-zarr
-              value: "{{ inputs.parameters.scratch }}historical-sliced.zarr"
+              value: "{{ inputs.parameters.out-hist-zarr }}"
             - name: from-time
               value: "{{ inputs.parameters.histslice-from-time }}"
             - name: to-time
