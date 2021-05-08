@@ -199,16 +199,18 @@ spec:
       source: |
         import os
         import xarray as xr
-        
+
+        in_zarr = os.environ.get("IN_ZARR")
+        from_time = os.environ.get("FROM_TIME")
+        to_time = os.environ.get("TO_TIME")
+        out_zarr = os.environ.get("OUT_ZARR")
 
         ds = xr.open_dataset(
-            os.environ.get("IN_ZARR"),
-            chunks="auto",
+            in_zarr,
+            chunks={},
             engine="zarr"
         )
 
-        from_time = os.environ.get("FROM_TIME")
-        to_time = os.environ.get("TO_TIME")
         print(f"slicing {from_time} : {to_time}")
         ds = ds.sel(time=slice(from_time, to_time))
 
@@ -219,9 +221,8 @@ spec:
             del ds[v].encoding["chunks"]
 
         ds.to_zarr(
-            os.environ.get("OUT_ZARR"),
-            mode="w",
-            compute=True
+            out_zarr,
+            mode="w"
         )
       resources:
         requests:
