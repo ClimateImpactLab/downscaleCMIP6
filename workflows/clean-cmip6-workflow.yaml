@@ -1,4 +1,3 @@
-# Commented out dodola standardized tasks until https://github.com/ClimateImpactLab/dodola/issues/58 is closed.
 apiVersion: argoproj.io/v1alpha1
 kind: Workflow
 metadata:
@@ -22,17 +21,23 @@ spec:
   arguments:
     parameters:
     - name: gcm-historical-zarr
-      value: "clean-dev/ACCESS-ESM1-5.historical.zarr"
+      value: "az://raw/ACCESS-ESM1-5/historical/r1i1p1f1/tasmax/gn/20191115.zarr"
     - name: gcm-future-zarr
-      value: "clean-dev/ACCESS-ESM1-5.ssp370.zarr"
-    - name: slicehist-from-time
+      value: "az://raw/ACCESS-ESM1-5/ssp370/r1i1p1f1/tasmax/gn/20191115.zarr"
+    - name: histslice-from-time
+      value: "1950"
+    - name: histslice-to-time
+      value: "2015"
+    - name: referenceslicehist-from-time
       value: "1995"
-    - name: slicehist-to-time
+    - name: referenceslicehist-to-time
       value: "2015"
     - name: out-hist-zarr
-      value: "scratch/cleancmip6-dev/ACCESS-ESM1-5.hist.zarr"
+      value: "az://scratch/cleancmip6-dev/ACCESS-ESM1-5.hist.zarr"
     - name: out-future-zarr
-      value: "scratch/cleancmip6-dev/ACCESS-ESM1-5.future.zarr"
+      value: "az://scratch/cleancmip6-dev/ACCESS-ESM1-5.future.zarr"
+    - name: scratch
+      value: "az://scratch/{{ workflow.name }}/"
   templates:
 
 
@@ -43,24 +48,22 @@ spec:
         value: "{{ workflow.parameters.gcm-historical-zarr }}"
       - name: gcm-future-zarr
         value: "{{ workflow.parameters.gcm-future-zarr }}"
-      - name: slicehist-from-time
-        value: "{{ workflow.parameters.slicehist-from-time }}"
-      - name: slicehist-to-time
-        value: "{{ workflow.parameters.slicehist-to-time }}"
+      - name: histslice-from-time
+        value: "{{ workflow.parameters.histslice-from-time }}"
+      - name: histslice-to-time
+        value: "{{ workflow.parameters.histslice-to-time }}"
+      - name: referenceslicehist-from-time
+        value: "{{ workflow.parameters.referenceslicehist-from-time }}"
+      - name: referenceslicehist-to-time
+        value: "{{ workflow.parameters.referenceslicehist-to-time }}"
       - name: out-hist-zarr
         value: "{{ workflow.parameters.out-hist-zarr }}"
       - name: out-future-zarr
         value: "{{ workflow.parameters.out-future-zarr }}"
+      - name: scratch
+        value: "{{ workflow.parameters.scratch }}"
     dag:
       tasks:
-      - name: standardize-historical-run
-        template: standardize-cmip6
-        arguments:
-          parameters:
-          - name: in-zarr
-            value: "{{ inputs.parameters.gcm-historical-zarr }}"
-          - name: out-zarr
-            value: "scratch/{{ workflow.name }}/historical-standardized.zarr"
       - name: standardize-future-run
         template: standardize-cmip6
         arguments:
@@ -68,27 +71,48 @@ spec:
           - name: in-zarr
             value: "{{ inputs.parameters.gcm-future-zarr }}"
           - name: out-zarr
-            value: "scratch/{{ workflow.name }}/future-standardized.zarr"
+            value: "{{ inputs.parameters.scratch }}future-standardized.zarr"
+      - name: standardize-historical-run
+        template: standardize-cmip6
+        arguments:
+          parameters:
+            - name: in-zarr
+              value: "{{ inputs.parameters.gcm-historical-zarr }}"
+            - name: out-zarr
+              value: "{{ inputs.parameters.out-hist-zarr }}"
       - name: slice-historical-to-reference
-        dependencies: [standardize-historical-run]
         template: timeslicezarr
+        dependencies: [ standardize-historical-run ]
         arguments:
           parameters:
           - name: in-zarr
             value: "{{ tasks.standardize-historical-run.outputs.parameters.out-zarr }}"
           - name: out-zarr
-            value: "{{ inputs.parameters.out-hist-zarr }}"
+            value: "{{ inputs.parameters.scratch }}historical-referencesliced.zarr"
           - name: from-time
-            value: "{{ inputs.parameters.slicehist-from-time }}"
+            value: "{{ inputs.parameters.referenceslicehist-from-time }}"
           - name: to-time
-            value: "{{ inputs.parameters.slicehist-to-time }}"
+            value: "{{ inputs.parameters.referenceslicehist-to-time }}"
+      - name: slice-historical
+        template: timeslicezarr
+        dependencies: [ standardize-historical-run ]
+        arguments:
+          parameters:
+            - name: in-zarr
+              value: "{{ tasks.standardize-historical-run.outputs.parameters.out-zarr }}"
+            - name: out-zarr
+              value: "{{ inputs.parameters.scratch }}historical-sliced.zarr"
+            - name: from-time
+              value: "{{ inputs.parameters.histslice-from-time }}"
+            - name: to-time
+              value: "{{ inputs.parameters.histslice-to-time }}"
       - name: concat-histfuture
-        dependencies: [slice-historical-to-reference, standardize-future-run]
+        dependencies: [slice-historical, standardize-future-run]
         template: timeconcatzarrs
         arguments:
           parameters:
           - name: in1-zarr
-            value: "{{ tasks.slice-historical-to-reference.outputs.parameters.out-zarr }}"
+            value: "{{ tasks.slice-historical.outputs.parameters.out-zarr }}"
           - name: in2-zarr
             value: "{{ tasks.standardize-future-run.outputs.parameters.out-zarr }}"
           - name: out-zarr
@@ -105,22 +129,14 @@ spec:
       - name: out-zarr
         value: "{{  inputs.parameters.out-zarr }}"
     container:
-      image: downscalecmip6.azurecr.io/dodola:0.1.0
+      image: downscalecmip6.azurecr.io/dodola:dev
       env:
-      - name: IN_ZARR
-        value: "{{  inputs.parameters.in-zarr }}"
-      - name: OUT_ZARR
-        value: "{{  inputs.parameters.out-zarr }}"
-      - name: PYTHONUNBUFFERED
-        value: "1"
-      # - name: AZURE_STORAGE_ACCOUNT_NAME
-      - name: AZURE_STORAGE_ACCOUNT
+      - name: AZURE_STORAGE_ACCOUNT_NAME
         valueFrom:
           secretKeyRef:
             name: workerstoragecreds-secret
             key: azurestorageaccount
-      # - name: AZURE_STORAGE_ACCOUNT_KEY
-      - name: AZURE_STORAGE_KEY
+      - name: AZURE_STORAGE_ACCOUNT_KEY
         valueFrom:
           secretKeyRef:
             name: workerstoragecreds-secret
@@ -155,7 +171,7 @@ spec:
       - name: out-zarr
         value: "{{ inputs.parameters.out-zarr }}"
     script:
-      image: downscalecmip6.azurecr.io/dodola:0.1.0
+      image: downscalecmip6.azurecr.io/dodola:dev
       env:
       - name: IN_ZARR
         value: "{{ inputs.parameters.in-zarr }}"
@@ -175,18 +191,14 @@ spec:
           secretKeyRef:
             name: workerstoragecreds-secret
             key: azurestoragekey
-      - name: PYTHONUNBUFFERED
-        value: "1"
       command: [python]
       source: |
         import os
         import xarray as xr
-        from adlfs import AzureBlobFileSystem
         
-        fs = AzureBlobFileSystem()
 
         ds = xr.open_dataset(
-            fs.get_mapper(os.environ.get("IN_ZARR")),
+            os.environ.get("IN_ZARR"),
             chunks="auto",
             engine="zarr"
         )
@@ -203,7 +215,7 @@ spec:
             del ds[v].encoding["chunks"]
 
         ds.to_zarr(
-            fs.get_mapper(os.environ.get("OUT_ZARR")),
+            os.environ.get("OUT_ZARR"),
             mode="w",
             compute=True
         )
@@ -227,7 +239,7 @@ spec:
       - name: in2-zarr
       - name: out-zarr
     script:
-      image: downscalecmip6.azurecr.io/dodola:0.2.0
+      image: downscalecmip6.azurecr.io/dodola:dev
       env:
       - name: IN1_ZARR
         value: "{{ inputs.parameters.in1-zarr }}"
@@ -245,24 +257,19 @@ spec:
           secretKeyRef:
             name: workerstoragecreds-secret
             key: azurestoragekey
-      - name: PYTHONUNBUFFERED
-        value: "1"
       command: [python]
       source: |
         import os
         import xarray as xr
-        from adlfs import AzureBlobFileSystem
-
-        fs = AzureBlobFileSystem()
 
         print(os.environ.get("IN1_ZARR"))  # DEBUG
         print(os.environ.get("IN2_ZARR"))  # DEBUG
 
-        ds1 = xr.open_zarr(fs.get_mapper(os.environ.get("IN1_ZARR")))
-        ds2 = xr.open_zarr(fs.get_mapper(os.environ.get("IN2_ZARR")))
-        # Seems a bit more reliable this week if we pre-load:
-        ds1.load()
-        ds2.load()
+        ds1 = xr.open_zarr(os.environ.get("IN1_ZARR"))
+        ds2 = xr.open_zarr(os.environ.get("IN2_ZARR"))
+        # # Seems a bit more reliable this week if we pre-load:
+        # ds1.load()
+        # ds2.load()
 
         print("ds1:")  # DEBUG
         print(ds1)  # DEBUG
@@ -281,7 +288,7 @@ spec:
 
         print(os.environ.get("OUT_ZARR"))  # DEBUG
         ds.to_zarr(
-            fs.get_mapper(os.environ.get("OUT_ZARR")),
+            os.environ.get("OUT_ZARR"),
             mode="w",
         )
         print("Output written")  # DEBUG
@@ -292,7 +299,56 @@ spec:
         limits:
           memory: 48Gi
           cpu: "2000m"
-    activeDeadlineSeconds: 1800
+    activeDeadlineSeconds: 3600
     retryStrategy:
       limit: 1
       retryPolicy: "Always"
+
+
+  - name: rechunk
+    inputs:
+      parameters:
+      - name: in-zarr
+      - name: out-zarr
+      - name: time-chunk
+      - name: lat-chunk
+      - name: lon-chunk
+      - name: time-dim-name
+        value: time
+    outputs:
+      parameters:
+        - name: out-zarr
+          value: "{{ inputs.parameters.out-zarr }}"
+    container:
+      image: downscalecmip6.azurecr.io/dodola:dev
+      env:
+      - name: AZURE_STORAGE_ACCOUNT_NAME
+        valueFrom:
+          secretKeyRef:
+            name: workerstoragecreds-secret
+            key: azurestorageaccount
+      - name: AZURE_STORAGE_ACCOUNT_KEY
+        valueFrom:
+          secretKeyRef:
+            name: workerstoragecreds-secret
+            key: azurestoragekey
+      command: [dodola]
+      args: 
+      - "rechunk"
+      - "{{ inputs.parameters.in-zarr }}"
+      - "--out"
+      - "{{ inputs.parameters.out-zarr }}"
+      - "--chunk"
+      - "{{ inputs.parameters.time-dim-name }}={{ inputs.parameters.time-chunk }}"
+      - "--chunk"
+      - "lat={{ inputs.parameters.lat-chunk }}"
+      - "--chunk" 
+      - "lon={{ inputs.parameters.lon-chunk }}"
+      resources:
+        requests:
+          memory: 24Gi
+          cpu: "1000m"
+        limits:
+          memory: 24Gi
+          cpu: "2000m"
+    activeDeadlineSeconds: 10800
