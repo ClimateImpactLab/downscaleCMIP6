@@ -373,7 +373,7 @@ spec:
           print(ds2)  # DEBUG
 
           ds = xr.concat([ds1, ds2], dim="time")
-          ds = ds.chunk({"time": 365, "lat": 10, "lon": 10, "bnds": 2})
+          ds = ds.chunk({"time": 365, "lat": -1, "lon": -1, "bnds": 2})
 
           # Hack to get around issue with writing chunks to zarr in xarray v0.17.0
           for v in ds.data_vars.keys():
