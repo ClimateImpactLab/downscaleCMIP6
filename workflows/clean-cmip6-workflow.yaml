@@ -414,7 +414,7 @@ spec:
           - name: item-version
             value: NULL
           - name: catalog-url
-            value: "https://gist.githubusercontent.com/brews/6c3cee11e141a9bb5e3d1a9c97a36707/raw/cdbbf914ccff8b5ee2167a1cb914b639df461ac4/intake-catalog.yaml"
+            value: "https://raw.githubusercontent.com/ClimateImpactLab/downscaleCMIP6/master/workflows/intake-catalog.yaml"
           - name: catalog-source-name
             value: "cmip6_raw"
       script:
@@ -492,7 +492,7 @@ spec:
           - name: source-id
           - name: member-id
           - name: catalog-url
-            value: "https://gist.githubusercontent.com/brews/6c3cee11e141a9bb5e3d1a9c97a36707/raw/cdbbf914ccff8b5ee2167a1cb914b639df461ac4/intake-catalog.yaml"
+            value: "https://raw.githubusercontent.com/ClimateImpactLab/downscaleCMIP6/master/workflows/intake-catalog.yaml"
           - name: catalog-source-name
             value: "cmip6_clean"
       script:
