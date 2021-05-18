@@ -597,12 +597,12 @@ spec:
           - name: variable
       outputs:
         artifacts:
-        - name: adjusted
-          path: "/mnt/out/{{ inputs.parameters.year }}.nc"
-          archive:
-            none: { }
-          s3:
-            key: "{{ workflow.name }}/qdm-years/{{ inputs.parameters.year }}.nc"
+          - name: adjusted
+            path: "/mnt/out/{{ inputs.parameters.year }}.nc"
+            archive:
+              none: { }
+            s3:
+              key: "{{ workflow.name }}/qdm-years/{{ inputs.parameters.year }}.nc"
       container:
         image: downscalecmip6.azurecr.io/dodola:dev
         imagePullPolicy: Always
