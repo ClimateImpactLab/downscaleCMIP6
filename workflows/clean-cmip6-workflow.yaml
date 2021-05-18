@@ -24,8 +24,6 @@ spec:
         value: "ACCESS-ESM1-5"
       - name: member-id
         value: "r1i1p1f1"
-      - name: variable-id
-        value: "tasmax"
       - name: grid-label
         value: "gn"
       - name: item-version
@@ -46,8 +44,6 @@ spec:
     - name: main
       inputs:
         parameters:
-          - name: variable-id
-            value: "{{ workflow.parameters.variable-id }}"
           - name: source-id
             value: "{{ workflow.parameters.source-id }}"
           - name: member-id
@@ -66,6 +62,163 @@ spec:
             value: "{{ workflow.parameters.referenceslicehist-to-time }}"
           - name: scratch
             value: "{{ workflow.parameters.scratch }}"
+      dag:
+        tasks:
+          - name: clean-pr
+            template: clean-generic-variable
+            arguments:
+              parameters:
+                - name: variable-id
+                  value: "pr"
+                - name: source-id
+                  value: "{{ inputs.parameters.source-id }}"
+                - name: member-id
+                  value: "{{ inputs.parameters.member-id }}"
+                - name: grid-label
+                  value: "{{ inputs.parameters.grid-label }}"
+                - name: item-version
+                  value: "{{ inputs.parameters.item-version }}"
+                - name: histslice-from-time
+                  value: "{{ inputs.parameters.histslice-from-time }}"
+                - name: histslice-to-time
+                  value: "{{ inputs.parameters.histslice-to-time }}"
+                - name: referenceslicehist-from-time
+                  value: "{{ inputs.parameters.referenceslicehist-from-time }}"
+                - name: referenceslicehist-to-time
+                  value: "{{ inputs.parameters.referenceslicehist-to-time }}"
+                - name: scratch
+                  value: "{{ inputs.parameters.scratch }}pr/"
+          - name: clean-tasmax
+            template: clean-generic-variable
+            arguments:
+              parameters:
+                - name: variable-id
+                  value: "tasmax"
+                - name: source-id
+                  value: "{{ inputs.parameters.source-id }}"
+                - name: member-id
+                  value: "{{ inputs.parameters.member-id }}"
+                - name: grid-label
+                  value: "{{ inputs.parameters.grid-label }}"
+                - name: item-version
+                  value: "{{ inputs.parameters.item-version }}"
+                - name: histslice-from-time
+                  value: "{{ inputs.parameters.histslice-from-time }}"
+                - name: histslice-to-time
+                  value: "{{ inputs.parameters.histslice-to-time }}"
+                - name: referenceslicehist-from-time
+                  value: "{{ inputs.parameters.referenceslicehist-from-time }}"
+                - name: referenceslicehist-to-time
+                  value: "{{ inputs.parameters.referenceslicehist-to-time }}"
+                - name: scratch
+                  value: "{{ inputs.parameters.scratch }}tasmax/"
+          - name: clean-tasmin
+            template: clean-generic-variable
+            arguments:
+              parameters:
+                - name: variable-id
+                  value: "tasmin"
+                - name: source-id
+                  value: "{{ inputs.parameters.source-id }}"
+                - name: member-id
+                  value: "{{ inputs.parameters.member-id }}"
+                - name: grid-label
+                  value: "{{ inputs.parameters.grid-label }}"
+                - name: item-version
+                  value: "{{ inputs.parameters.item-version }}"
+                - name: histslice-from-time
+                  value: "{{ inputs.parameters.histslice-from-time }}"
+                - name: histslice-to-time
+                  value: "{{ inputs.parameters.histslice-to-time }}"
+                - name: referenceslicehist-from-time
+                  value: "{{ inputs.parameters.referenceslicehist-from-time }}"
+                - name: referenceslicehist-to-time
+                  value: "{{ inputs.parameters.referenceslicehist-to-time }}"
+                - name: scratch
+                  value: "{{ inputs.parameters.scratch }}tasmin/"
+          - name: clean-dtr
+            template: clean-dtr
+            dependencies: [ clean-tasmax, clean-tasmin ]
+            arguments:
+              parameters:
+                - name: source-id
+                  value: "{{ inputs.parameters.source-id }}"
+                - name: member-id
+                  value: "{{ inputs.parameters.member-id }}"
+                - name: grid-label
+                  value: "{{ inputs.parameters.grid-label }}"
+                - name: item-version
+                  value: "{{ inputs.parameters.item-version }}"
+                - name: division
+                  value: "{{item}}"
+            withItems:
+              - historical
+              - training
+              - ssp126
+              - ssp245
+              - ssp370
+
+
+    - name: clean-dtr
+      inputs:
+        parameters:
+          - name: source-id
+          - name: member-id
+          - name: grid-label
+          - name: item-version
+          - name: division
+      dag:
+        tasks:
+          - name: get-clean-tasmin-url
+            template: clean-catalog
+            arguments:
+              parameters:
+                - { name: variable-id, value: "tasmin" }
+                - { name: division, value: "{{inputs.parameters.division}}" }
+                - { name: source-id, value: "{{inputs.parameters.source-id}}" }
+                - { name: member-id, value: "{{inputs.parameters.member-id}}" }
+          - name: get-clean-tasmax-url
+            template: clean-catalog
+            arguments:
+              parameters:
+                - { name: variable-id, value: "tasmax" }
+                - { name: division, value: "{{inputs.parameters.division}}" }
+                - { name: source-id, value: "{{inputs.parameters.source-id}}" }
+                - { name: member-id, value: "{{inputs.parameters.member-id}}" }
+          - name: get-clean-dtr-url
+            template: clean-catalog
+            arguments:
+              parameters:
+                - { name: variable-id, value: "dtr" }
+                - { name: division, value: "{{inputs.parameters.division}}" }
+                - { name: source-id, value: "{{inputs.parameters.source-id}}" }
+                - { name: member-id, value: "{{inputs.parameters.member-id}}" }
+          - name: compute-dtr
+            template: compute-dtr
+            dependencies: [ get-clean-tasmax-url, get-clean-tasmin-url, get-clean-dtr-url ]
+            arguments:
+              parameters:
+                - name: tasmax-zarr
+                  value: "{{ tasks.get-clean-tasmax-url.outputs.parameters.url }}"
+                - name: tasmin-zarr
+                  value: "{{ tasks.get-clean-tasmin-url.outputs.parameters.url }}"
+                - name: out-zarr
+                  value: "{{ tasks.get-clean-dtr-url.outputs.parameters.url }}"
+
+
+    - name: clean-generic-variable
+      inputs:
+        parameters:
+          - name: variable-id
+          - name: source-id
+          - name: member-id
+          - name: grid-label
+          - name: item-version
+          - name: histslice-from-time
+          - name: histslice-to-time
+          - name: referenceslicehist-from-time
+          - name: referenceslicehist-to-time
+          - name: scratch
       dag:
         tasks:
           - name: get-raw-historical-url
@@ -395,6 +548,72 @@ spec:
             cpu: "1000m"
           limits:
             memory: 48Gi
+            cpu: "2000m"
+      activeDeadlineSeconds: 3600
+      retryStrategy:
+        limit: 2
+        retryPolicy: "Always"
+
+
+    - name: compute-dtr
+      inputs:
+        parameters:
+          - name: tasmax-zarr
+          - name: tasmin-zarr
+          - name: out-zarr
+      outputs:
+        parameters:
+          - name: out-zarr
+            value: "{{ inputs.parameters.out-zarr }}"
+      script:
+        image: downscalecmip6.azurecr.io/dodola:dev
+        env:
+          - name: TASMAX_ZARR
+            value: "{{ inputs.parameters.tasmax-zarr }}"
+          - name: TASMIN_ZARR
+            value: "{{ inputs.parameters.tasmin-zarr }}"
+          - name: OUT_ZARR
+            value: "{{ inputs.parameters.out-zarr }}"
+          - name: AZURE_STORAGE_ACCOUNT_NAME
+            valueFrom:
+              secretKeyRef:
+                name: workerstoragecreds-secret
+                key: azurestorageaccount
+          - name: AZURE_STORAGE_ACCOUNT_KEY
+            valueFrom:
+              secretKeyRef:
+                name: workerstoragecreds-secret
+                key: azurestoragekey
+        command: [ python ]
+        source: |
+          import os
+          import xarray as xr
+
+          tasmin_zarr = os.environ.get("TASMIN_ZARR")
+          print(tasmin_zarr)  # DEBUG
+          tasmax_zarr = os.environ.get("TASMAX_ZARR")
+          print(tasmax_zarr)  # DEBUG
+          out_zarr = os.environ.get("OUT_ZARR")
+          print(out_zarr)  # DEBUG
+
+          tasmin = xr.open_zarr(tasmin_zarr)["tasmin"]
+          print(f"Read {tasmin_zarr}")  # DEBUG
+          tasmax = xr.open_zarr(tasmax_zarr)["tasmax"]
+          print(f"Read {tasmax_zarr}")  # DEBUG
+
+          dtr = tasmax - tasmin
+
+          dtr.to_dataset(name="dtr").to_zarr(
+              out_zarr,
+              mode="w"
+          )
+          print(f"Written to {out_zarr}")  # DEBUG
+        resources:
+          requests:
+            memory: 16Gi
+            cpu: "1000m"
+          limits:
+            memory: 16Gi
             cpu: "2000m"
       activeDeadlineSeconds: 3600
       retryStrategy:
