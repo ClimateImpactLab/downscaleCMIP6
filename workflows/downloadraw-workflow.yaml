@@ -10,7 +10,7 @@ spec:
   arguments:
     parameters:
     - name: gcmruns-url
-      value: "https://gist.githubusercontent.com/brews/3c1555dc640f0ec03bfa0680847950c5/raw/8ed547b3f951453c3a4dc9ba0d83a6c529d2906b/testlist.json"
+      value: "https://raw.githubusercontent.com/ClimateImpactLab/downscaleCMIP6/master/workflows/cmip6run-targets.json"
   serviceAccountName: workflows-default
   nodeSelector:
     dedicated: worker
