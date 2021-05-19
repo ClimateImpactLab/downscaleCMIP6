@@ -590,11 +590,8 @@ spec:
           import xarray as xr
 
           tasmin_zarr = os.environ.get("TASMIN_ZARR")
-          print(tasmin_zarr)  # DEBUG
           tasmax_zarr = os.environ.get("TASMAX_ZARR")
-          print(tasmax_zarr)  # DEBUG
           out_zarr = os.environ.get("OUT_ZARR")
-          print(out_zarr)  # DEBUG
 
           tasmin = xr.open_zarr(tasmin_zarr)["tasmin"]
           print(f"Read {tasmin_zarr}")  # DEBUG
