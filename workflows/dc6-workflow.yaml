@@ -258,8 +258,10 @@ spec:
               parameters:
                 - name: in-zarr
                   value: "{{ tasks.rechunk-biascorrected.outputs.parameters.out-zarr }}"
-                - name: variable
+                - name: out-variable
                   value: "{{ workflow.parameters.target-variable }}"
+                - name: train-variable
+                  value: "temperature"
                 - name: domain-file
                   value: "{{ workflow.parameters.domainfile0p25x0p25 }}"
                 - name: yclimocoarse-zarr
@@ -719,14 +721,15 @@ spec:
         retryPolicy: "Always"
 
 
-    - name: downscale
+    - name: downscale-dodola
       inputs:
         parameters:
           - name: in-zarr
           - name: domain-file
           - name: yclimocoarse-zarr
           - name: yclimofine-zarr
-          - name: variable
+          - name: out-variable
+          - name: train-variable
           - name: method
           - name: adjustmentfactors-out-zarr
           - name: out-zarr
@@ -755,6 +758,158 @@ spec:
           - "downscale"
           - "{{ inputs.parameters.in-zarr }}"
           - "--trainvariable"
+          - "{{ inputs.parameters.train-variable }}"
+          - "--outvariable"
+          - "{{ inputs.parameters.out-variable }}"
+          - "--yclimocoarse"
+          - "{{ inputs.parameters.yclimocoarse-zarr }}"
+          - "--yclimofine"
+          - "{{ inputs.parameters.yclimofine-zarr }}"
+          - "--method"
+          - "{{ inputs.parameters.method }}"
+          - "--domain_file"
+          - "{{ inputs.parameters.domain-file }}"
+          - "--adjustmentfactors"
+          - "{{ inputs.parameters.adjustmentfactors-out-zarr }}"
+          - "--out"
+          - "{{ inputs.parameters.out-zarr }}"
+        resources:
+          requests:
+            memory: 48Gi
+            cpu: "1000m"
+          limits:
+            memory: 48Gi
+            cpu: "2000m"
+      activeDeadlineSeconds: 43200  # 12 hours
+
+
+    - name: downscale
+      inputs:
+        parameters:
+          - name: in-zarr
+            value: "az://scratch/dc6-dev-75bpr/fine-climatology-regrid.zarr"
+          - name: domain-file
+            value: "{{ workflow.parameters.domainfile0p25x0p25 }}"
+          - name: yclimocoarse-zarr
+            value: "az://scratch/dc6-dev-75bpr/coarse-climatology-regrid.zarr"
+          - name: yclimofine-zarr
+            value: "az://scratch/dc6-dev-75bpr/fine-climatology-regrid.zarr"
+          - name: train-variable
+            value: "temperature"
+          - name: out-variable
+            value: "tasmax"
+          - name: method
+            value: "BCSD"
+          - name: adjustmentfactors-out-zarr
+            value: "az://scatch/{{ workflow.name }}/af.zarr"
+          - name: out-zarr
+            value: "az://scatch/{{ workflow.name }}/downscaled.zarr"
+      outputs:
+        parameters:
+          - name: out-zarr
+            valueFrom:
+              parameter: "{{ inputs.parameters.out-zarr }}"
+          - name: adjustmentfactors-out-zarr
+            valueFrom:
+              parameter:  "{{ inputs.parameters.adjustmentfactors-out-zarr }}"
+      dag:
+        tasks:
+          - name: rename-main-ds
+            template: downscaler-rename
+            arguments:
+              parameters:
+                - name: in-zarr
+                  value: "{{ inputs.parameters.in-zarr }}"
+                - name: out-zarr
+                  value: "az://scratch/{{workflow.name}}/downscaling/renamed.zarr"
+                - name: rename-from
+                  value: "{{ inputs.parameters.out-variable }}"
+                - name: rename-to
+                  value: "{{ inputs.parameters.train-variable }}"
+          - name: rename-coarseclimo-ds
+            template: downscaler-rename
+            arguments:
+              parameters:
+                - name: in-zarr
+                  value: "{{ inputs.parameters.yclimocoarse-zarr }}"
+                - name: out-zarr
+                  value: "az://scratch/{{workflow.name}}/downscaling/coarseclimo-renamed.zarr"
+                - name: rename-from
+                  value: "{{ inputs.parameters.out-variable }}"
+                - name: rename-to
+                  value: "{{ inputs.parameters.train-variable }}"
+          - name: rename-fineclimo-ds
+            template: downscaler-rename
+            arguments:
+              parameters:
+                - name: in-zarr
+                  value: "{{ inputs.parameters.yclimofine-zarr }}"
+                - name: out-zarr
+                  value: "az://scratch/{{workflow.name}}/downscaling/fineclimo-renamed.zarr"
+                - name: rename-from
+                  value: "{{ inputs.parameters.out-variable }}"
+                - name: rename-to
+                  value: "{{ inputs.parameters.train-variable }}"
+          - name: train-downscaler
+            template: downscale-dodola
+            dependencies: [ rename-main-ds, rename-coarseclimo-ds, rename-fineclimo-ds ]
+            arguments:
+              parameters:
+                - name: in-zarr
+                  value: "{{ tasks.rename-main-ds.outputs.parameters.out-zarr }}"
+                - name: out-variable
+                  value: "{{ inputs.parameters.out-variable }}"
+                - name: train-variable
+                  value: "{{ inputs.parameters.train-variable }}"
+                - name: domain-file
+                  value: "{{ workflow.parameters.domainfile0p25x0p25 }}"
+                - name: yclimocoarse-zarr
+                  value: "{{ tasks.rename-coarseclimo-ds.outputs.parameters.out-zarr }}"
+                - name: yclimofine-zarr
+                  value: "{{ tasks.rename-fineclimo-ds.outputs.parameters.out-zarr }}"
+                - name: out-zarr
+                  value: "{{ inputs.parameters.out-zarr }}"
+                - name: method
+                  value: "BCSD"
+                - name: adjustmentfactors-out-zarr
+                  value: "{{ inputs.parameters.adjustmentfactors-out-zarr }}"
+
+
+    - name: train-downscaler
+      inputs:
+        parameters:
+          - name: in-zarr
+          - name: domain-file
+          - name: yclimocoarse-zarr
+          - name: yclimofine-zarr
+          - name: out-variable
+          - name: train-variable
+          - name: method
+          - name: adjustmentfactors-out-zarr
+          - name: out-zarr
+      outputs:
+        parameters:
+          - name: out-zarr
+            value: "{{ inputs.parameters.out-zarr }}"
+      script:
+        image: downscalecmip6.azurecr.io/dodola:dev
+        imagePullPolicy: Always
+        env:
+          - name: AZURE_STORAGE_ACCOUNT_NAME
+            valueFrom:
+              secretKeyRef:
+                name: workerstoragecreds-secret
+                key: azurestorageaccount
+          - name: AZURE_STORAGE_ACCOUNT_KEY
+            valueFrom:
+              secretKeyRef:
+                name: workerstoragecreds-secret
+                key: azurestoragekey
+        command: [ python ]
+        source: |
+          - "downscale"
+          - "{{ inputs.parameters.in-zarr }}"
+          - "--trainvariable"
           - "{{ inputs.parameters.variable }}"
           - "--outvariable"
           - "{{ inputs.parameters.variable }}"
@@ -778,6 +933,73 @@ spec:
             memory: 42Gi
             cpu: "2000m"
       activeDeadlineSeconds: 43200  # 12 hours
+
+
+    - name: downscaler-rename
+      inputs:
+        parameters:
+          - name: in-zarr
+          - name: rename-from
+          - name: rename-to
+          - name: out-zarr
+      outputs:
+        parameters:
+          - name: out-zarr
+            value: "{{ inputs.parameters.out-zarr }}"
+      script:
+        image: downscalecmip6.azurecr.io/dodola:0.2.0
+        env:
+          - name: IN_ZARR
+            value: "{{  inputs.parameters.in-zarr }}"
+          - name: RENAME_FROM
+            value: "{{  inputs.parameters.rename-from }}"
+          - name: RENAME_TO
+            value: "{{  inputs.parameters.rename-to }}"
+          - name: OUT_ZARR
+            value: "{{  inputs.parameters.out-zarr }}"
+          - name: PYTHONUNBUFFERED
+            value: "1"
+          - name: AZURE_STORAGE_ACCOUNT_NAME
+            valueFrom:
+              secretKeyRef:
+                name: workerstoragecreds-secret
+                key: azurestorageaccount
+          - name: AZURE_STORAGE_ACCOUNT_KEY
+            valueFrom:
+              secretKeyRef:
+                name: workerstoragecreds-secret
+                key: azurestoragekey
+          - name: PYTHONUNBUFFERED
+            value: "1"
+        command: [python]
+        source: |
+          import os
+          import xarray as xr
+
+
+          in_store_path = os.environ.get("IN_ZARR")
+          out_store_path = os.environ.get("OUT_ZARR")
+          rename_from = os.environ.get("RENAME_FROM")
+          rename_to = os.environ.get("RENAME_TO")
+
+          ds = xr.open_zarr(in_store_path)
+          print(f"opening {in_store_path}")
+
+          ds = ds.rename({rename_from: rename_to})
+
+          ds.to_zarr(out_store_path, mode="w")
+          print(f"written to {out_store_path}")
+        resources:
+          requests:
+            memory: 24Gi
+            cpu: "200m"
+          limits:
+            memory: 24Gi
+            cpu: "2000m"
+      activeDeadlineSeconds: 1800
+      retryStrategy:
+        limit: 3
+        retryPolicy: "Always"
 
 
     # Prints data on stored zarr file to log.
