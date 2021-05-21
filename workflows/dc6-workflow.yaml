@@ -252,7 +252,7 @@ spec:
                 - name: domain-file
                   value: "{{ workflow.parameters.domainfile0p25x0p25 }}"
           - name: downscale
-            template: downscale
+            template: downscale-bcsd
             dependencies: [ rechunk-biascorrected, fine-climatology-regrid, coarse-climatology-regrid ]
             arguments:
               parameters:
@@ -270,8 +270,6 @@ spec:
                   value: "{{ tasks.fine-climatology-regrid.outputs.parameters.out-zarr }}"
                 - name: out-zarr
                   value: "az://scratch/{{ workflow.name }}/downscaled.zarr"
-                - name: method
-                  value: "BCSD"
                 - name: adjustmentfactors-out-zarr
                   value: "az://scratch/{{ workflow.name }}/downscale-adjustmentfactors.zarr"
 
@@ -721,69 +719,7 @@ spec:
         retryPolicy: "Always"
 
 
-    - name: downscale-dodola
-      inputs:
-        parameters:
-          - name: in-zarr
-          - name: domain-file
-          - name: yclimocoarse-zarr
-          - name: yclimofine-zarr
-          - name: out-variable
-          - name: train-variable
-          - name: method
-          - name: adjustmentfactors-out-zarr
-          - name: out-zarr
-      outputs:
-        parameters:
-          - name: out-zarr
-            value: "{{ inputs.parameters.out-zarr }}"
-          - name: adjustmentfactors-out-zarr
-            value: "{{ inputs.parameters.adjustmentfactors-out-zarr }}"
-      container:
-        image: downscalecmip6.azurecr.io/dodola:dev
-        imagePullPolicy: Always
-        env:
-          - name: AZURE_STORAGE_ACCOUNT_NAME
-            valueFrom:
-              secretKeyRef:
-                name: workerstoragecreds-secret
-                key: azurestorageaccount
-          - name: AZURE_STORAGE_ACCOUNT_KEY
-            valueFrom:
-              secretKeyRef:
-                name: workerstoragecreds-secret
-                key: azurestoragekey
-        command: [ dodola ]
-        args:
-          - "downscale"
-          - "{{ inputs.parameters.in-zarr }}"
-          - "--trainvariable"
-          - "{{ inputs.parameters.train-variable }}"
-          - "--outvariable"
-          - "{{ inputs.parameters.out-variable }}"
-          - "--yclimocoarse"
-          - "{{ inputs.parameters.yclimocoarse-zarr }}"
-          - "--yclimofine"
-          - "{{ inputs.parameters.yclimofine-zarr }}"
-          - "--method"
-          - "{{ inputs.parameters.method }}"
-          - "--domain_file"
-          - "{{ inputs.parameters.domain-file }}"
-          - "--adjustmentfactors"
-          - "{{ inputs.parameters.adjustmentfactors-out-zarr }}"
-          - "--out"
-          - "{{ inputs.parameters.out-zarr }}"
-        resources:
-          requests:
-            memory: 48Gi
-            cpu: "1000m"
-          limits:
-            memory: 48Gi
-            cpu: "2000m"
-      activeDeadlineSeconds: 43200  # 12 hours
-
-
-    - name: downscale
+    - name: downscale-bcsd
       inputs:
         parameters:
           - name: in-zarr
@@ -798,8 +734,6 @@ spec:
             value: "temperature"
           - name: out-variable
             value: "tasmax"
-          - name: method
-            value: "BCSD"
           - name: adjustmentfactors-out-zarr
             value: "az://scatch/{{ workflow.name }}/af.zarr"
           - name: out-zarr
@@ -850,42 +784,55 @@ spec:
                   value: "{{ inputs.parameters.out-variable }}"
                 - name: rename-to
                   value: "{{ inputs.parameters.train-variable }}"
-          - name: train-downscaler
-            template: downscale-dodola
-            dependencies: [ rename-main-ds, rename-coarseclimo-ds, rename-fineclimo-ds ]
+          - name: fit-adjustmentfactors
+            template: fit-adjustmentfactors
+            dependencies: [ rename-main-ds, rename-coarseclimo-ds ]
             arguments:
               parameters:
                 - name: in-zarr
                   value: "{{ tasks.rename-main-ds.outputs.parameters.out-zarr }}"
+                - name: train-variable
+                  value: "{{ inputs.parameters.train-variable }}"
+                - name: yclimocoarse-zarr
+                  value: "{{ tasks.rename-coarseclimo-ds.outputs.parameters.out-zarr }}"
+                - name: out-zarr
+                  value: "az://scratch/{{ workflow.name }}/adjustmentfactors-original.zarr"
+          - name: regrid-adjustmentfactors
+            template: regrid
+            dependencies: [ fit-adjustmentfactors ]
+            arguments:
+              parameters:
+                - name: in-zarr
+                  value: "{{ tasks.fit-adjustmentfactors.outputs.parameters.out-zarr }}"
+                - name: out-zarr
+                  value: "{{ inputs.parameters.adjustmentfactors-out-zarr }}"
+                - name: regrid-method
+                  value: "bilinear"
+                - name: domain-file
+                  value: "{{ inputs.parameters.domain-file }}"
+          - name: apply-adjustmentfactors
+            template: apply-adjustmentfactors
+            dependencies: [ regrid-adjustmentfactors, rename-fineclimo-ds ]
+            arguments:
+              parameters:
+                - name: in-zarr
+                  value: "{{ tasks.regrid-adjustmentfactors.outputs.parameters.out-zarr }}"
                 - name: out-variable
                   value: "{{ inputs.parameters.out-variable }}"
                 - name: train-variable
                   value: "{{ inputs.parameters.train-variable }}"
-                - name: domain-file
-                  value: "{{ workflow.parameters.domainfile0p25x0p25 }}"
-                - name: yclimocoarse-zarr
-                  value: "{{ tasks.rename-coarseclimo-ds.outputs.parameters.out-zarr }}"
                 - name: yclimofine-zarr
                   value: "{{ tasks.rename-fineclimo-ds.outputs.parameters.out-zarr }}"
                 - name: out-zarr
                   value: "{{ inputs.parameters.out-zarr }}"
-                - name: method
-                  value: "BCSD"
-                - name: adjustmentfactors-out-zarr
-                  value: "{{ inputs.parameters.adjustmentfactors-out-zarr }}"
 
 
-    - name: train-downscaler
+    - name: fit-adjustmentfactors
       inputs:
         parameters:
           - name: in-zarr
-          - name: domain-file
           - name: yclimocoarse-zarr
-          - name: yclimofine-zarr
-          - name: out-variable
           - name: train-variable
-          - name: method
-          - name: adjustmentfactors-out-zarr
           - name: out-zarr
       outputs:
         parameters:
@@ -895,6 +842,14 @@ spec:
         image: downscalecmip6.azurecr.io/dodola:dev
         imagePullPolicy: Always
         env:
+          - name: IN_ZARR
+            value: "{{ inputs.parameters.in-zarr }}"
+          - name: CLIMO_ZARR
+            value: "{{ inputs.parameters.yclimocoarse-zarr }}"
+          - name: TRAIN_VARIABLE
+            value: "{{ inputs.parameters.train-variable }}"
+          - name: OUT_ZARR
+            value: "{{ inputs.parameters.out-zarr }}"
           - name: AZURE_STORAGE_ACCOUNT_NAME
             valueFrom:
               secretKeyRef:
@@ -907,24 +862,158 @@ spec:
                 key: azurestoragekey
         command: [ python ]
         source: |
-          - "downscale"
+          import os
+          import xarray as xr
+          from skdownscale.spatial_models import SpatialDisaggregator
+
+          in_store_path = os.environ.get("IN_ZARR")
+          climo_path = os.environ.get("CLIMO_ZARR")
+          train_variable = os.environ.get("TRAIN_VARIABLE")
+          out_path = os.environ.get("OUT_ZARR")
+
+          ds = xr.open_zarr(in_store_path)
+          print(f"read {in_store_path}")
+          obs_climo_coarse = xr.open_zarr(climo_path)
+          print(f"read {climo_path}")
+
+          sd = SpatialDisaggregator(var=train_variable)
+          af = sd.fit(ds, obs_climo_coarse, var_name=train_variable)
+          print("spatial disaggregation fit")
+
+          af.to_zarr(
+              out_path,
+              mode="w",
+              encoding={  # Change chunking to make it easier to regrid to quarter degree.
+                  "time": {"chunks": (100,)},
+                  "lat": {"chunks": (-1,)},
+                  "lon": {"chunks": (-1,)},
+                  "dayofyear": {"chunks": (100,)}
+              }
+          )
+          print(f"written to {out_path}")
+        resources:
+          requests:
+            memory: 24Gi
+            cpu: "1000m"
+          limits:
+            memory: 24Gi
+            cpu: "3000m"
+      activeDeadlineSeconds: 4200  # 12 hours
+
+
+    - name: rechunk-adjustmentfactors
+      inputs:
+        parameters:
+          - name: in-zarr
+          - name: out-zarr
+          - name: time-chunk
+            value: 365
+          - name: lat-chunk
+            value: 10
+          - name: lon-chunk
+            value: 10
+          - name: dayofyear-chunk
+            value: 365
+      outputs:
+        parameters:
+          - name: out-zarr
+            value: "{{ inputs.parameters.out-zarr }}"
+      container:
+        image: downscalecmip6.azurecr.io/dodola:0.2.0
+        env:
+          - name: AZURE_STORAGE_ACCOUNT_NAME
+            valueFrom:
+              secretKeyRef:
+                name: workerstoragecreds-secret
+                key: azurestorageaccount
+          - name: AZURE_STORAGE_ACCOUNT_KEY
+            valueFrom:
+              secretKeyRef:
+                name: workerstoragecreds-secret
+                key: azurestoragekey
+        command: [ dodola ]
+        args:
+          - "rechunk"
           - "{{ inputs.parameters.in-zarr }}"
-          - "--trainvariable"
-          - "{{ inputs.parameters.variable }}"
-          - "--outvariable"
-          - "{{ inputs.parameters.variable }}"
-          - "--yclimocoarse"
-          - "{{ inputs.parameters.yclimocoarse-zarr }}"
-          - "--yclimofine"
-          - "{{ inputs.parameters.yclimofine-zarr }}"
-          - "--method"
-          - "{{ inputs.parameters.method }}"
-          - "--domain_file"
-          - "{{ inputs.parameters.domain-file }}"
-          - "--adjustmentfactors"
-          - "{{ inputs.parameters.adjustmentfactors-out-zarr }}"
           - "--out"
           - "{{ inputs.parameters.out-zarr }}"
+          - "--chunk"
+          - "time={{ inputs.parameters.time-chunk }}"
+          - "--chunk"
+          - "lat={{ inputs.parameters.lat-chunk }}"
+          - "--chunk"
+          - "lon={{ inputs.parameters.lon-chunk }}"
+          - "--chunk"
+          - "dayofyear={{ inputs.parameters.dayofyear-chunk }}"
+        resources:
+          requests:
+            memory: 32Gi
+            cpu: "1000m"
+          limits:
+            memory: 32Gi
+            cpu: "2000m"
+      activeDeadlineSeconds: 10800
+
+
+    - name: apply-adjustmentfactors
+      inputs:
+        parameters:
+          - name: in-zarr
+          - name: yclimofine-zarr
+          - name: train-variable
+          - name: out-variable
+          - name: out-zarr
+      outputs:
+        parameters:
+          - name: out-zarr
+            value: "{{ inputs.parameters.out-zarr }}"
+      script:
+        image: downscalecmip6.azurecr.io/dodola:dev
+        imagePullPolicy: Always
+        env:
+          - name: IN_ZARR
+            value: "{{ inputs.parameters.in-zarr }}"
+          - name: CLIMO_ZARR
+            value: "{{ inputs.parameters.yclimofine-zarr }}"
+          - name: TRAIN_VARIABLE
+            value: "{{ inputs.parameters.train-variable }}"
+          - name: OUT_VARIABLE
+            value: "{{ inputs.parameters.out-variable }}"
+          - name: OUT_ZARR
+            value: "{{ inputs.parameters.out-zarr }}"
+          - name: AZURE_STORAGE_ACCOUNT_NAME
+            valueFrom:
+              secretKeyRef:
+                name: workerstoragecreds-secret
+                key: azurestorageaccount
+          - name: AZURE_STORAGE_ACCOUNT_KEY
+            valueFrom:
+              secretKeyRef:
+                name: workerstoragecreds-secret
+                key: azurestoragekey
+        command: [ python ]
+        source: |
+          import os
+          import xarray as xr
+          from skdownscale.spatial_models import SpatialDisaggregator
+
+          in_store_path = os.environ.get("IN_ZARR")
+          climo_path = os.environ.get("CLIMO_ZARR")
+          train_variable = os.environ.get("TRAIN_VARIABLE")
+          out_variable = os.environ.get("OUT_VARIABLE")
+          out_path = os.environ.get("OUT_ZARR")
+
+          af = xr.open_zarr(in_store_path)
+          print(f"read {in_store_path}")
+          obs_climo_fine = xr.open_zarr(climo_path)
+          print(f"read {climo_path}")
+
+          sd = SpatialDisaggregator(var=train_variable)
+          out = model.predict(af, obs_climo_fine[train_variable], var_name=train_variable)
+          print("spatial disaggregation adjustment factors applied")
+
+          out.to_dataset(name=out_variable).to_zarr(out_path, mode="w")
+          print(f"written to {out_path}")
         resources:
           requests:
             memory: 42Gi
