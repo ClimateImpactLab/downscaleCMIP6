@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: workflow-controller-configmap
+data:
+  # https://argoproj.github.io/argo-workflows/workflow-controller-configmap.yaml
+
+  # Specifies the container runtime interface to use (default: docker)
+  # must be one of: docker, kubelet, k8sapi, pns
+  # It has lower precedence than either `--container-runtime-executor` and `containerRuntimeExecutors`.
+  #
+  # This change becomes necessary with AKS >= 1.19.x (since Azure abandoned docker in favor of containerd)
+  containerRuntimeExecutor: k8sapi
