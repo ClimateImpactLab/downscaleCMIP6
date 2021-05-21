@@ -3,6 +3,7 @@ kind: Workflow
 metadata:
   generateName: clean-cmip6-dev-
   labels:
+    component: clean-cmip6
     env: dev
 spec:
   serviceAccountName: workflows-default

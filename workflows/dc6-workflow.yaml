@@ -4,6 +4,7 @@ kind: Workflow
 metadata:
   generateName: dc6-dev-
   labels:
+    component: dc6
     env: dev
 spec:
   arguments:

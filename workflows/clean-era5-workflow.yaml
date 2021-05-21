@@ -4,6 +4,7 @@ kind: Workflow
 metadata:
   generateName: clean-era5-dev-
   labels:
+    component: clean-era5
     env: dev
 spec:
   entrypoint: main

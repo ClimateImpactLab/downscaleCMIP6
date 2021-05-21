@@ -4,6 +4,7 @@ kind: Workflow
 metadata:
   generateName: downloadraw-
   labels:
+    component: downloadraw
     env: prod
 spec:
   entrypoint: main
