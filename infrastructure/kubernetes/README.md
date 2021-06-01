@@ -5,7 +5,7 @@ Manifests for Argo Workflow itself are in `./argo/`. The `./workflows-default/` 
 
 ## Updating
 
-If there is already has a deployment -- file a pull request with changes to `main`. Merged PRs are checked and automatically pulled.
+If there is already a deployment -- file a pull request with changes to `main`. Merged changes are automatically pulled into the cluster through ArgoCD.
 
 ## Deploying
 
