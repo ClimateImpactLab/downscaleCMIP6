@@ -1,5 +1,5 @@
 # downscaleCMIP6-infra-argo
-Kuberenetes internals and Argo Workflow configuration for CMIP6 downscaling project.
+Kubernetes internals and Argo Workflow configuration for CMIP6 downscaling project.
 
 Manifests for Argo Workflow itself are in `./argo/`. The `./workflows-default/` directory contains manifests required to run analysis Workflows. `./minio/` is a configuration Helm Chart to deploy the artifact repository. Cluster internals are mostly managed with `argocd`. The hard infrastructure we're deploying on top of is in `/infrastructure/terraform/`.
 
