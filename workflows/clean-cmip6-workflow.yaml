@@ -1,0 +1,773 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Workflow
+metadata:
+  generateName: clean-cmip6-dev-
+  labels:
+    component: clean-cmip6
+    env: dev
+spec:
+  serviceAccountName: workflows-default
+  nodeSelector:
+    dedicated: worker
+  tolerations:
+    - key: dedicated
+      operator: "Equal"
+      value: "worker"
+      effect: "NoSchedule"
+    - key: kubernetes.azure.com/scalesetpriority
+      operator: "Equal"
+      value: "spot"
+      effect: "NoSchedule"
+  entrypoint: main
+  arguments:
+    parameters:
+      - name: source-id
+        value: "ACCESS-ESM1-5"
+      - name: member-id
+        value: "r1i1p1f1"
+      - name: grid-label
+        value: "gn"
+      - name: item-version
+        value: "20191115"
+      - name: histslice-from-time
+        value: "1979"
+      - name: histslice-to-time
+        value: "2015"
+      - name: referenceslicehist-from-time
+        value: "1995"
+      - name: referenceslicehist-to-time
+        value: "2015"
+      - name: scratch
+        value: "az://scratch/{{ workflow.name }}/"
+  templates:
+
+
+    - name: main
+      inputs:
+        parameters:
+          - name: source-id
+            value: "{{ workflow.parameters.source-id }}"
+          - name: member-id
+            value: "{{ workflow.parameters.member-id }}"
+          - name: grid-label
+            value: "{{ workflow.parameters.grid-label }}"
+          - name: item-version
+            value: "{{ workflow.parameters.item-version }}"
+          - name: histslice-from-time
+            value: "{{ workflow.parameters.histslice-from-time }}"
+          - name: histslice-to-time
+            value: "{{ workflow.parameters.histslice-to-time }}"
+          - name: referenceslicehist-from-time
+            value: "{{ workflow.parameters.referenceslicehist-from-time }}"
+          - name: referenceslicehist-to-time
+            value: "{{ workflow.parameters.referenceslicehist-to-time }}"
+          - name: scratch
+            value: "{{ workflow.parameters.scratch }}"
+      dag:
+        tasks:
+          - name: clean-pr
+            template: clean-generic-variable
+            arguments:
+              parameters:
+                - name: variable-id
+                  value: "pr"
+                - name: source-id
+                  value: "{{ inputs.parameters.source-id }}"
+                - name: member-id
+                  value: "{{ inputs.parameters.member-id }}"
+                - name: grid-label
+                  value: "{{ inputs.parameters.grid-label }}"
+                - name: item-version
+                  value: "{{ inputs.parameters.item-version }}"
+                - name: histslice-from-time
+                  value: "{{ inputs.parameters.histslice-from-time }}"
+                - name: histslice-to-time
+                  value: "{{ inputs.parameters.histslice-to-time }}"
+                - name: referenceslicehist-from-time
+                  value: "{{ inputs.parameters.referenceslicehist-from-time }}"
+                - name: referenceslicehist-to-time
+                  value: "{{ inputs.parameters.referenceslicehist-to-time }}"
+                - name: scratch
+                  value: "{{ inputs.parameters.scratch }}pr/"
+          - name: clean-tasmax
+            template: clean-generic-variable
+            arguments:
+              parameters:
+                - name: variable-id
+                  value: "tasmax"
+                - name: source-id
+                  value: "{{ inputs.parameters.source-id }}"
+                - name: member-id
+                  value: "{{ inputs.parameters.member-id }}"
+                - name: grid-label
+                  value: "{{ inputs.parameters.grid-label }}"
+                - name: item-version
+                  value: "{{ inputs.parameters.item-version }}"
+                - name: histslice-from-time
+                  value: "{{ inputs.parameters.histslice-from-time }}"
+                - name: histslice-to-time
+                  value: "{{ inputs.parameters.histslice-to-time }}"
+                - name: referenceslicehist-from-time
+                  value: "{{ inputs.parameters.referenceslicehist-from-time }}"
+                - name: referenceslicehist-to-time
+                  value: "{{ inputs.parameters.referenceslicehist-to-time }}"
+                - name: scratch
+                  value: "{{ inputs.parameters.scratch }}tasmax/"
+          - name: clean-tasmin
+            template: clean-generic-variable
+            arguments:
+              parameters:
+                - name: variable-id
+                  value: "tasmin"
+                - name: source-id
+                  value: "{{ inputs.parameters.source-id }}"
+                - name: member-id
+                  value: "{{ inputs.parameters.member-id }}"
+                - name: grid-label
+                  value: "{{ inputs.parameters.grid-label }}"
+                - name: item-version
+                  value: "{{ inputs.parameters.item-version }}"
+                - name: histslice-from-time
+                  value: "{{ inputs.parameters.histslice-from-time }}"
+                - name: histslice-to-time
+                  value: "{{ inputs.parameters.histslice-to-time }}"
+                - name: referenceslicehist-from-time
+                  value: "{{ inputs.parameters.referenceslicehist-from-time }}"
+                - name: referenceslicehist-to-time
+                  value: "{{ inputs.parameters.referenceslicehist-to-time }}"
+                - name: scratch
+                  value: "{{ inputs.parameters.scratch }}tasmin/"
+          - name: clean-dtr
+            template: clean-dtr
+            dependencies: [ clean-tasmax, clean-tasmin ]
+            arguments:
+              parameters:
+                - name: source-id
+                  value: "{{ inputs.parameters.source-id }}"
+                - name: member-id
+                  value: "{{ inputs.parameters.member-id }}"
+                - name: grid-label
+                  value: "{{ inputs.parameters.grid-label }}"
+                - name: item-version
+                  value: "{{ inputs.parameters.item-version }}"
+                - name: division
+                  value: "{{item}}"
+            withItems:
+              - historical
+              - training
+              - ssp126
+              - ssp245
+              - ssp370
+
+
+    - name: clean-dtr
+      inputs:
+        parameters:
+          - name: source-id
+          - name: member-id
+          - name: grid-label
+          - name: item-version
+          - name: division
+      dag:
+        tasks:
+          - name: get-clean-tasmin-url
+            template: clean-catalog
+            arguments:
+              parameters:
+                - { name: variable-id, value: "tasmin" }
+                - { name: division, value: "{{inputs.parameters.division}}" }
+                - { name: source-id, value: "{{inputs.parameters.source-id}}" }
+                - { name: member-id, value: "{{inputs.parameters.member-id}}" }
+          - name: get-clean-tasmax-url
+            template: clean-catalog
+            arguments:
+              parameters:
+                - { name: variable-id, value: "tasmax" }
+                - { name: division, value: "{{inputs.parameters.division}}" }
+                - { name: source-id, value: "{{inputs.parameters.source-id}}" }
+                - { name: member-id, value: "{{inputs.parameters.member-id}}" }
+          - name: get-clean-dtr-url
+            template: clean-catalog
+            arguments:
+              parameters:
+                - { name: variable-id, value: "dtr" }
+                - { name: division, value: "{{inputs.parameters.division}}" }
+                - { name: source-id, value: "{{inputs.parameters.source-id}}" }
+                - { name: member-id, value: "{{inputs.parameters.member-id}}" }
+          - name: compute-dtr
+            template: compute-dtr
+            dependencies: [ get-clean-tasmax-url, get-clean-tasmin-url, get-clean-dtr-url ]
+            arguments:
+              parameters:
+                - name: tasmax-zarr
+                  value: "{{ tasks.get-clean-tasmax-url.outputs.parameters.url }}"
+                - name: tasmin-zarr
+                  value: "{{ tasks.get-clean-tasmin-url.outputs.parameters.url }}"
+                - name: out-zarr
+                  value: "{{ tasks.get-clean-dtr-url.outputs.parameters.url }}"
+
+
+    - name: clean-generic-variable
+      inputs:
+        parameters:
+          - name: variable-id
+          - name: source-id
+          - name: member-id
+          - name: grid-label
+          - name: item-version
+          - name: histslice-from-time
+          - name: histslice-to-time
+          - name: referenceslicehist-from-time
+          - name: referenceslicehist-to-time
+          - name: scratch
+      dag:
+        tasks:
+          - name: get-raw-historical-url
+            template: raw-catalog
+            arguments:
+              parameters:
+                - { name: experiment-id, value: historical }
+                - { name: variable-id, value: "{{ inputs.parameters.variable-id }}" }
+                - { name: source-id, value: "{{inputs.parameters.source-id}}" }
+                - { name: member-id, value: "{{inputs.parameters.member-id}}" }
+                - { name: grid-label, value: "{{inputs.parameters.grid-label}}" }
+                - { name: item-version, value: "{{inputs.parameters.item-version}}" }
+          - name: get-clean-historical-url
+            template: clean-catalog
+            arguments:
+              parameters:
+                - { name: division, value: historical }
+                - { name: variable-id, value: "{{inputs.parameters.variable-id}}" }
+                - { name: source-id, value: "{{inputs.parameters.source-id}}" }
+                - { name: member-id, value: "{{inputs.parameters.member-id}}" }
+          - name: get-clean-training-url
+            template: clean-catalog
+            arguments:
+              parameters:
+                - { name: division, value: training }
+                - { name: variable-id, value: "{{ inputs.parameters.variable-id }}" }
+                - { name: source-id, value: "{{inputs.parameters.source-id}}" }
+                - { name: member-id, value: "{{inputs.parameters.member-id}}" }
+          - name: standardize-historical-run
+            template: standardize-cmip6
+            dependencies: [ get-raw-historical-url ]
+            arguments:
+              parameters:
+                - name: in-zarr
+                  value: "{{ tasks.get-raw-historical-url.outputs.parameters.url }}"
+                - name: out-zarr
+                  value: "{{ inputs.parameters.scratch }}historical-standardized.zarr"
+          - name: slice-training
+            template: timeslicezarr
+            dependencies: [ standardize-historical-run, get-clean-training-url ]
+            arguments:
+              parameters:
+                - name: in-zarr
+                  value: "{{ tasks.standardize-historical-run.outputs.parameters.out-zarr }}"
+                - name: out-zarr
+                  value: "{{ tasks.get-clean-training-url.outputs.parameters.url }}"
+                - name: from-time
+                  value: "{{ inputs.parameters.referenceslicehist-from-time }}"
+                - name: to-time
+                  value: "{{ inputs.parameters.referenceslicehist-to-time }}"
+          - name: slice-historical
+            template: timeslicezarr
+            dependencies: [ standardize-historical-run, get-clean-historical-url ]
+            arguments:
+              parameters:
+                - name: in-zarr
+                  value: "{{ tasks.standardize-historical-run.outputs.parameters.out-zarr }}"
+                - name: out-zarr
+                  value: "{{ tasks.get-clean-historical-url.outputs.parameters.url }}"
+                - name: from-time
+                  value: "{{ inputs.parameters.histslice-from-time }}"
+                - name: to-time
+                  value: "{{ inputs.parameters.histslice-to-time }}"
+          - name: ssp-loop
+            dependencies: [ slice-historical ]
+            template: concatenate-ssp
+            arguments:
+              parameters:
+                - name: variable-id
+                  value: "{{ inputs.parameters.variable-id }}"
+                - name: source-id
+                  value: "{{ inputs.parameters.source-id }}"
+                - name: member-id
+                  value: "{{ inputs.parameters.member-id }}"
+                - name: grid-label
+                  value: "{{ inputs.parameters.grid-label }}"
+                - name: item-version
+                  value: "{{ inputs.parameters.item-version }}"
+                - name: historical-zarr
+                  value: "{{ tasks.slice-historical.outputs.parameters.out-zarr }}"
+                - name: scratch
+                  value: "{{ inputs.parameters.scratch }}{{ item }}/"
+                - name: ssp
+                  value: "{{item}}"
+            withItems:
+              - ssp126
+              - ssp245
+              - ssp370
+
+    - name: concatenate-ssp
+      inputs:
+        parameters:
+          - name: variable-id
+          - name: source-id
+          - name: member-id
+          - name: grid-label
+          - name: item-version
+          - name: historical-zarr
+          - name: ssp
+          - name: scratch
+      dag:
+        tasks:
+          - name: get-raw-ssp-url
+            template: raw-catalog
+            arguments:
+              parameters:
+                - { name: experiment-id, value: "{{ inputs.parameters.ssp }}" }
+                - { name: variable-id, value: "{{ inputs.parameters.variable-id }}" }
+                - { name: source-id, value: "{{inputs.parameters.source-id}}" }
+                - { name: member-id, value: "{{inputs.parameters.member-id}}" }
+                - { name: grid-label, value: "{{inputs.parameters.grid-label}}" }
+                - { name: item-version, value: "{{inputs.parameters.item-version}}" }
+          - name: get-clean-ssp-url
+            template: clean-catalog
+            arguments:
+              parameters:
+                - { name: division, value: "{{ inputs.parameters.ssp }}" }
+                - { name: variable-id, value: "{{ inputs.parameters.variable-id }}" }
+                - { name: source-id, value: "{{inputs.parameters.source-id}}" }
+                - { name: member-id, value: "{{inputs.parameters.member-id}}" }
+          - name: standardize-future-run
+            template: standardize-cmip6
+            dependencies: [ get-raw-ssp-url ]
+            arguments:
+              parameters:
+                - name: in-zarr
+                  value: "{{ tasks.get-raw-ssp-url.outputs.parameters.url }}"
+                - name: out-zarr
+                  value: "{{ inputs.parameters.scratch }}future-standardized.zarr"
+          - name: concat-histfuture
+            dependencies: [ standardize-future-run, get-clean-ssp-url ]
+            template: timeconcatzarrs
+            arguments:
+              parameters:
+                - name: in1-zarr
+                  value: "{{ inputs.parameters.historical-zarr }}"
+                - name: in2-zarr
+                  value: "{{ tasks.standardize-future-run.outputs.parameters.out-zarr }}"
+                - name: out-zarr
+                  value: "{{ tasks.get-clean-ssp-url.outputs.parameters.url }}"
+
+
+    - name: standardize-cmip6
+      inputs:
+        parameters:
+          - name: in-zarr
+          - name: out-zarr
+      outputs:
+        parameters:
+          - name: out-zarr
+            value: "{{ inputs.parameters.out-zarr }}"
+      container:
+        image: downscalecmip6.azurecr.io/dodola:dev
+        imagePullPolicy: Always
+        env:
+          - name: AZURE_STORAGE_ACCOUNT_NAME
+            valueFrom:
+              secretKeyRef:
+                name: workerstoragecreds-secret
+                key: azurestorageaccount
+          - name: AZURE_STORAGE_ACCOUNT_KEY
+            valueFrom:
+              secretKeyRef:
+                name: workerstoragecreds-secret
+                key: azurestoragekey
+        command: [ "dodola" ]
+        args:
+          - "cleancmip6"
+          - "{{ inputs.parameters.in-zarr }}"
+          - "{{ inputs.parameters.out-zarr }}"
+        resources:
+          requests:
+            memory: 8Gi
+            cpu: "2000m"
+          limits:
+            memory: 8Gi
+            cpu: "2000m"
+      activeDeadlineSeconds: 3600
+      retryStrategy:
+        limit: 2
+        retryPolicy: "Always"
+
+
+    - name: timeslicezarr
+      inputs:
+        parameters:
+          - name: in-zarr
+          - name: from-time
+          - name: to-time
+          - name: out-zarr
+      outputs:
+        parameters:
+          - name: out-zarr
+            value: "{{ inputs.parameters.out-zarr }}"
+      script:
+        image: downscalecmip6.azurecr.io/dodola:dev
+        env:
+          - name: IN_ZARR
+            value: "{{ inputs.parameters.in-zarr }}"
+          - name: FROM_TIME
+            value: "{{ inputs.parameters.from-time }}"
+          - name: TO_TIME
+            value: "{{ inputs.parameters.to-time }}"
+          - name: OUT_ZARR
+            value: "{{ inputs.parameters.out-zarr }}"
+          - name: AZURE_STORAGE_ACCOUNT_NAME
+            valueFrom:
+              secretKeyRef:
+                name: workerstoragecreds-secret
+                key: azurestorageaccount
+          - name: AZURE_STORAGE_ACCOUNT_KEY
+            valueFrom:
+              secretKeyRef:
+                name: workerstoragecreds-secret
+                key: azurestoragekey
+        command: [ python ]
+        source: |
+          import os
+          import xarray as xr
+
+          in_zarr = os.environ.get("IN_ZARR")
+          from_time = os.environ.get("FROM_TIME")
+          to_time = os.environ.get("TO_TIME")
+          out_zarr = os.environ.get("OUT_ZARR")
+
+          ds = xr.open_dataset(
+              in_zarr,
+              chunks={},
+              engine="zarr"
+          )
+          print(f"Read {in_zarr}")  # DEBUG
+
+          print(f"slicing {from_time} : {to_time}")
+          ds = ds.sel(time=slice(from_time, to_time))
+
+          ds = ds.chunk({"time": 365})
+
+          # Hack to get around issue with writing chunks to zarr in xarray v0.17.0
+          for v in ds.data_vars.keys():
+              del ds[v].encoding["chunks"]
+
+          ds.to_zarr(
+              out_zarr,
+              mode="w"
+          )
+          print(f"Written to {out_zarr}")  # DEBUG
+        resources:
+          requests:
+            memory: 4Gi
+            cpu: "1000m"
+          limits:
+            memory: 4Gi
+            cpu: "2000m"
+      activeDeadlineSeconds: 3600
+      retryStrategy:
+        limit: 2
+        retryPolicy: "Always"
+
+
+    - name: timeconcatzarrs
+      inputs:
+        parameters:
+          - name: in1-zarr
+          - name: in2-zarr
+          - name: out-zarr
+      outputs:
+        parameters:
+          - name: out-zarr
+            value: "{{ inputs.parameters.out-zarr }}"
+      script:
+        image: downscalecmip6.azurecr.io/dodola:dev
+        env:
+          - name: IN1_ZARR
+            value: "{{ inputs.parameters.in1-zarr }}"
+          - name: IN2_ZARR
+            value: "{{ inputs.parameters.in2-zarr }}"
+          - name: OUT_ZARR
+            value: "{{ inputs.parameters.out-zarr }}"
+          - name: AZURE_STORAGE_ACCOUNT_NAME
+            valueFrom:
+              secretKeyRef:
+                name: workerstoragecreds-secret
+                key: azurestorageaccount
+          - name: AZURE_STORAGE_ACCOUNT_KEY
+            valueFrom:
+              secretKeyRef:
+                name: workerstoragecreds-secret
+                key: azurestoragekey
+        command: [ python ]
+        source: |
+          import os
+          import xarray as xr
+
+          print(os.environ.get("IN1_ZARR"))  # DEBUG
+          print(os.environ.get("IN2_ZARR"))  # DEBUG
+
+          ds1 = xr.open_zarr(os.environ.get("IN1_ZARR"))
+          ds2 = xr.open_zarr(os.environ.get("IN2_ZARR"))
+          # # Seems a bit more reliable this week if we pre-load:
+          # ds1.load()
+          # ds2.load()
+
+          print("ds1:")  # DEBUG
+          print(ds1)  # DEBUG
+          print("ds2:")  # DEBUG
+          print(ds2)  # DEBUG
+
+          ds = xr.concat([ds1, ds2], dim="time")
+          ds = ds.chunk({"time": 365, "lat": -1, "lon": -1, "bnds": 2})
+
+          # Hack to get around issue with writing chunks to zarr in xarray v0.17.0
+          for v in ds.data_vars.keys():
+              del ds[v].encoding["chunks"]
+          # TODO: For whatever reason these where not removed in the above loop, even if iter over ds.keys()...
+          del ds["lat_bnds"].encoding["chunks"]
+          del ds["lon_bnds"].encoding["chunks"]
+
+          print(os.environ.get("OUT_ZARR"))  # DEBUG
+          ds.to_zarr(
+              os.environ.get("OUT_ZARR"),
+              mode="w",
+          )
+          print("Output written")  # DEBUG
+        resources:
+          requests:
+            memory: 48Gi
+            cpu: "1000m"
+          limits:
+            memory: 48Gi
+            cpu: "2000m"
+      activeDeadlineSeconds: 3600
+      retryStrategy:
+        limit: 2
+        retryPolicy: "Always"
+
+
+    - name: compute-dtr
+      inputs:
+        parameters:
+          - name: tasmax-zarr
+          - name: tasmin-zarr
+          - name: out-zarr
+      outputs:
+        parameters:
+          - name: out-zarr
+            value: "{{ inputs.parameters.out-zarr }}"
+      script:
+        image: downscalecmip6.azurecr.io/dodola:dev
+        env:
+          - name: TASMAX_ZARR
+            value: "{{ inputs.parameters.tasmax-zarr }}"
+          - name: TASMIN_ZARR
+            value: "{{ inputs.parameters.tasmin-zarr }}"
+          - name: OUT_ZARR
+            value: "{{ inputs.parameters.out-zarr }}"
+          - name: AZURE_STORAGE_ACCOUNT_NAME
+            valueFrom:
+              secretKeyRef:
+                name: workerstoragecreds-secret
+                key: azurestorageaccount
+          - name: AZURE_STORAGE_ACCOUNT_KEY
+            valueFrom:
+              secretKeyRef:
+                name: workerstoragecreds-secret
+                key: azurestoragekey
+        command: [ python ]
+        source: |
+          import os
+          import xarray as xr
+
+          tasmin_zarr = os.environ.get("TASMIN_ZARR")
+          tasmax_zarr = os.environ.get("TASMAX_ZARR")
+          out_zarr = os.environ.get("OUT_ZARR")
+
+          tasmin = xr.open_zarr(tasmin_zarr)["tasmin"]
+          print(f"Read {tasmin_zarr}")  # DEBUG
+          tasmax = xr.open_zarr(tasmax_zarr)["tasmax"]
+          print(f"Read {tasmax_zarr}")  # DEBUG
+
+          dtr = tasmax - tasmin
+
+          dtr.to_dataset(name="dtr").to_zarr(
+              out_zarr,
+              mode="w"
+          )
+          print(f"Written to {out_zarr}")  # DEBUG
+        resources:
+          requests:
+            memory: 16Gi
+            cpu: "1000m"
+          limits:
+            memory: 16Gi
+            cpu: "2000m"
+      activeDeadlineSeconds: 3600
+      retryStrategy:
+        limit: 2
+        retryPolicy: "Always"
+
+
+    - name: raw-catalog
+      inputs:
+        parameters:
+          - name: experiment-id
+          - name: variable-id
+          - name: source-id
+          - name: member-id
+          - name: grid-label
+            value: NULL
+          - name: item-version
+            value: NULL
+          - name: catalog-url
+            value: "https://raw.githubusercontent.com/ClimateImpactLab/downscaleCMIP6/master/workflows/intake-catalog.yaml"
+          - name: catalog-source-name
+            value: "cmip6_raw"
+      script:
+        image: pangeo/pangeo-notebook:2021.01.24
+        env:
+          - name: CATALOG_SOURCE_NAME
+            value: "{{inputs.parameters.catalog-source-name}}"
+          - name: EXPERIMENT_ID
+            value: "{{inputs.parameters.experiment-id}}"
+          - name: VARIABLE_ID
+            value: "{{inputs.parameters.variable-id}}"
+          - name: SOURCE_ID
+            value: "{{inputs.parameters.source-id}}"
+          - name: MEMBER_ID
+            value: "{{inputs.parameters.member-id}}"
+          - name: GRID_LABEL
+            value: "{{inputs.parameters.grid-label}}"
+          - name: ITEM_VERSION
+            value: "{{inputs.parameters.item-version}}"
+          - name: CATALOG_URL
+            value: "{{inputs.parameters.catalog-url}}"
+          - name: PYTHONUNBUFFERED
+            value: "1"
+        command: [ /srv/conda/envs/notebook/bin/python ]
+        source: |
+          import os
+          import intake
+
+          catalog_url = os.environ.get("CATALOG_URL")
+          catalog_source_name = os.environ.get("CATALOG_SOURCE_NAME")
+
+          col = intake.open_catalog(catalog_url)
+          cat = col[catalog_source_name]
+
+          payload = cat.get(
+              experiment_id=os.environ.get("EXPERIMENT_ID"),
+              variable_id=os.environ.get("VARIABLE_ID"),
+              source_id=os.environ.get("SOURCE_ID"),
+              member_id=os.environ.get("MEMBER_ID"),
+              grid_label=os.environ.get("GRID_LABEL"),
+              item_version=os.environ.get("ITEM_VERSION"),
+          ).urlpath
+
+          print(payload)
+          with open("/mnt/out/url.txt", "w") as fl:
+            fl.write(payload)
+        resources:
+          requests:
+            memory: 200Mi
+            cpu: "100m"
+          limits:
+            memory: 500Mi
+            cpu: "500m"
+        volumeMounts:
+          - name: out
+            mountPath: /mnt/out
+      volumes:
+        - name: out
+          emptyDir: { }
+      outputs:
+        parameters:
+          - name: url
+            valueFrom:
+              path: /mnt/out/url.txt
+      activeDeadlineSeconds: 300
+      retryStrategy:
+        limit: 3
+
+
+    - name: clean-catalog
+      inputs:
+        parameters:
+          - name: division
+          - name: variable-id
+          - name: source-id
+          - name: member-id
+          - name: catalog-url
+            value: "https://raw.githubusercontent.com/ClimateImpactLab/downscaleCMIP6/master/workflows/intake-catalog.yaml"
+          - name: catalog-source-name
+            value: "cmip6_clean"
+      script:
+        image: pangeo/pangeo-notebook:2021.01.24
+        env:
+          - name: CATALOG_SOURCE_NAME
+            value: "{{inputs.parameters.catalog-source-name}}"
+          - name: DIVISION
+            value: "{{inputs.parameters.division}}"
+          - name: VARIABLE_ID
+            value: "{{inputs.parameters.variable-id}}"
+          - name: SOURCE_ID
+            value: "{{inputs.parameters.source-id}}"
+          - name: MEMBER_ID
+            value: "{{inputs.parameters.member-id}}"
+          - name: CATALOG_URL
+            value: "{{inputs.parameters.catalog-url}}"
+          - name: PYTHONUNBUFFERED
+            value: "1"
+        command: [ /srv/conda/envs/notebook/bin/python ]
+        source: |
+          import os
+          import intake
+
+          catalog_url = os.environ.get("CATALOG_URL")
+          catalog_source_name = os.environ.get("CATALOG_SOURCE_NAME")
+
+          col = intake.open_catalog(catalog_url)
+          cat = col[catalog_source_name]
+
+          payload = cat.get(
+              division=os.environ.get("DIVISION"),
+              variable_id=os.environ.get("VARIABLE_ID"),
+              source_id=os.environ.get("SOURCE_ID"),
+              member_id=os.environ.get("MEMBER_ID")
+          ).urlpath
+
+          print(payload)
+          with open("/mnt/out/url.txt", "w") as fl:
+            fl.write(payload)
+        resources:
+          requests:
+            memory: 200Mi
+            cpu: "100m"
+          limits:
+            memory: 500Mi
+            cpu: "500m"
+        volumeMounts:
+          - name: out
+            mountPath: /mnt/out
+      volumes:
+        - name: out
+          emptyDir: { }
+      outputs:
+        parameters:
+          - name: url
+            valueFrom:
+              path: /mnt/out/url.txt
+      activeDeadlineSeconds: 300
+      retryStrategy:
+        limit: 3

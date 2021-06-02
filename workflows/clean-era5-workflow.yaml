@@ -1,0 +1,341 @@
+# Rolling QDM test case
+apiVersion: argoproj.io/v1alpha1
+kind: Workflow
+metadata:
+  generateName: clean-era5-dev-
+  labels:
+    component: clean-era5
+    env: dev
+spec:
+  entrypoint: main
+  arguments:
+    parameters:
+    - name: in-zarr
+      value: "clean-dev/ERA-5/tmax.1995-2014.0p25.zarr"
+    - name: out-zarr
+      value: "scratch/clean-dev/ERA-5/tasmax.1995-2014.0p25.zarr"
+  serviceAccountName: workflows-default
+  nodeSelector:
+    dedicated: worker
+  tolerations:
+  - key: dedicated
+    operator: "Equal"
+    value: "worker"
+    effect: "NoSchedule"
+  - key: kubernetes.azure.com/scalesetpriority
+    operator: "Equal"
+    value: "spot"
+    effect: "NoSchedule"
+  templates:
+
+  - name: main
+    dag:
+      tasks:
+      # - name: drop-leapdays
+      #   template: noleap
+      #   arguments:
+      #     parameters:
+      #     - name: in-zarr
+      #       value: "{{ workflow.parameters.in-zarr }}"
+      #     - name: out-zarr
+      #       value: "scratch/{{ workflow.name }}/noleaped.zarr"
+      # - name: rechunk
+      #   template: rechunk
+      #   dependencies: [drop-leapdays]
+      #   arguments:
+      #     parameters:
+      #     - name: in-zarr
+      #       value: "{{ tasks.drop-leapdays.outputs.parameters.out-zarr }}"
+      #     - name: out-zarr
+      #       value: "scratch/{{ workflow.name }}/rechunked.zarr"
+      #     - name: time-chunk
+      #       value: 365
+      #     - name: lat-chunk
+      #       value: 10
+      #     - name: lon-chunk
+      #       value: 10
+      - name: standardize
+        template: standardize
+        # dependencies: [rechunk]
+        arguments:
+          parameters:
+          - name: in-zarr
+            value: "{{ workflow.parameters.in-zarr }}"         
+            # value: "{{ tasks.rechunk.outputs.parameters.out-zarr }}"
+          - name: out-zarr
+            value: "{{ workflow.parameters.out-zarr }}"
+
+  - name: noleap
+    inputs:
+      parameters:
+      - name: in-zarr
+      - name: out-zarr
+    outputs:
+      parameters:
+      - name: out-zarr
+        value: "{{ inputs.parameters.out-zarr }}"
+    container:
+      image: downscalecmip6.azurecr.io/dodola:0.1.0
+      env:
+      - name: IN_ZARR
+        value: "{{  inputs.parameters.in-zarr }}"
+      - name: OUT_ZARR
+        value: "{{  inputs.parameters.out-zarr }}"
+      - name: PYTHONUNBUFFERED
+        value: "1"
+      # - name: AZURE_STORAGE_ACCOUNT_NAME
+      - name: AZURE_STORAGE_ACCOUNT
+        valueFrom:
+          secretKeyRef:
+            name: workerstoragecreds-secret
+            key: azurestorageaccount
+      # - name: AZURE_STORAGE_ACCOUNT_KEY
+      - name: AZURE_STORAGE_KEY
+        valueFrom:
+          secretKeyRef:
+            name: workerstoragecreds-secret
+            key: azurestoragekey
+      command: ["dodola"]
+      args:
+      - "removeleapdays"
+      - "{{ inputs.parameters.in-zarr }}"
+      - "{{ inputs.parameters.out-zarr }}"
+      resources:
+        requests:
+          memory: "42Gi"
+          cpu: "2000m"
+        limits:
+          memory: "42Gi"
+          cpu: "2000m"
+    activeDeadlineSeconds: 2700
+    retryStrategy:
+      limit: 3
+      retryPolicy: "Always"
+
+
+  - name: standardize
+    inputs:
+      parameters:
+      - name: in-zarr
+      - name: out-zarr
+    outputs:
+      parameters:
+      - name: out-zarr
+        value: "{{ inputs.parameters.out-zarr }}"
+    script:
+      image: downscalecmip6.azurecr.io/dodola:0.1.0
+      env:
+      - name: IN_ZARR
+        value: "{{  inputs.parameters.in-zarr }}"
+      - name: OUT_ZARR
+        value: "{{  inputs.parameters.out-zarr }}"
+      - name: PYTHONUNBUFFERED
+        value: "1"
+      - name: AZURE_STORAGE_ACCOUNT_NAME
+        valueFrom:
+          secretKeyRef:
+            name: workerstoragecreds-secret
+            key: azurestorageaccount
+      - name: AZURE_STORAGE_ACCOUNT_KEY
+        valueFrom:
+          secretKeyRef:
+            name: workerstoragecreds-secret
+            key: azurestoragekey
+      - name: PYTHONUNBUFFERED
+        value: "1"
+      command: [python]
+      source: |
+        import os
+        import xarray as xr
+        from adlfs import AzureBlobFileSystem
+
+        print("starting ERA-5 cleaning")
+
+        in_store_path = os.environ.get("IN_ZARR")
+        out_store_path = os.environ.get("OUT_ZARR")
+        
+        fs = AzureBlobFileSystem()
+
+        ds = xr.open_zarr(
+            fs.get_mapper(in_store_path), 
+            # chunks="auto",
+            # chunks={
+            #     "latitude": 10,
+            #     "longitude": 10,
+            #     "time": 365,
+            # }
+        )
+        print(f"opening {in_store_path}")
+
+        ds = ds.rename({"tmax": "tasmax"})
+        ds = ds.rename({"latitude": "lat", "longitude": "lon"})
+
+        # ds = ds.rename({"latitude": "lat", "longitude": "lon", "tmax": "tasmax"})
+        print(f"standardized tmax/latitude/longitude name to tasmax/lat/lon")
+
+        # # Hack to get around issue with writing chunks to zarr in xarray v0.17.0
+        # for v in ds.data_vars.keys():
+        #     del ds[v].encoding["chunks"]
+
+        ds.to_zarr(
+            store=fs.get_mapper(out_store_path),
+            mode="w",
+        )
+        print(f"written to {out_store_path}")
+        
+        print("ERA-5 cleaning done")
+      resources:
+        requests:
+          memory: 42Gi
+          cpu: "2000m"
+        limits:
+          memory: 42Gi
+          cpu: "2000m"
+    activeDeadlineSeconds: 21600
+    retryStrategy:
+      limit: 3
+      retryPolicy: "Always"
+
+# THIS IS TO DEBUG RENAMING
+  # - name: standardize
+  #   inputs:
+  #     parameters:
+  #     - name: in-zarr
+  #     - name: out-zarr
+  #   outputs:
+  #     parameters:
+  #     - name: out-zarr
+  #       value: "{{ inputs.parameters.out-zarr }}"
+  #   script:
+  #     image: downscalecmip6.azurecr.io/dodola:0.1.0
+  #     env:
+  #     - name: IN_ZARR
+  #       value: "{{  inputs.parameters.in-zarr }}"
+  #     - name: OUT_ZARR
+  #       value: "{{  inputs.parameters.out-zarr }}"
+  #     - name: PYTHONUNBUFFERED
+  #       value: "1"
+  #     - name: AZURE_STORAGE_ACCOUNT_NAME
+  #       valueFrom:
+  #         secretKeyRef:
+  #           name: workerstoragecreds-secret
+  #           key: azurestorageaccount
+  #     - name: AZURE_STORAGE_ACCOUNT_KEY
+  #       valueFrom:
+  #         secretKeyRef:
+  #           name: workerstoragecreds-secret
+  #           key: azurestoragekey
+  #     command: [python]
+  #     source: |
+  #       import os
+  #       import numpy as np
+  #       import xarray as xr
+  #       import pandas as pd
+  #       from adlfs import AzureBlobFileSystem
+
+  #       print(xr.__version__)
+
+  #       rng = np.random.default_rng(123)
+  #       temp = 15 + 8 * rng.integers(100, size=(2, 2, 3))
+  #       precip = 10 * rng.integers(100, size=(2, 2, 3))
+  #       lon = [[-99.83, -99.32], [-99.79, -99.23]]
+  #       lat = [[42.25, 42.21], [42.63, 42.59]]
+
+  #       ds = xr.Dataset(
+  #           {
+  #               "temperature": (["x", "y", "time"], temp),
+  #               "precipitation": (["x", "y", "time"], precip),
+  #           },
+  #           coords={
+  #               "lon": (["x", "y"], lon),
+  #               "lat": (["x", "y"], lat),
+  #               "time": pd.date_range("2014-09-06", periods=3),
+  #               "reference_time": pd.Timestamp("2014-09-05"),
+  #           },
+  #       )
+  #       print(ds)
+
+  #       print(ds["temperature"].mean())
+  #       ds.to_zarr("az://scratch/debug/foobar.zarr", compute=True)
+  #       print("Original written to store")
+
+  #       ds2 = xr.open_zarr("az://scratch/debug/foobar.zarr")
+  #       ds2 = ds2.rename({"temperature": "tas"})
+  #       print(ds2)
+  #       ds2.to_zarr("az://scratch/debug/foobar_rename.zarr", compute=True)
+  #       print("Renamed written to store")
+
+  #       ds3 = xr.open_zarr("az://scratch/debug/foobar_rename.zarr")
+  #       print(ds3)
+  #       print(ds3["tas"].mean().compute())
+  #     resources:
+  #       requests:
+  #         memory: 1Gi
+  #         cpu: "2000m"
+  #       limits:
+  #         memory: 1Gi
+  #         cpu: "2000m"
+  #     volumeMounts:
+  #     - name: out
+  #       mountPath: /mnt/out
+  #   volumes:
+  #     - name: out
+  #       emptyDir: { }
+  #   activeDeadlineSeconds: 21600
+  #   retryStrategy:
+  #     limit: 3
+  #     retryPolicy: "Always"
+
+
+
+  - name: rechunk
+    inputs:
+      parameters:
+        - name: in-zarr
+        - name: out-zarr
+        - name: time-chunk
+        - name: lat-chunk
+        - name: lon-chunk
+    outputs:
+      parameters:
+        - name: out-zarr
+          value: "{{ inputs.parameters.out-zarr }}"
+    container:
+      image: downscalecmip6.azurecr.io/dodola:dev
+      imagePullPolicy: Always
+      env:
+        - name: AZURE_STORAGE_ACCOUNT_NAME
+          valueFrom:
+            secretKeyRef:
+              name: workerstoragecreds-secret
+              key: azurestorageaccount
+        - name: AZURE_STORAGE_ACCOUNT_KEY
+          valueFrom:
+            secretKeyRef:
+              name: workerstoragecreds-secret
+              key: azurestoragekey
+        - name: PYTHONUNBUFFERED
+          value: "1"
+      command: [dodola]
+      args:
+        - "rechunk"
+        - "az://{{ inputs.parameters.in-zarr }}"
+        - "--out"
+        - "az://{{ inputs.parameters.out-zarr }}"
+        - "--chunk"
+        - "time={{ inputs.parameters.time-chunk }}"
+        - "--chunk"
+        - "lat={{ inputs.parameters.lat-chunk }}"
+        - "--chunk"
+        - "lon={{ inputs.parameters.lon-chunk }}"
+      resources:
+        requests:
+          memory: 48Gi
+          cpu: "2000m"
+        limits:
+          memory: 48Gi
+          cpu: "2000m"
+    activeDeadlineSeconds: 10800
+    retryStrategy:
+      limit: 3
+      retryPolicy: "Always"
