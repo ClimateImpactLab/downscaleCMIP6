@@ -1,0 +1,18 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: workflow-controller-configmap
+data:
+  artifactRepository: |
+    archiveLogs: true
+    s3:
+      bucket: scratch
+      endpoint: minio:9000
+      insecure: true
+      accessKeySecret:
+        name: artifactrepocreds-secret
+        key: accesskey
+      secretKeySecret:
+        name: artifactrepocreds-secret
+        key: secretkey
+      keyFormat: "{{workflow.name}}/{{pod.name}}"
