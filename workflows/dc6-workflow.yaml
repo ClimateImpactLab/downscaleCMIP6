@@ -804,7 +804,7 @@ spec:
                   value: "{{ tasks.rename-coarseclimo-ds.outputs.parameters.out-zarr }}"
                 - name: out-zarr
                   value: "az://scratch/{{ workflow.name }}/adjustmentfactors-original.zarr"
-          - name: regrid-years
+          - name: regrid-adjustmentfactors
             template: regrid-select-time
             dependencies: [ fit-adjustmentfactors ]
             arguments:
@@ -822,7 +822,7 @@ spec:
               end: "{{ inputs.parameters.lastyear }}"
           - name: netcdfs2zarr
             template: netcdfs2zarr
-            dependencies: [ regrid-years ]
+            dependencies: [ regrid-adjustmentfactors ]
             arguments:
               parameters:
                 - name: in-dir
@@ -844,48 +844,6 @@ spec:
                   value: "{{ tasks.rename-fineclimo-ds.outputs.parameters.out-zarr }}"
                 - name: out-zarr
                   value: "{{ inputs.parameters.out-zarr }}"
-
-
-      # Fan-out and then fan-in for heavy regridding (usually downscaling to high res).
-    - name: regrid-adjustmentfactors
-      inputs:
-        parameters:
-          - name: in-zarr
-          - name: firstyear
-          - name: lastyear
-          - name: out-zarr
-          - name: regrid-method
-          - name: domain-file
-      outputs:
-        parameters:
-          - name: out-zarr
-            valueFrom:
-              parameter: "{{ inputs.parameters.out-zarr }}"
-      steps:
-        - - name: regrid-years
-            template: regrid-select-time
-            arguments:
-              parameters:
-                - name: in-zarr
-                  value: "{{ tasks.fit-adjustmentfactors.outputs.parameters.out-zarr }}"
-                - name: select-time
-                  value: "{{ item }}"
-                - name: regrid-method
-                  value: "{{ inputs.parameters.regrid-method }}"
-                - name: domain-file
-                  value: "{{ inputs.parameters.domain-file }}"
-            withSequence:
-              start: "{{ inputs.parameters.firstyear }}"
-              end: "{{ inputs.parameters.lastyear }}"
-        - - name: netcdfs2zarr
-            template: netcdfs2zarr
-            arguments:
-              parameters:
-                - name: in-dir
-                  value: "scratch/{{ workflow.name }}/sd-regrid-years/"
-                - name: out-zarr
-                  value: "{{ inputs.parameters.out-zarr }}"
-
 
     # Subset to a select time and then regrid the subset, output netcdf
     - name: regrid-select-time
@@ -1036,61 +994,6 @@ spec:
             memory: 24Gi
             cpu: "3000m"
       activeDeadlineSeconds: 4200  # 12 hours
-
-
-    - name: rechunk-adjustmentfactors
-      inputs:
-        parameters:
-          - name: in-zarr
-          - name: out-zarr
-          - name: time-chunk
-            value: 365
-          - name: lat-chunk
-            value: 10
-          - name: lon-chunk
-            value: 10
-          - name: dayofyear-chunk
-            value: 365
-      outputs:
-        parameters:
-          - name: out-zarr
-            value: "{{ inputs.parameters.out-zarr }}"
-      container:
-        image: downscalecmip6.azurecr.io/dodola:0.2.0
-        env:
-          - name: AZURE_STORAGE_ACCOUNT_NAME
-            valueFrom:
-              secretKeyRef:
-                name: workerstoragecreds-secret
-                key: azurestorageaccount
-          - name: AZURE_STORAGE_ACCOUNT_KEY
-            valueFrom:
-              secretKeyRef:
-                name: workerstoragecreds-secret
-                key: azurestoragekey
-        command: [ dodola ]
-        args:
-          - "rechunk"
-          - "{{ inputs.parameters.in-zarr }}"
-          - "--out"
-          - "{{ inputs.parameters.out-zarr }}"
-          - "--chunk"
-          - "time={{ inputs.parameters.time-chunk }}"
-          - "--chunk"
-          - "lat={{ inputs.parameters.lat-chunk }}"
-          - "--chunk"
-          - "lon={{ inputs.parameters.lon-chunk }}"
-          - "--chunk"
-          - "dayofyear={{ inputs.parameters.dayofyear-chunk }}"
-        resources:
-          requests:
-            memory: 32Gi
-            cpu: "1000m"
-          limits:
-            memory: 32Gi
-            cpu: "2000m"
-      activeDeadlineSeconds: 10800
-
 
     - name: apply-adjustmentfactors
       inputs:
