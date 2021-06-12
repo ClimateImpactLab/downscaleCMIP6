@@ -695,6 +695,10 @@ spec:
               f"{local_stash}*.nc",
               concat_dim="time"
           )
+
+          # Auto rechunk otherwise zarr codec chokes on buffers > 2147483647B.
+          d = d.chunk("auto")
+
           d.to_zarr(
               os.environ.get("OUT"),
               mode="w",
