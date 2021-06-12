@@ -756,7 +756,7 @@ spec:
       dag:
         tasks:
           - name: rename-main-ds
-            template: downscaler-rename
+            template: rename-zarr-variable
             arguments:
               parameters:
                 - name: in-zarr
@@ -768,7 +768,7 @@ spec:
                 - name: rename-to
                   value: "{{ inputs.parameters.train-variable }}"
           - name: rename-coarseclimo-ds
-            template: downscaler-rename
+            template: rename-zarr-variable
             arguments:
               parameters:
                 - name: in-zarr
@@ -780,7 +780,7 @@ spec:
                 - name: rename-to
                   value: "{{ inputs.parameters.train-variable }}"
           - name: rename-fineclimo-ds
-            template: downscaler-rename
+            template: rename-zarr-variable
             arguments:
               parameters:
                 - name: in-zarr
@@ -1064,7 +1064,7 @@ spec:
       activeDeadlineSeconds: 43200  # 12 hours
 
 
-    - name: downscaler-rename
+    - name: rename-zarr-variable
       inputs:
         parameters:
           - name: in-zarr
