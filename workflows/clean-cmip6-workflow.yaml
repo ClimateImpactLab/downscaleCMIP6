@@ -30,13 +30,13 @@ spec:
       - name: item-version
         value: "20191115"
       - name: histslice-from-time
-        value: "1979"
+        value: "1950"
       - name: histslice-to-time
-        value: "2015"
+        value: "2014"
       - name: referenceslicehist-from-time
-        value: "1995"
+        value: "1994-12-17"
       - name: referenceslicehist-to-time
-        value: "2015"
+        value: "2015-01-15"
       - name: scratch
         value: "az://scratch/{{ workflow.name }}/"
   templates:
