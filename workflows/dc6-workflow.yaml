@@ -293,7 +293,7 @@ spec:
           - name: out-zarr
             value: "{{ inputs.parameters.out-zarr }}"
       container:
-        image: downscalecmip6.azurecr.io/dodola:dev  # Later than 0.2.0...
+        image: downscalecmip6.azurecr.io/dodola:0.3.0
         env:
           - name: AZURE_STORAGE_ACCOUNT_NAME
             valueFrom:
@@ -455,8 +455,7 @@ spec:
           - name: out-zarr
             value: "{{ inputs.parameters.out-zarr }}"
       script:
-        image: downscalecmip6.azurecr.io/dodola:dev
-        imagePullPolicy: Always
+        image: downscalecmip6.azurecr.io/dodola:0.3.0
         env:
           - name: VARIABLE
             value: "{{  inputs.parameters.variable }}"
@@ -549,8 +548,7 @@ spec:
           - name: out-zarr
             value: "{{ inputs.parameters.out-zarr }}"
       container:
-        image: downscalecmip6.azurecr.io/dodola:dev
-        imagePullPolicy: Always
+        image: downscalecmip6.azurecr.io/dodola:0.3.0
         env:
           - name: AZURE_STORAGE_ACCOUNT_NAME
             valueFrom:
@@ -611,8 +609,7 @@ spec:
             s3:
               key: "{{ workflow.name }}/qdm-years/{{ inputs.parameters.year }}.nc"
       container:
-        image: downscalecmip6.azurecr.io/dodola:dev
-        imagePullPolicy: Always
+        image: downscalecmip6.azurecr.io/dodola:0.3.0
         env:
           - name: AZURE_STORAGE_ACCOUNT_NAME
             valueFrom:
@@ -934,8 +931,7 @@ spec:
           - name: out-zarr
             value: "{{ inputs.parameters.out-zarr }}"
       script:
-        image: downscalecmip6.azurecr.io/dodola:dev
-        imagePullPolicy: Always
+        image: downscalecmip6.azurecr.io/dodola:0.3.0
         env:
           - name: IN_ZARR
             value: "{{ inputs.parameters.in-zarr }}"
@@ -1008,8 +1004,7 @@ spec:
           - name: out-zarr
             value: "{{ inputs.parameters.out-zarr }}"
       script:
-        image: downscalecmip6.azurecr.io/dodola:dev
-        imagePullPolicy: Always
+        image: downscalecmip6.azurecr.io/dodola:0.3.0
         env:
           - name: IN_ZARR
             value: "{{ inputs.parameters.in-zarr }}"
