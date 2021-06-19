@@ -1,0 +1,32 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: daskkubernetes
+rules:
+  - apiGroups:
+      - ""  # indicates the core API group
+    resources:
+      - "pods"
+    verbs:
+      - "get"
+      - "list"
+      - "watch"
+      - "create"
+      - "delete"
+  - apiGroups:
+      - ""  # indicates the core API group
+    resources:
+      - "pods/log"
+    verbs:
+      - "get"
+      - "list"
+  - apiGroups: # Newer dask kubernetes functionality begins here:
+      - "" # indicates the core API group
+    resources:
+      - "services"
+    verbs:
+      - "get"
+      - "list"
+      - "watch"
+      - "create"
+      - "delete"
