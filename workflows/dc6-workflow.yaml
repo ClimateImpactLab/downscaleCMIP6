@@ -284,7 +284,7 @@ spec:
             template: downscale-analog-adjust-year
             arguments:
               parameters:
-                - name: to-downscale-zarr
+                - name: in-zarr
                   value: "{{ tasks.rechunk-biascorrected.outputs.parameters.out-zarr }}"
                 - name: variable
                   value: "{{ workflow.parameters.target-variable }}"
@@ -756,8 +756,6 @@ spec:
           - name: ref0p25x0p25-zarr
           - name: out-zarr
           - name: kind
-          - name: firstyear
-          - name: lastyear
       outputs:
         parameters:
           - name: out-zarr
@@ -766,8 +764,16 @@ spec:
         image: downscalecmip6.azurecr.io/dodola:dev
         imagePullPolicy: Always
         env:
-          - name: IN_ZARR
-            value: "{{ inputs.parameters.in-zarr }}"
+          - name: VARIABLE
+            value: "{{  inputs.parameters.variable }}"
+          - name: REF1X1_ZARR
+            value: "{{  inputs.parameters.ref1x1-zarr }}"
+          - name: REF0P25X0P25_ZARR
+            value: "{{  inputs.parameters.ref0p25x0p25-zarr }}"
+          - name: OUT_ZARR
+            value: "{{ inputs.parameters.out-zarr }}"
+          - name: KIND
+            value: "{{ inputs.parameters.kind }}"
           - name: AZURE_STORAGE_ACCOUNT_NAME
             valueFrom:
               secretKeyRef:
@@ -782,6 +788,8 @@ spec:
         source: |
           import os
           import xarray as xr
+
+          target_variable = os.environ["VARIABLE"]
 
           print("This is the downscale-train-analog step")
         resources:
@@ -797,20 +805,30 @@ spec:
     - name: downscale-analog-adjust-year
       inputs:
         parameters:
-          - name: to-downscale-zarr
+          - name: in-zarr
           - name: variable
           - name: year
           - name: analog-model-zarr
       outputs:
-        parameters:
-          - name: out-zarr
-            value: "{{ inputs.parameters.out-zarr }}"
+        artifacts:
+          - name: adjusted
+            path: "/mnt/out/{{ inputs.parameters.year }}.nc"
+            archive:
+              none: { }
+            s3:
+              key: "{{ workflow.name }}/analog-years/{{ inputs.parameters.year }}.nc"
       script:
         image: downscalecmip6.azurecr.io/dodola:dev
         imagePullPolicy: Always
         env:
           - name: IN_ZARR
             value: "{{ inputs.parameters.in-zarr }}"
+          - name: VARIABLE
+            value: "{{ inputs.parameters.variable }}"
+          - name: YEAR
+            value: "{{ inputs.parameters.year }}"
+          - name: ANALOG_MODEL_ZARR
+            value: "{{ inputs.parameters.analog-model-zarr }}"
           - name: AZURE_STORAGE_ACCOUNT_NAME
             valueFrom:
               secretKeyRef:
@@ -826,6 +844,11 @@ spec:
           import os
           import xarray as xr
 
+          target_year = os.environ["YEAR"]
+
+          # Write NetCDF output here and artifact repo will pick it up and move it automatically.
+          outpath = f"/mnt/out/{target_year}.nc"
+
           print("This is the downscale-analog-adjust-year step")
         resources:
           requests:
@@ -834,6 +857,13 @@ spec:
           limits:
             memory: 1Gi
             cpu: "1000m"
+          # emptyDir volume as k8sapi runtime executor can't output to base image layer:
+        volumeMounts:
+          - name: out
+            mountPath: /mnt/out
+      volumes:
+        - name: out
+          emptyDir: { }
       activeDeadlineSeconds: 900
 
 
