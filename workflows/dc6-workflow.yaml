@@ -232,26 +232,26 @@ spec:
                   value: "{{ workflow.parameters.biascorrect-firstfutureyear }}"
                 - name: lastyear
                   value: "{{ workflow.parameters.biascorrect-lastfutureyear }}"
-          - name: upsample-biascorrected
-            template: upsample
+          - name: regrid-biascorrected-0p25x0p25
             dependencies: [ biascorrect ]
+            template: regrid
             arguments:
               parameters:
                 - name: in-zarr
                   value: "{{ tasks.biascorrect.outputs.parameters.out-zarr }}"
                 - name: out-zarr
-                  value: "az://scratch/{{ workflow.name }}/biascorrected-0p25x0p25-upsampled.zarr"
-                - name: lat-scale
-                  value: 4
-                - name: lon-scale
-                  value: 4
+                  value: "az://scratch/{{ workflow.name }}/biascorrected-0p25x0p25-nearestneighbor.zarr"
+                - name: regrid-method
+                  value: "nearest_s2d"
+                - name: domain-file
+                  value: "{{ workflow.parameters.domainfile0p25x0p25 }}"
           - name: rechunk-biascorrected
             template: rechunk
-            dependencies: [ upsample-biascorrected ]
+            dependencies: [ regrid-biascorrected-0p25x0p25 ]
             arguments:
               parameters:
                 - name: in-zarr
-                  value: "{{ tasks.upsample-biascorrected.outputs.parameters.out-zarr }}"
+                  value: "{{ tasks.regrid-biascorrected-0p25x0p25.outputs.parameters.out-zarr }}"
                 - name: out-zarr
                   value: "az://scratch/{{ workflow.name }}/biascorrected-rechunked.zarr"
                 - name: time-chunk
@@ -746,51 +746,6 @@ spec:
       retryStrategy:
         limit: 4
         retryPolicy: "Always"
-
-
-    - name: upsample
-      inputs:
-        parameters:
-          - name: in-zarr
-          - name: out-zarr
-          - name: lat-scale
-            value: 4
-          - name: lon-scale
-            value: 4
-      outputs:
-        parameters:
-          - name: out-zarr
-            value: "{{ inputs.parameters.out-zarr }}"
-      script:
-        image: downscalecmip6.azurecr.io/dodola:dev
-        imagePullPolicy: Always
-        env:
-          - name: IN_ZARR
-            value: "{{ inputs.parameters.in-zarr }}"
-          - name: AZURE_STORAGE_ACCOUNT_NAME
-            valueFrom:
-              secretKeyRef:
-                name: workerstoragecreds-secret
-                key: azurestorageaccount
-          - name: AZURE_STORAGE_ACCOUNT_KEY
-            valueFrom:
-              secretKeyRef:
-                name: workerstoragecreds-secret
-                key: azurestoragekey
-        command: [ python ]
-        source: |
-          import os
-          import xarray as xr
-
-          print("This is the upsample step")
-        resources:
-          requests:
-            memory: 500Mi
-            cpu: "1000m"
-          limits:
-            memory: 1Gi
-            cpu: "1000m"
-      activeDeadlineSeconds: 900
 
 
     - name: downscale-train-analog
