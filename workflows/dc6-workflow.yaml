@@ -29,8 +29,6 @@ spec:
         value: "az://support/domain.1x1.zarr"
       - name: domainfile0p25x0p25
         value: "az://support/domain.0p25x0p25.zarr"
-      - name: climatology-zarr
-        value: "az://clean-dev/tasmax_1995_2015_climo_cleaned.zarr"
   serviceAccountName: workflows-default
   # So workers go on larger, spot, worker node pool.
   nodeSelector:
