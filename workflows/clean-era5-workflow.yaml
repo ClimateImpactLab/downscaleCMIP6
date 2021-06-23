@@ -11,9 +11,9 @@ spec:
   arguments:
     parameters:
     - name: in-zarr
-      value: "clean-dev/ERA-5/tmax.1995-2014.0p25.zarr"
+      value: "clean-dev/ERA-5/F320/tasmax.1995-2015.F320.v2.zarr"
     - name: out-zarr
-      value: "scratch/clean-dev/ERA-5/tasmax.1995-2014.0p25.zarr"
+      value: "scratch/clean-dev/ERA-5/tasmax.1995-2015.F320.zarr"
   serviceAccountName: workflows-default
   nodeSelector:
     dedicated: worker
@@ -167,7 +167,8 @@ spec:
         )
         print(f"opening {in_store_path}")
 
-        ds = ds.rename({"tmax": "tasmax"})
+	if 'tmax' in ds.variables:
+            ds = ds.rename({"tmax": "tasmax"})
         ds = ds.rename({"latitude": "lat", "longitude": "lon"})
 
         # ds = ds.rename({"latitude": "lat", "longitude": "lon", "tmax": "tasmax"})
