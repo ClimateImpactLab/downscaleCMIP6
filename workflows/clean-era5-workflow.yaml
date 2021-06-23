@@ -167,7 +167,7 @@ spec:
         )
         print(f"opening {in_store_path}")
 
-	if "tmax" in ds.variables:
+        if "tmax" in ds.variables:
             ds = ds.rename({"tmax": "tasmax"})
         ds = ds.rename({"latitude": "lat", "longitude": "lon"})
 
