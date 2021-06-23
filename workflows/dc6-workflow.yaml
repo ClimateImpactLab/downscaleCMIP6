@@ -25,6 +25,8 @@ spec:
         value: 1980
       - name: biascorrect-lastfutureyear
         value: 2099
+      - name: biascorrect-kind
+        value: additive  # multiplicative
       - name: domainfile1x1
         value: "az://support/domain.1x1.zarr"
       - name: domainfile0p25x0p25
@@ -174,7 +176,7 @@ spec:
                 - name: out-zarr
                   value: "az://scratch/{{ workflow.name }}/biascorrected.zarr"
                 - name: kind
-                  value: additive
+                  value: "{{ workflow.parameters.biascorrect-kind }}"
                 - name: firstyear
                   value: "{{ workflow.parameters.biascorrect-firstfutureyear }}"
                 - name: lastyear
