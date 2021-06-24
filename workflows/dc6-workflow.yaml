@@ -372,7 +372,10 @@ spec:
           limits:
             memory: 32Gi
             cpu: "2000m"
-      activeDeadlineSeconds: 10800
+      activeDeadlineSeconds: 1800
+      retryStrategy:
+        limit: 1
+        retryPolicy: "Always"
 
 
     - name: biascorrect-qdm
