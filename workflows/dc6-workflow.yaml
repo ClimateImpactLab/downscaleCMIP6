@@ -1,4 +1,3 @@
-# Rolling QDM test case
 apiVersion: argoproj.io/v1alpha1
 kind: Workflow
 metadata:
@@ -25,6 +24,8 @@ spec:
         value: 1980
       - name: biascorrect-lastfutureyear
         value: 2099
+      - name: biascorrect-kind
+        value: additive  # multiplicative
       - name: domainfile1x1
         value: "az://support/domain.1x1.zarr"
       - name: domainfile0p25x0p25
@@ -174,7 +175,7 @@ spec:
                 - name: out-zarr
                   value: "az://scratch/{{ workflow.name }}/biascorrected.zarr"
                 - name: kind
-                  value: additive
+                  value: "{{ workflow.parameters.biascorrect-kind }}"
                 - name: firstyear
                   value: "{{ workflow.parameters.biascorrect-firstfutureyear }}"
                 - name: lastyear
@@ -371,7 +372,10 @@ spec:
           limits:
             memory: 32Gi
             cpu: "2000m"
-      activeDeadlineSeconds: 10800
+      activeDeadlineSeconds: 1800
+      retryStrategy:
+        limit: 1
+        retryPolicy: "Always"
 
 
     - name: biascorrect-qdm
@@ -385,7 +389,6 @@ spec:
           - name: firstyear
           - name: lastyear
           - name: kind
-            value: additive
       outputs:
         parameters:
           - name: out-zarr
@@ -432,101 +435,6 @@ spec:
                   value: "scratch/{{workflow.name}}/qdm-years/"
                 - name: out-zarr
                   value: "{{ inputs.parameters.out-zarr }}"
-
-    - name: train-qdm-script
-      inputs:
-        parameters:
-          - name: variable
-          - name: ref-zarr  # Needs to be az://... format
-          - name: hist-zarr  # Needs to be az://... format
-          - name: out-zarr  # Needs to be az://... format
-          - name: kind
-            value: additive
-          - name: n-quantiles
-            value: 100
-      outputs:
-        parameters:
-          - name: out-zarr
-            value: "{{ inputs.parameters.out-zarr }}"
-      script:
-        image: downscalecmip6.azurecr.io/dodola:0.3.0
-        env:
-          - name: VARIABLE
-            value: "{{  inputs.parameters.variable }}"
-          - name: REF_PATH
-            value: "{{  inputs.parameters.ref-zarr }}"
-          - name: HIST_PATH
-            value: "{{  inputs.parameters.hist-zarr }}"
-          - name: OUT
-            value: "{{ inputs.parameters.out-zarr }}"
-          - name: N_QUANTILES
-            value: "{{ inputs.parameters.n-quantiles }}"
-          - name: KIND
-            value: "{{ inputs.parameters.kind }}"
-          - name: AZURE_STORAGE_ACCOUNT_NAME
-            valueFrom:
-              secretKeyRef:
-                name: workerstoragecreds-secret
-                key: azurestorageaccount
-          - name: AZURE_STORAGE_ACCOUNT_KEY
-            valueFrom:
-              secretKeyRef:
-                name: workerstoragecreds-secret
-                key: azurestoragekey
-        command: [ python ]
-        source: |
-          import os
-          from xclim import sdba
-          import numpy as np
-          import xarray as xr
-
-          kind_map = {"additive": "+", "multiplicative": "*"}
-          model_kind = kind_map[os.environ.get("KIND").lower()]
-
-          target_variable = os.environ.get("VARIABLE")
-          refdf = xr.open_zarr(os.environ.get("REF_PATH"), chunks="auto")
-          histdf = xr.open_zarr(os.environ.get("HIST_PATH"), chunks="auto")
-
-          QDMdg = sdba.adjustment.QuantileDeltaMapping(
-              kind=model_kind,
-              group=sdba.Grouper("time.dayofyear", window=31),
-              nquantiles=int(os.environ.get("N_QUANTILES"))
-          )
-
-          histdf = histdf.drop_vars("height")  # DEBUG!!!
-          #histdf = histdf.drop_dims("bnds")  # DEBUG!!!
-
-          print(refdf[target_variable])  # DEBUG
-          print(histdf[target_variable])  # DEBUG
-
-          QDMdg.train(
-              ref=refdf[target_variable],
-              hist=histdf[target_variable]
-          )
-
-          print(QDMdg)  # DEBUG
-
-          QDMdg.ds.to_zarr(
-              store=os.environ.get("OUT"),
-              mode="w"
-          )
-        resources:
-          requests:
-            memory: 48Gi
-            cpu: "2000m"
-          limits:
-            memory: 48Gi
-            cpu: "8000m"
-        volumeMounts:
-          - name: out
-            mountPath: /mnt/out
-      volumes:
-        - name: out
-          emptyDir: { }
-      activeDeadlineSeconds: 172800
-      retryStrategy:
-        limit: 4
-        retryPolicy: "Always"
 
 
     - name: train-qdm
@@ -642,9 +550,9 @@ spec:
       volumes:
         - name: out
           emptyDir: { }
-      activeDeadlineSeconds: 86400
+      activeDeadlineSeconds: 3600
       retryStrategy:
-        limit: 2
+        limit: 4
         retryPolicy: "Always"
 
 
