@@ -1,4 +1,3 @@
-# Rolling QDM test case
 apiVersion: argoproj.io/v1alpha1
 kind: Workflow
 metadata:
@@ -373,7 +372,10 @@ spec:
           limits:
             memory: 32Gi
             cpu: "2000m"
-      activeDeadlineSeconds: 10800
+      activeDeadlineSeconds: 1800
+      retryStrategy:
+        limit: 1
+        retryPolicy: "Always"
 
 
     - name: biascorrect-qdm
@@ -548,9 +550,9 @@ spec:
       volumes:
         - name: out
           emptyDir: { }
-      activeDeadlineSeconds: 86400
+      activeDeadlineSeconds: 3600
       retryStrategy:
-        limit: 2
+        limit: 4
         retryPolicy: "Always"
 
 
