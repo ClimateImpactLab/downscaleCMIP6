@@ -387,7 +387,6 @@ spec:
           - name: firstyear
           - name: lastyear
           - name: kind
-            value: additive
       outputs:
         parameters:
           - name: out-zarr
