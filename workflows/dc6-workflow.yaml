@@ -10,7 +10,7 @@ spec:
   arguments:
     parameters:
       - name: reference-zarr
-        value: "az://scratch/clean-dev/ERA-5/tasmax.1995-2014.0p25.zarr"
+        value: "az://scratch/clean-dev/ERA-5/tasmax.1995-2015.F320.zarr"
       - name: gcm-historical-zarr
         value: "az://clean/ACCESS-ESM1-5/training/r1i1p1f1/tasmax.zarr"
       - name: gcm-training-zarr

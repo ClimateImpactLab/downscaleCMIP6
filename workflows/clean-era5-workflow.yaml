@@ -11,9 +11,9 @@ spec:
   arguments:
     parameters:
     - name: in-zarr
-      value: "clean-dev/ERA-5/F320/tasmax.1995-2015.F320.v2.zarr"
+      value: "clean-dev/ERA-5/F320/dtr.1995-2015.F320.v2.zarr"
     - name: out-zarr
-      value: "scratch/clean-dev/ERA-5/tasmax.1995-2015.F320.zarr"
+      value: "scratch/clean-dev/ERA-5/dtr.1995-2015.F320.zarr"
   serviceAccountName: workflows-default
   nodeSelector:
     dedicated: worker
