@@ -175,7 +175,6 @@ spec:
             ds = ds.rename({"precip": "pr"})
         ds = ds.rename({"latitude": "lat", "longitude": "lon"})
 
-        # ds = ds.rename({"latitude": "lat", "longitude": "lon", "tmax": "tasmax"})
         print(f"standardized tmax/latitude/longitude name to tasmax/lat/lon")
 
         # # Hack to get around issue with writing chunks to zarr in xarray v0.17.0
