@@ -169,6 +169,10 @@ spec:
 
         if "tmax" in ds.variables:
             ds = ds.rename({"tmax": "tasmax"})
+        if "tmin" in ds.variables:
+            ds = ds.rename({"tmin": "tasmin"})
+        if "precip" in ds.variables:
+            ds = ds.rename({"precip": "pr"})
         ds = ds.rename({"latitude": "lat", "longitude": "lon"})
 
         # ds = ds.rename({"latitude": "lat", "longitude": "lon", "tmax": "tasmax"})
