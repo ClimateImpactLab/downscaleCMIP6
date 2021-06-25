@@ -11,9 +11,9 @@ spec:
   arguments:
     parameters:
     - name: in-zarr
-      value: "clean-dev/ERA-5/tmax.1995-2014.0p25.zarr"
+      value: "clean-dev/ERA-5/F320/tasmax.1995-2015.F320.v2.zarr"
     - name: out-zarr
-      value: "scratch/clean-dev/ERA-5/tasmax.1995-2014.0p25.zarr"
+      value: "scratch/clean-dev/ERA-5/tasmax.1995-2015.F320.zarr"
   serviceAccountName: workflows-default
   nodeSelector:
     dedicated: worker
@@ -167,10 +167,14 @@ spec:
         )
         print(f"opening {in_store_path}")
 
-        ds = ds.rename({"tmax": "tasmax"})
+        if "tmax" in ds.variables:
+            ds = ds.rename({"tmax": "tasmax"})
+        if "tmin" in ds.variables:
+            ds = ds.rename({"tmin": "tasmin"})
+        if "precip" in ds.variables:
+            ds = ds.rename({"precip": "pr"})
         ds = ds.rename({"latitude": "lat", "longitude": "lon"})
 
-        # ds = ds.rename({"latitude": "lat", "longitude": "lon", "tmax": "tasmax"})
         print(f"standardized tmax/latitude/longitude name to tasmax/lat/lon")
 
         # # Hack to get around issue with writing chunks to zarr in xarray v0.17.0
