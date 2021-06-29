@@ -971,7 +971,7 @@ spec:
         parameters:
           - name: out-zarr
             valueFrom:
-              parameter: "{{ inputs.parameters.out-zarr }}"
+              parameter: "{{ tasks.prime-regrid-zarr.outputs.parameters.out-zarr }}"
       dag:
         tasks:
           - name: prime-regrid-zarr
