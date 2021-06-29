@@ -731,7 +731,7 @@ spec:
                   value: "lat lon"
           - name: apply-adjustmentfactors
             template: apply-adjustmentfactors
-            dependencies: [ rename-fineclimo-ds ]
+            dependencies: [ rename-fineclimo-ds, regrid-adjustmentfactors ]
             arguments:
               parameters:
                 - name: in-zarr
@@ -872,7 +872,7 @@ spec:
           print(f"read {climo_path}")
 
           sd = SpatialDisaggregator(var=train_variable)
-          out = model.predict(af, obs_climo_fine[train_variable], var_name=train_variable)
+          out = sd.predict(af, obs_climo_fine[train_variable], var_name=train_variable)
           print("spatial disaggregation adjustment factors applied")
 
           out.to_dataset(name=out_variable).to_zarr(out_path, mode="w")
