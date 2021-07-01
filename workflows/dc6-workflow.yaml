@@ -32,6 +32,8 @@ spec:
         value: "az://support/domain.0p25x0p25.zarr"
       - name: climatology-zarr
         value: "az://clean-dev/tasmax_1995_2015_climo_cleaned.zarr"
+      - name: correct-wetday-frequency
+        value: false  # true or false
   serviceAccountName: workflows-default
   # So workers go on larger, spot, worker node pool.
   nodeSelector:
@@ -78,12 +80,27 @@ spec:
                   value: 10
                 - name: lon-chunk
                   value: 10
-          - name: gcm-historical-regrid
-            template: regrid
+          - name: gcm-historical-wetdaycorrect
+            template: wdf-check
             arguments:
               parameters:
                 - name: in-zarr
                   value: "{{ workflow.parameters.gcm-historical-zarr }}"
+                - name: corrected-out-zarr
+                  value: "az://scratch/{{ workflow.name }}/gcm-historical-wetcorrect.zarr"
+                - name: uncorrected-out-zarr
+                  value: "{{ workflow.parameters.gcm-historical-zarr }}"
+                - name: process
+                  value: pre
+                - name: correct-bool
+                  value: "{{ workflow.parameters.correct-wetday-frequency }}"
+          - name: gcm-historical-regrid
+            dependencies: [ gcm-historical-wetdaycorrect ]
+            template: regrid
+            arguments:
+              parameters:
+                - name: in-zarr
+                  value: "{{ tasks.gcm-historical-wetdaycorrect.outputs.parameters.out-zarr }}"
                 - name: out-zarr
                   value: "az://scratch/{{ workflow.name }}/gcm-historical-regrid.zarr"
                 - name: regrid-method
@@ -105,12 +122,27 @@ spec:
                   value: 10
                 - name: lon-chunk
                   value: 10
-          - name: gcm-training-regrid
-            template: regrid
+          - name: gcm-training-wetdaycorrect
+            template: wdf-check
             arguments:
               parameters:
                 - name: in-zarr
                   value: "{{ workflow.parameters.gcm-training-zarr }}"
+                - name: corrected-out-zarr
+                  value: "az://scratch/{{ workflow.name }}/gcm-training-wetcorrect.zarr"
+                - name: uncorrected-out-zarr
+                  value: "{{ workflow.parameters.gcm-training-zarr }}"
+                - name: process
+                  value: pre
+                - name: correct-bool
+                  value: "{{ workflow.parameters.correct-wetday-frequency }}"
+          - name: gcm-training-regrid
+            dependencies: [ gcm-training-wetdaycorrect ]
+            template: regrid
+            arguments:
+              parameters:
+                - name: in-zarr
+                  value: "{{ tasks.gcm-training-wetdaycorrect.outputs.parameters.out-zarr }}"
                 - name: out-zarr
                   value: "az://scratch/{{ workflow.name }}/gcm-training-regrid.zarr"
                 - name: regrid-method
@@ -132,12 +164,27 @@ spec:
                   value: 10
                 - name: lon-chunk
                   value: 10
-          - name: gcm-future-regrid
-            template: regrid
+          - name: gcm-future-wetdaycorrect
+            template: wdf-check
             arguments:
               parameters:
                 - name: in-zarr
                   value: "{{ workflow.parameters.gcm-future-zarr }}"
+                - name: corrected-out-zarr
+                  value: "az://scratch/{{ workflow.name }}/gcm-future-wetcorrect.zarr"
+                - name: uncorrected-out-zarr
+                  value: "{{ workflow.parameters.gcm-future-zarr }}"
+                - name: process
+                  value: pre
+                - name: correct-bool
+                  value: "{{ workflow.parameters.correct-wetday-frequency }}"
+          - name: gcm-future-regrid
+            dependencies: [ gcm-future-wetdaycorrect ]
+            template: regrid
+            arguments:
+              parameters:
+                - name: in-zarr
+                  value: "{{ tasks.gcm-future-wetdaycorrect.outputs.parameters.out-zarr }}"
                 - name: out-zarr
                   value: "az://scratch/{{ workflow.name }}/gcm-future-regrid.zarr"
                 - name: regrid-method
@@ -274,6 +321,21 @@ spec:
                   value: "az://scratch/{{ workflow.name }}/downscaled.zarr"
                 - name: adjustmentfactors-out-zarr
                   value: "az://scratch/{{ workflow.name }}/downscale-adjustmentfactors.zarr"
+          - name: downscaled-wetdaycorrect
+            dependencies: [ downscale ]
+            template: wdf-check
+            arguments:
+              parameters:
+                - name: in-zarr
+                  value: "{{ tasks.downscale.outputs.parameters.out-zarr }}"
+                - name: corrected-out-zarr
+                  value: "az://scratch/{{ workflow.name }}/downscaled-wetcorrect.zarr"
+                - name: uncorrected-out-zarr
+                  value: "az://scratch/{{ workflow.name }}/downscaled-final?.zarr"
+                - name: process
+                  value: post
+                - name: correct-bool
+                  value: "{{ workflow.parameters.correct-wetday-frequency }}"
 
 
     - name: regrid
@@ -651,7 +713,7 @@ spec:
               parameter: "{{ inputs.parameters.out-zarr }}"
           - name: adjustmentfactors-out-zarr
             valueFrom:
-              parameter:  "{{ inputs.parameters.adjustmentfactors-out-zarr }}"
+              parameter: "{{ inputs.parameters.adjustmentfactors-out-zarr }}"
       dag:
         tasks:
           - name: rename-main-ds
@@ -964,7 +1026,7 @@ spec:
                 key: azurestoragekey
           - name: PYTHONUNBUFFERED
             value: "1"
-        command: [python]
+        command: [ python ]
         source: |
           import os
           import xarray as xr
@@ -990,6 +1052,80 @@ spec:
             memory: 24Gi
             cpu: "2000m"
       activeDeadlineSeconds: 1800
+      retryStrategy:
+        limit: 3
+        retryPolicy: "Always"
+
+
+    # Easier way to do conditional wet day frequency in Argo 3.1. This evaluates whether we do wet day frequency
+    # correction or not and outputs the location of the corrected or uncorrected file if appropriate.
+    # It's pretty clunky. Sorry. There has to be a better way to do this.
+    - name: wdf-check
+      inputs:
+        parameters:
+          - name: in-zarr
+          - name: corrected-out-zarr  # If wetday freq corrected, write this zarr store
+          - name: uncorrected-out-zarr  # If not wetday freq corrected, give this path.
+          - name: process  # "pre" or "post"
+          - name: correct-bool  # Do the correction? true or false
+      steps:
+        - - name: correct-wetday-frequency
+            template: correct-wetday-frequency
+            when: "{{ inputs.parameters.correct-bool }} == true"
+            arguments:
+              parameters:
+                - name: in-zarr
+                  value: "{{ inputs.parameters.in-zarr }}"
+                - name: out-zarr
+                  value: "{{ inputs.parameters.out-zarr }}"
+                - name: process  # pre or post
+                  value: "{{ inputs.parameters.process }}"
+      outputs:
+        parameters:
+          - name: out-zarr
+            valueFrom:
+              expression: "inputs.parameters['correct-bool'] == true ? steps.correct-wetday-frequency.outputs.parameters['out-zarr'] : inputs.parameters['uncorrected-out-zarr']"
+
+
+    - name: correct-wetday-frequency
+      inputs:
+        parameters:
+          - name: in-zarr
+          - name: out-zarr
+          - name: process  # pre or post
+      outputs:
+        parameters:
+          - name: out-zarr
+            value: "{{ inputs.parameters.out-zarr }}"
+      container:
+        image: downscalecmip6.azurecr.io/dodola:0.3.0
+        env:
+          - name: AZURE_STORAGE_ACCOUNT_NAME
+            valueFrom:
+              secretKeyRef:
+                name: workerstoragecreds-secret
+                key: azurestorageaccount
+          - name: AZURE_STORAGE_ACCOUNT_KEY
+            valueFrom:
+              secretKeyRef:
+                name: workerstoragecreds-secret
+                key: azurestoragekey
+        command: [ dodola ]
+        args:
+          - "correct-wetday-frequency"
+          - "{{ inputs.parameters.in-zarr }}"
+          - "--out"
+          - "{{ inputs.parameters.out-zarr }}"
+          - "--process"
+          - "{{ inputs.parameters.process }}"
+        resources:
+          requests:
+            memory: 8Gi
+            cpu: "1000m"
+          limits:
+            memory: 8Gi
+            cpu: "2000m"
+      activeDeadlineSeconds: 600
       retryStrategy:
         limit: 3
         retryPolicy: "Always"
