@@ -1,5 +1,5 @@
 kubernetes-external-secrets:
-  env:
+  envVarsFromSecret:
     AZURE_TENANT_ID:
       secretKeyRef: azure-credentials
       key: tenantid
