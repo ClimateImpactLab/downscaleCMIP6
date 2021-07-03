@@ -1,0 +1,27 @@
+apiVersion: traefik.containo.us/v1alpha1
+kind: IngressRoute
+metadata:
+  name: argo-ingressroute
+spec:
+  entryPoints:
+    - websecure
+  routes:
+    - kind: Rule
+      match: Host(`dc6.cildev.com`) && PathPrefix(`/argo`)
+      priority: 10
+      services:
+        - name: argo-server
+          port: 2746
+      middlewares:
+        - name: argo-stripprefix
+    - kind: Rule
+      match: Host(`dc6.cildev.com`) && PathPrefix(`/argo`) && Headers(`Content-Type`, `application/grpc`)
+      priority: 11
+      services:
+        - name: argo-server
+          port: 2746
+          scheme: h2c
+      middlewares:
+        - name: argo-stripprefix
+  tls:
+    secretName: dc6-cildev-org-dev

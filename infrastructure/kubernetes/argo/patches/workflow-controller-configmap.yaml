@@ -1,0 +1,37 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: workflow-controller-configmap
+data:
+
+  containerRuntimeExecutor: k8sapi
+
+  artifactRepository: |
+    archiveLogs: true
+    s3:
+      bucket: scratch
+      endpoint: minio:9000
+      insecure: true
+      accessKeySecret:
+        name: artifactrepocreds-secret
+        key: accesskey
+      secretKeySecret:
+        name: artifactrepocreds-secret
+        key: secretkey
+      keyFormat: "{{workflow.name}}/{{pod.name}}"
+
+  sso: |
+    issuer: https://login.microsoftonline.com/e26d3ccf-6270-4235-94ec-857966b171c1/v2.0
+    sessionExpiry: 10h
+    clientId:
+      name: client-id-secret
+      key: client-id-key
+    clientSecret:
+      name: client-secret-secret
+      key: client-secret-key
+    redirectUrl: https://dc6.cildev.org/argo/oauth2/callback
+    scopes:
+     - groups
+     - email
+    rbac:
+      enabled: false
