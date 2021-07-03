@@ -6,7 +6,8 @@ metadata:
     env: dev
 spec:
   dnsNames:
-    - "*.cildev.org"
+    - "dc6.cildev.org"
+    - "*.dc6.cildev.org"
   secretName: dc6-cildev-org-dev
   issuerRef:
     name: clouddns-dev
