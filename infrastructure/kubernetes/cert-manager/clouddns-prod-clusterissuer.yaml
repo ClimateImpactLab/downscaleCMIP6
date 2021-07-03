@@ -17,4 +17,4 @@ spec:
             serviceAccountSecretRef:
               name: clouddns-dns01-solver-svc-acct
               key: key.json
-            hostedZoneName: cildev.org
+            hostedZoneName: cildev
