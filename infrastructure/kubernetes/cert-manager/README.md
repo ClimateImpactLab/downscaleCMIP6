@@ -1,11 +1,13 @@
 # cert-manager
+
 This component handles TLS certificate issuing and renewing.
 
 This depends `kubernetes-external-secrets`.
 
 ## Pre-deployment
-Be sure the `cert-manager` Namespace exists on the cluster.
-Create the Namespace with
+
+Be sure the `cert-manager` Namespace exists on the cluster. Create the Namespace with
+
 ```bash
 kubectl create namespace "cert-manager"
 ```
@@ -13,6 +15,7 @@ kubectl create namespace "cert-manager"
 If you're using Google Cloud for DNS you need to create a service account with correct permissions to interact with DNS.
 
 For example
+
 ```bash
 PROJECT_ID="compute-impactlab"
 GCP_SA_NAME="azuredc6-dns01-solver"
