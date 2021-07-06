@@ -12,4 +12,3 @@ spec:
   issuerRef:
     name: clouddns-dev
     kind: ClusterIssuer
-    commonName: "*.dc6.cildev.org"
