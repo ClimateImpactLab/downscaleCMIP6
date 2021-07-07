@@ -1,7 +1,0 @@
-apiVersion: kustomize.config.k8s.io/v1beta1
-kind: Kustomization
-
-resources:
-  - argo-ingressroute.yaml
-  - argo-stripprefix-middleware.yaml
-  - dc6-cildev-org-dev-certificate.yaml
