@@ -8,7 +8,8 @@ metadata:
     ingress.kubernetes.io/rewrite-target: /$2
 spec:
   rules:
-    - http:
+    - host: dc6.westeurope.cloudapp.azure.com
+      http:
         paths:
           - backend:
               service:
