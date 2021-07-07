@@ -6,10 +6,10 @@ ingress-nginx:
     admissionWebhooks:
       patch:
         nodeSelector:
-          "beta\.kubernetes\.io/os": linux
+          "beta.kubernetes.io/os": linux
 #    service:
 #      loadBalancerIP:
 #      annotations."service\.beta\.kubernetes\.io/azure-dns-label-name"="DNS_LABEL"
   defaultBackend:
     nodeSelector:
-      "beta\.kubernetes\.io/os": linux
+      "beta.kubernetes.io/os": linux
