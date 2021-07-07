@@ -45,7 +45,7 @@ resource "azurerm_public_ip" "primary" {
 resource "azurerm_lb" "primary" {
   name                = "ProdLoadBalancer"
   location            = var.location
-  resource_group_name = azurerm_resource_group.rg.name
+  resource_group_name = module.aks_cluster.node_resource_group
   tags = {
     managed-by = "terraform"
   }

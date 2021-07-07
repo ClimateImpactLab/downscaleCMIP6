@@ -28,3 +28,7 @@ output "cluster_ca_certificate" {
 output "host" {
   value = azurerm_kubernetes_cluster.k8scluster.kube_admin_config.0.host
 }
+
+output "node_resource_group" {
+  value = azurerm_kubernetes_cluster.k8scluster.node_resource_group
+}
