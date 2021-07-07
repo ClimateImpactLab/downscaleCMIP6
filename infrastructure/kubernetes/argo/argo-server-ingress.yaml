@@ -11,9 +11,10 @@ spec:
     - host: dc6.westeurope.cloudapp.azure.com
       http:
         paths:
-          - backend:
+          - path: /argo(/|$)(.*)
+            pathType: Prefix
+            backend:
               service:
                 name: argo-server
                 port:
                   number: 2746
-            path: /argo(/|$)(.*)
