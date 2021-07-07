@@ -29,7 +29,7 @@ data:
     clientSecret:
       name: client-secret-secret
       key: client-secret-key
-    redirectUrl: https://dc6.cildev.org/argo/oauth2/callback
+    redirectUrl: https://dc6.westeurope.cloudapp.azure.com/argo/oauth2/callback
     scopes:
      - groups
      - email
