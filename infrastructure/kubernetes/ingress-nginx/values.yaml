@@ -2,14 +2,15 @@ ingress-nginx:
   controller:
     replicaCount: 2
     nodeSelector:
-      "beta.kubernetes.io/os": linux
+      beta.kubernetes.io/os: linux
     admissionWebhooks:
       patch:
         nodeSelector:
-          "beta.kubernetes.io/os": linux
-#    service:
-#      loadBalancerIP:
-#      annotations."service\.beta\.kubernetes\.io/azure-dns-label-name"="DNS_LABEL"
+          beta.kubernetes.io/os: linux
+    service:
+      loadBalancerIP: 104.40.140.153
+      annotations:
+        service.beta.kubernetes.io/azure-dns-label-name: dc6argodev
   defaultBackend:
     nodeSelector:
-      "beta.kubernetes.io/os": linux
+      beta.kubernetes.io/os: linux
