@@ -11,7 +11,7 @@ spec:
     - host: dc6.westeurope.cloudapp.azure.com
       http:
         paths:
-          - path: /argo(/|$)(.*)
+          - path: /(.*)
             pathType: Prefix
             backend:
               service:
