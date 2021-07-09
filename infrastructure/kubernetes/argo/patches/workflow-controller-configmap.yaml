@@ -30,8 +30,3 @@ data:
       name: client-secret-secret
       key: client-secret-key
     redirectUrl: https://dc6.westeurope.cloudapp.azure.com/oauth2/callback
-    scopes:
-     - groups
-     - email
-    rbac:
-      enabled: false
