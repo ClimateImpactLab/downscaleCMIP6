@@ -566,7 +566,7 @@ spec:
           - name: out-zarr
             value: "{{ inputs.parameters.out-zarr }}"
       script:
-        image: downscalecmip6.azurecr.io/dodola:dev
+        image: downscalecmip6.azurecr.io/dodola:0.4.0
         env:
           - name: TASMAX_ZARR
             value: "{{ inputs.parameters.tasmax-zarr }}"
