@@ -4,7 +4,7 @@ metadata:
   name: argo-server
   annotations:
     kubernetes.io/ingress.class: nginx
-    nginx.ingress.kubernetes.io/rewrite-target: /$1
+    nginx.ingress.kubernetes.io/ssl-passthrough: "true"
     nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
     cert-manager.io/cluster-issuer: letsencrypt-staging
 spec:
@@ -12,14 +12,7 @@ spec:
     - host: dc6.westeurope.cloudapp.azure.com
       http:
         paths:
-          - path: /argo
-            pathType: Prefix
-            backend:
-              service:
-                name: argo-server
-                port:
-                  number: 2746
-          - path: /argo/(.*)
+          - path: /
             pathType: Prefix
             backend:
               service:
