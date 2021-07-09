@@ -350,7 +350,7 @@ spec:
           - name: out-zarr
             value: "{{ inputs.parameters.out-zarr }}"
       container:
-        image: downscalecmip6.azurecr.io/dodola:0.3.0
+        image: downscalecmip6.azurecr.io/dodola:0.4.0
         env:
           - name: AZURE_STORAGE_ACCOUNT_NAME
             valueFrom:
@@ -366,6 +366,7 @@ spec:
         args:
           - "regrid"
           - "{{ inputs.parameters.in-zarr }}"
+          - "--astype=float32"
           - "--out"
           - "{{ inputs.parameters.out-zarr }}"
           - "--method"
