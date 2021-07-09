@@ -4,7 +4,16 @@
     --auth-mode=sso
 
 - op: add
+  path: /spec/template/spec/containers/0/args/-
+  value:
+    --insecure
+
+- op: add
   path: /spec/template/spec/containers/0/env
   value:
     - name: BASE_HREF
       value: "/argo/"
+
+- op: replace
+  path: /spec/template/spec/containers/0/readinessProbe/httpGet/scheme
+  value: HTTP
