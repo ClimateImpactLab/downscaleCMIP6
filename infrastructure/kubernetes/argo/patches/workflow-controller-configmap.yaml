@@ -29,4 +29,4 @@ data:
     clientSecret:
       name: client-secret-secret
       key: client-secret-key
-    redirectUrl: https://dc6.westeurope.cloudapp.azure.com/oauth2/callback
+    redirectUrl: https://dc6.westeurope.cloudapp.azure.com/argo/oauth2/callback

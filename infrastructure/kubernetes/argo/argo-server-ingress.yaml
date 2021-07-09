@@ -4,6 +4,8 @@ metadata:
   name: argo-server
   annotations:
     kubernetes.io/ingress.class: nginx
+    ingress.kubernetes.io/rewrite-target: /$2
+    nginx.ingress.kubernetes.io/use-regex: "true"
     nginx.ingress.kubernetes.io/ssl-passthrough: "true"
     nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
     nginx.ingress.kubernetes.io/backend-protocol: "HTTPS"
@@ -13,7 +15,7 @@ spec:
     - host: dc6.westeurope.cloudapp.azure.com
       http:
         paths:
-          - path: /
+          - path: /argo(/|$)(.*)
             pathType: Prefix
             backend:
               service:
