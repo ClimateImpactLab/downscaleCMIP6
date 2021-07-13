@@ -305,8 +305,7 @@ spec:
         - name: out-zarr
           value: "{{ inputs.parameters.out-zarr }}"
     container:
-      image: downscalecmip6.azurecr.io/dodola:dev
-      imagePullPolicy: Always
+      image: downscalecmip6.azurecr.io/dodola:0.4.0
       env:
         - name: AZURE_STORAGE_ACCOUNT_NAME
           valueFrom:
