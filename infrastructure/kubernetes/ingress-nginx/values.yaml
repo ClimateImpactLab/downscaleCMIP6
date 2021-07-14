@@ -1,0 +1,16 @@
+ingress-nginx:
+  controller:
+    replicaCount: 2
+    nodeSelector:
+      beta.kubernetes.io/os: linux
+    admissionWebhooks:
+      patch:
+        nodeSelector:
+          beta.kubernetes.io/os: linux
+    service:
+      loadBalancerIP: 20.76.193.129
+      annotations:
+        service.beta.kubernetes.io/azure-dns-label-name: dc6argo
+  defaultBackend:
+    nodeSelector:
+      beta.kubernetes.io/os: linux

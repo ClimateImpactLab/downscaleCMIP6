@@ -1,7 +1,7 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
+
 resources:
   - https://github.com/jetstack/cert-manager/releases/download/v1.4.0/cert-manager.yaml
-  - ./clouddns-dns01-solver-svc-acct-externalsecret.yaml
-  - ./clouddns-prod-clusterissuer.yaml
-  - ./clouddns-dev-clusterissuer.yaml
+  - letsencrypt-prod-clusterissuer.yaml
+  - letsencrypt-staging-clusterissuer.yaml

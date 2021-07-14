@@ -1,6 +1,6 @@
 apiVersion: v2
-name: traefik
-description: DC6 traefik deployment for various ingresses
+name: ingress-nginx
+description: Basic ingress-nginx deployment
 type: application
 
 # This is the chart version. This version number should be incremented each time you make changes
@@ -15,6 +15,6 @@ version: 0.0.1
 appVersion: "0.0.1"
 
 dependencies:
-  - name: traefik
-    version: "9.19.2"
-    repository: 'https://helm.traefik.io/traefik'
+  - name: ingress-nginx
+    version: "3.34.0"
+    repository: 'https://kubernetes.github.io/ingress-nginx'

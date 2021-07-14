@@ -1,11 +1,11 @@
-# traefik
-This component is the cluster ingress. We use this one because it can terminate TLS and both TCP and HTTP connections on the same port. Hooray for less work.
+# ingress-nginx
+This component is a basic cluster ingress.
 
 ## Pre-deployment
-Be sure the `traefik` Namespace exists on the cluster.
+Be sure the `ingress-nginx` Namespace exists on the cluster.
 Create the Namespace with
 ```bash
-kubectl create namespace "traefik"
+kubectl create namespace "ingress-nginx"
 ```
 
 ## Deploy (`argocd`)
@@ -13,12 +13,12 @@ kubectl create namespace "traefik"
 You can deploy this in a dev environment with `argocd` from the CLI with
 
 ```bash
-argocd app create traefik \
+argocd app create ingress-nginx \
     --repo https://github.com/ClimateImpactLab/downscaleCMIP6 \
-    --path infrastructure/kubernetes/traefik \
+    --path infrastructure/kubernetes/ingress-nginx \
     --values values.yaml \
     --dest-server https://kubernetes.default.svc \
-    --dest-namespace traefik \
+    --dest-namespace ingress-nginx \
     --sync-policy automated \
     --auto-prune \
     --port-forward-namespace argocd
