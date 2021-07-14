@@ -4,7 +4,7 @@ metadata:
   name: workflows-default-dask-rolebinding
 subjects:
   - kind: ServiceAccount
-    name: workflows-default
+    name: workflows-dask
 roleRef:
   kind: Role
   name: daskkubernetes
