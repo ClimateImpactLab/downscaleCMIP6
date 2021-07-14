@@ -8,7 +8,7 @@ ingress-nginx:
         nodeSelector:
           beta.kubernetes.io/os: linux
     service:
-      loadBalancerIP: 52.232.101.84
+      loadBalancerIP: 20.76.193.129
       annotations:
         service.beta.kubernetes.io/azure-dns-label-name: dc6
   defaultBackend:
