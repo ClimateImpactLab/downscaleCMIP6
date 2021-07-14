@@ -10,7 +10,7 @@ metadata:
     cert-manager.io/cluster-issuer: letsencrypt-prod
 spec:
   rules:
-    - host: dc6.westeurope.cloudapp.azure.com
+    - host: dc6argo.westeurope.cloudapp.azure.com
       http:
         paths:
           - path: /
@@ -22,5 +22,5 @@ spec:
                   number: 2746
   tls:
     - hosts:
-        - dc6.westeurope.cloudapp.azure.com
+        - dc6argo.westeurope.cloudapp.azure.com
       secretName: argo-secret
