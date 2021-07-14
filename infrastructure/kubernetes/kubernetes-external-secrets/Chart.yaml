@@ -16,5 +16,5 @@ appVersion: "0.0.1"
 
 dependencies:
   - name: kubernetes-external-secrets
-    version: "8.1.3"
+    version: "8.2.2"
     repository: 'https://external-secrets.github.io/kubernetes-external-secrets'
