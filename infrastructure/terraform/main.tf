@@ -32,26 +32,15 @@ resource "azurerm_resource_group" "rg" {
 }
 
 
-# Loadbalancer and IP address for services from the cluster.
+# Public IP address for services from the cluster.
 resource "azurerm_public_ip" "primary" {
-  name                = "PublicIPForLB"
+  name                = "aksPublicIPAddress"
   location            = var.location
-  resource_group_name = azurerm_resource_group.rg.name
+  sku                 = "Standard"
+  resource_group_name = module.aks_cluster.node_resource_group
   allocation_method   = "Static"
   tags = {
     managed-by = "terraform"
-  }
-}
-resource "azurerm_lb" "primary" {
-  name                = "ProdLoadBalancer"
-  location            = var.location
-  resource_group_name = azurerm_resource_group.rg.name
-  tags = {
-    managed-by = "terraform"
-  }
-  frontend_ip_configuration {
-    name                 = "PublicIPAddress"
-    public_ip_address_id = azurerm_public_ip.primary.id
   }
 }
 
