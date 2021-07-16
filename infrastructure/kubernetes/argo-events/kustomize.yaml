@@ -1,0 +1,7 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  # Basic cluster-wide argo-events install based on https://argoproj.github.io/argo-events/installation/#cluster-wide-installation
+  # Installs validating admission controller.
+  - github.com/argoproj/argo-events/manifests/cluster-install?ref=v1.4.0
+  - github.com/argoproj/argo-events/manifests/extensions/validating-webhook?ref=v1.4.0
