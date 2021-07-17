@@ -4,6 +4,32 @@ metadata:
   name: workflow-controller-configmap
 data:
 
+  workflowDefaults: |
+    metadata:
+      labels:
+        env: dev
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 8737  #; Work as non-root user.
+      activeDeadlineSeconds: 28800  #; Workflows must finish in 8 hours.
+      ttlStrategy:
+        secondsAfterCompletion: 1296000   #; Workflows delete after 15 days.
+      podGC:
+        strategy: OnPodCompletion
+      serviceAccountName: workflows-default
+      nodeSelector:
+        dedicated: worker
+      tolerations:
+      - key: dedicated
+        operator: "Equal"
+        value: "worker"
+        effect: "NoSchedule"
+      - key: kubernetes.azure.com/scalesetpriority
+        operator: "Equal"
+        value: "spot"
+        effect: "NoSchedule"
+
   containerRuntimeExecutor: emissary
 
   artifactRepository: |
