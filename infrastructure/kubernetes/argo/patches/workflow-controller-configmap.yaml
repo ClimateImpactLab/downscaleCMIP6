@@ -8,6 +8,7 @@ data:
     metadata:
       labels:
         env: dev
+        project: dc6
     spec:
       securityContext:
         runAsNonRoot: true
