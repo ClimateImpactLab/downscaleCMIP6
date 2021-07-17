@@ -15,9 +15,6 @@ spec:
       filter:
         afterStart: true
         labels:
-          - key: project
-            operation: ==
-            value: "dc6"
           - key: component
             operation: ==
             value: "downloadraw"
@@ -33,9 +30,6 @@ spec:
       filter:
         afterStart: true
         labels:
-          - key: project
-            operation: ==
-            value: "dc6"
           - key: component
             operation: ==
             value: "cleancmip6"
@@ -51,9 +45,6 @@ spec:
       filter:
         afterStart: true
         labels:
-          - key: project
-            operation: ==
-            value: "dc6"
           - key: component
             operation: ==
             value: "dc6"
