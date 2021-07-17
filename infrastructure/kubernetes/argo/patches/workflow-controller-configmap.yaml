@@ -31,6 +31,15 @@ data:
         effect: "NoSchedule"
 
   containerRuntimeExecutor: emissary
+  executor: |
+    imagePullPolicy: IfNotPresent
+    resources:
+      requests:
+        cpu: 100m
+        memory: 64Mi
+      limits:
+        cpu: 500m
+        memory: 1Gi
 
   artifactRepository: |
     archiveLogs: true
