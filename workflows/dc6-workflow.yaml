@@ -4,7 +4,6 @@ metadata:
   generateName: dc6-dev-
   labels:
     component: dc6
-    env: dev
 spec:
   arguments:
     parameters:
@@ -34,19 +33,6 @@ spec:
         value: "az://clean-dev/tasmax_1995_2015_climo_cleaned.zarr"
       - name: correct-wetday-frequency
         value: false  # true or false
-  serviceAccountName: workflows-default
-  # So workers go on larger, spot, worker node pool.
-  nodeSelector:
-    dedicated: worker
-  tolerations:
-    - key: dedicated
-      operator: "Equal"
-      value: "worker"
-      effect: "NoSchedule"
-    - key: kubernetes.azure.com/scalesetpriority
-      operator: "Equal"
-      value: "spot"
-      effect: "NoSchedule"
   entrypoint: main
   templates:
 
