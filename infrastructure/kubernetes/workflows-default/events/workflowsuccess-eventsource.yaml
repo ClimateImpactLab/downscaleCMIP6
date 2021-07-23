@@ -7,6 +7,7 @@ spec:
     serviceAccountName: argoworkflow-eventsource-sa
   resource:
     downloadraw-success:
+      namespace: argo
       group: argoproj.io
       version: v1alpha1
       resource: workflows
@@ -22,6 +23,7 @@ spec:
             operation: ==
             value: "true"
     cleancmip6-success:
+      namespace: argo
       group: argoproj.io
       version: v1alpha1
       resource: workflows
@@ -37,6 +39,7 @@ spec:
             operation: ==
             value: "true"
     dc6-success:
+      namespace: argo
       group: argoproj.io
       version: v1alpha1
       resource: workflows
