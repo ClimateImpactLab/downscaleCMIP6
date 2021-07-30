@@ -1,0 +1,180 @@
+# Downloads select, raw CMIP6 from GCP to co-located Azure storage for test case.
+apiVersion: argoproj.io/v1alpha1
+kind: WorkflowTemplate
+metadata:
+  name: downloadraw
+  labels:
+    component: downloadraw
+spec:
+  workflowMetadata:
+    labels:
+      component: downloadraw
+  entrypoint: main
+  arguments:
+    parameters:
+      - name: variableID
+        value: "tasmin"
+      - name: sourceID
+        value: "GFDL-ESM4"
+      - name: historical
+        value: |
+          [
+            { "activityID": "CMIP", "experimentID": "historical", "tableID": "day", "variableID": "tasmin", "sourceID": "GFDL-ESM4", "institutionID": "NOAA-GFDL", "memberID": "r1i1p1f1", "gridLabel": "gr1", "version": "20190726" }
+          ]
+      - name: ssps
+        value: |
+          [
+            { "activityID": "ScenarioMIP", "experimentID": "ssp370", "tableID": "day", "variableID": "tasmin", "sourceID": "GFDL-ESM4", "institutionID": "NOAA-GFDL", "memberID": "r1i1p1f1", "gridLabel": "gr1", "version": "20180701" },
+            { "activityID": "ScenarioMIP", "experimentID": "ssp245", "tableID": "day", "variableID": "tasmin", "sourceID": "GFDL-ESM4", "institutionID": "NOAA-GFDL", "memberID": "r1i1p1f1", "gridLabel": "gr1", "version": "20180701" },
+            { "activityID": "ScenarioMIP", "experimentID": "ssp126", "tableID": "day", "variableID": "tasmin", "sourceID": "GFDL-ESM4", "institutionID": "NOAA-GFDL", "memberID": "r1i1p1f1", "gridLabel": "gr1", "version": "20180701" }
+          ]
+  templates:
+
+    - name: main
+      inputs:
+        parameters:
+          - name: variableID
+          - name: sourceID
+          - name: historical
+          - name: ssps
+      dag:
+        tasks:
+          - name: download-historical
+            template: download-gcm
+            arguments:
+              parameters:
+                - name: experiment-id
+                  value: "{{item.experimentID}}"
+                - name: activity-id
+                  value: "{{item.activityID}}"
+                - name: table-id
+                  value: "{{item.tableID}}"
+                - name: variable-id
+                  value: "{{item.variableID}}"
+                - name: source-id
+                  value: "{{item.sourceID}}"
+                - name: institution-id
+                  value: "{{item.institutionID}}"
+                - name: member-id
+                  value: "{{item.memberID}}"
+                - name: grid-label
+                  value: "{{item.gridLabel}}"
+                - name: version
+                  value: "{{item.version}}"
+                - name: out-url
+                  value: "az://raw/{{inputs.parameters.sourceID}}/historical/{{inputs.parameters.variableID}}.zarr"
+            withParam: "{{ inputs.parameters.historical }}"
+          - name: download-ssps
+            template: download-gcm
+            arguments:
+              parameters:
+                - name: experiment-id
+                  value: "{{item.experimentID}}"
+                - name: activity-id
+                  value: "{{item.activityID}}"
+                - name: table-id
+                  value: "{{item.tableID}}"
+                - name: variable-id
+                  value: "{{item.variableID}}"
+                - name: source-id
+                  value: "{{item.sourceID}}"
+                - name: institution-id
+                  value: "{{item.institutionID}}"
+                - name: member-id
+                  value: "{{item.memberID}}"
+                - name: grid-label
+                  value: "{{item.gridLabel}}"
+                - name: version
+                  value: "{{item.version}}"
+                - name: out-url
+                  value: "az://raw/{{inputs.parameters.sourceID}}/{{item.experimentID}}/{{inputs.parameters.variableID}}.zarr"
+            withParam: "{{ inputs.parameters.ssps }}"
+
+
+    - name: download-gcm
+      inputs:
+        parameters:
+          - name: experiment-id
+          - name: activity-id
+          - name: table-id
+          - name: variable-id
+          - name: source-id
+          - name: institution-id
+          - name: member-id
+          - name: grid-label
+          - name: version
+          - name: out-url
+      outputs:
+        parameters:
+          - name: out-zarr
+            value: "{{ inputs.parameters.out-url }}"
+      script:
+        image: downscalecmip6.azurecr.io/dodola:dev
+        env:
+          - name: ACTIVITY_ID
+            value: "{{inputs.parameters.activity-id}}"
+          - name: EXPERIMENT_ID
+            value: "{{inputs.parameters.experiment-id}}"
+          - name: TABLE_ID
+            value: "{{inputs.parameters.table-id}}"
+          - name: VARIABLE_ID
+            value: "{{inputs.parameters.variable-id}}"
+          - name: SOURCE_ID
+            value: "{{inputs.parameters.source-id}}"
+          - name: INSTITUTION_ID
+            value: "{{inputs.parameters.institution-id}}"
+          - name: MEMBER_ID
+            value: "{{inputs.parameters.member-id}}"
+          - name: GRID_LABEL
+            value: "{{inputs.parameters.grid-label}}"
+          - name: INTAKE_VERSION
+            value: "{{inputs.parameters.version}}"
+          - name: OUTPATH
+            value: "{{inputs.parameters.out-url}}"
+          - name: AZURE_STORAGE_ACCOUNT_NAME
+            valueFrom:
+              secretKeyRef:
+                name: workerstoragecreds-secret
+                key: azurestorageaccount
+          - name: AZURE_STORAGE_ACCOUNT_KEY
+            valueFrom:
+              secretKeyRef:
+                name: workerstoragecreds-secret
+                key: azurestoragekey
+        command: [python]
+        source: |
+          import os
+          import intake
+          import dodola.repository
+
+          print("Searching catalog")
+          col = intake.open_esm_datastore("https://storage.googleapis.com/cmip6/pangeo-cmip6.json")
+          cat = col.search(
+              activity_id=os.environ.get("ACTIVITY_ID"),
+              experiment_id=os.environ.get("EXPERIMENT_ID"),
+              table_id=os.environ.get("TABLE_ID"),
+              variable_id=os.environ.get("VARIABLE_ID"),
+              source_id=os.environ.get("SOURCE_ID"),
+              member_id=os.environ.get("MEMBER_ID"),
+              grid_label=os.environ.get("GRID_LABEL"),
+              version=int(os.environ.get("INTAKE_VERSION")),
+          )
+          d = cat.to_dataset_dict(progressbar=False)
+          k = list(d.keys())
+          if len(k) != 1:
+              raise ValueError("catalog does not have one entry, reconsider input IDs so only one entry")
+          print(f"Found one catalog entry {k}")
+          print(d)  # DEBUG
+
+          dodola.repository.write(os.environ.get("OUTPATH"), d[k[0]])
+        resources:
+          requests:
+            memory: 14Gi
+            cpu: "200m"
+          limits:
+            memory: 14Gi
+            cpu: "1000m"
+      activeDeadlineSeconds: 1500
+      retryStrategy:
+        limit: 4
+        retryPolicy: "Always"

@@ -1,0 +1,381 @@
+apiVersion: argoproj.io/v1alpha1
+kind: WorkflowTemplate
+metadata:
+  name: clean-cmip6
+  labels:
+    component: clean-cmip6
+spec:
+  workflowMetadata:
+    labels:
+      component: clean-cmip6
+  entrypoint: clean-generic-variable
+  arguments:
+    parameters:
+      - name: variable-id
+        value: "{{workflows.parameters.variable-id}}"
+      - name: source-id
+        value: "{{workflows.parameters.source-id}}"
+      - name: ssps
+        value: "{{workflows.parameters.ssps}}"
+      - name: histslice-from-time
+        value: "1950"
+      - name: histslice-to-time
+        value: "2014"
+      - name: referenceslicehist-from-time
+        value: "1994-12-17"
+      - name: referenceslicehist-to-time
+        value: "2015-01-15"
+      - name: scratch
+        value: "az://scratch/{{ workflow.name }}/{{ inputs.parameters.variable-id }}/"
+  templates:
+
+    - name: clean-generic-variable
+      inputs:
+        parameters:
+          - name: variable-id
+          - name: source-id
+          - name: ssps
+          - name: histslice-from-time
+          - name: histslice-to-time
+          - name: referenceslicehist-from-time
+          - name: referenceslicehist-to-time
+          - name: scratch
+      dag:
+        tasks:
+          - name: standardize-historical-run
+            template: standardize-cmip6
+            arguments:
+              parameters:
+                - name: in-zarr
+                  value: "az://raw/{{inputs.parameters.source-id}}/historical/{{inputs.parameters.variable-id}}.zarr"
+          - name: slice-training
+            template: timeslicezarr
+            dependencies: [ standardize-historical-run ]
+            arguments:
+              parameters:
+                - name: in-zarr
+                  value: "{{ tasks.standardize-historical-run.outputs.parameters.out-zarr }}"
+                - name: out-zarr
+                  value: "az://clean/{{inputs.parameters.source-id}}/training/{{inputs.parameters.variable-id}}.zarr"
+                - name: from-time
+                  value: "{{ inputs.parameters.referenceslicehist-from-time }}"
+                - name: to-time
+                  value: "{{ inputs.parameters.referenceslicehist-to-time }}"
+          - name: slice-historical
+            template: timeslicezarr
+            dependencies: [ standardize-historical-run ]
+            arguments:
+              parameters:
+                - name: in-zarr
+                  value: "{{ tasks.standardize-historical-run.outputs.parameters.out-zarr }}"
+                - name: out-zarr
+                  value: "az://clean/{{inputs.parameters.source-id}}/historical/{{inputs.parameters.variable-id}}.zarr"
+                - name: from-time
+                  value: "{{ inputs.parameters.histslice-from-time }}"
+                - name: to-time
+                  value: "{{ inputs.parameters.histslice-to-time }}"
+          - name: ssp-loop
+            dependencies: [ slice-historical ]
+            template: concatenate-ssp
+            arguments:
+              parameters:
+                - name: variable-id
+                  value: "{{ inputs.parameters.variable-id }}"
+                - name: source-id
+                  value: "{{ inputs.parameters.source-id }}"
+                - name: historical-zarr
+                  value: "{{ tasks.slice-historical.outputs.parameters.out-zarr }}"
+                - name: scratch
+                  value: "{{ inputs.parameters.scratch }}{{ item.experimentID }}/"
+                - name: ssp
+                  value: "{{ item.experimentID }}"
+            withParam: "{{ inputs.parameters.ssps }}"
+
+
+    - name: concatenate-ssp
+      inputs:
+        parameters:
+          - name: variable-id
+          - name: source-id
+          - name: historical-zarr
+          - name: ssp
+          - name: scratch
+      dag:
+        tasks:
+          - name: standardize-future-run
+            template: standardize-cmip6
+            arguments:
+              parameters:
+                - name: in-zarr
+                  value: "az://raw/{{ inputs.parameters.source-id }}/{{ inputs.parameters.ssp }}/{{ inputs.parameters.variable-id }}.zarr"
+          - name: concat-histfuture
+            dependencies: [ standardize-future-run ]
+            template: timeconcatzarrs
+            arguments:
+              parameters:
+                - name: in1-zarr
+                  value: "{{ inputs.parameters.historical-zarr }}"
+                - name: in2-zarr
+                  value: "{{ tasks.standardize-future-run.outputs.parameters.out-zarr }}"
+                - name: out-zarr
+                  value: "az://clean/{{ inputs.parameters.source-id }}/{{ inputs.parameters.ssp }}/{{ inputs.parameters.variable-id }}.zarr"
+
+
+    - name: standardize-cmip6
+      inputs:
+        parameters:
+          - name: in-zarr
+          - name: out-zarr
+            value: "az://scratch/{{ workflow.name }}/{{ pod.name }}/out.zarr"
+      outputs:
+        parameters:
+          - name: out-zarr
+            value: "{{ inputs.parameters.out-zarr }}"
+      container:
+        image: downscalecmip6.azurecr.io/dodola:0.4.0
+        env:
+          - name: AZURE_STORAGE_ACCOUNT_NAME
+            valueFrom:
+              secretKeyRef:
+                name: workerstoragecreds-secret
+                key: azurestorageaccount
+          - name: AZURE_STORAGE_ACCOUNT_KEY
+            valueFrom:
+              secretKeyRef:
+                name: workerstoragecreds-secret
+                key: azurestoragekey
+        command: [ "dodola" ]
+        args:
+          - "cleancmip6"
+          - "{{ inputs.parameters.in-zarr }}"
+          - "{{ inputs.parameters.out-zarr }}"
+        resources:
+          requests:
+            memory: 16Gi
+            cpu: "2000m"
+          limits:
+            memory: 16Gi
+            cpu: "2000m"
+      activeDeadlineSeconds: 3600
+      retryStrategy:
+        limit: 2
+        retryPolicy: "Always"
+
+
+    - name: timeslicezarr
+      inputs:
+        parameters:
+          - name: in-zarr
+          - name: from-time
+          - name: to-time
+          - name: out-zarr
+            value: "az://scratch/{{ workflow.name }}/{{ pod.name }}/out.zarr"
+      outputs:
+        parameters:
+          - name: out-zarr
+            value: "{{ inputs.parameters.out-zarr }}"
+      script:
+        image: downscalecmip6.azurecr.io/dodola:0.3.0
+        env:
+          - name: IN_ZARR
+            value: "{{ inputs.parameters.in-zarr }}"
+          - name: FROM_TIME
+            value: "{{ inputs.parameters.from-time }}"
+          - name: TO_TIME
+            value: "{{ inputs.parameters.to-time }}"
+          - name: OUT_ZARR
+            value: "{{ inputs.parameters.out-zarr }}"
+          - name: AZURE_STORAGE_ACCOUNT_NAME
+            valueFrom:
+              secretKeyRef:
+                name: workerstoragecreds-secret
+                key: azurestorageaccount
+          - name: AZURE_STORAGE_ACCOUNT_KEY
+            valueFrom:
+              secretKeyRef:
+                name: workerstoragecreds-secret
+                key: azurestoragekey
+        command: [ python ]
+        source: |
+          import os
+          import xarray as xr
+
+          in_zarr = os.environ.get("IN_ZARR")
+          from_time = os.environ.get("FROM_TIME")
+          to_time = os.environ.get("TO_TIME")
+          out_zarr = os.environ.get("OUT_ZARR")
+
+          ds = xr.open_dataset(
+              in_zarr,
+              chunks={},
+              engine="zarr"
+          )
+          print(f"Read {in_zarr}")  # DEBUG
+
+          print(f"slicing {from_time} : {to_time}")
+          ds = ds.sel(time=slice(from_time, to_time))
+
+          ds = ds.chunk({"time": 365})
+
+          # Hack to get around issue with writing chunks to zarr in xarray v0.17.0
+          for v in ds.data_vars.keys():
+              del ds[v].encoding["chunks"]
+
+          ds.to_zarr(
+              out_zarr,
+              mode="w"
+          )
+          print(f"Written to {out_zarr}")  # DEBUG
+        resources:
+          requests:
+            memory: 8Gi
+            cpu: "1000m"
+          limits:
+            memory: 8Gi
+            cpu: "2000m"
+      activeDeadlineSeconds: 3600
+      retryStrategy:
+        limit: 2
+        retryPolicy: "Always"
+
+
+    - name: timeconcatzarrs
+      inputs:
+        parameters:
+          - name: in1-zarr
+          - name: in2-zarr
+          - name: out-zarr
+            value: "az://scratch/{{ workflow.name }}/{{ pod.name }}/out.zarr"
+      outputs:
+        parameters:
+          - name: out-zarr
+            value: "{{ inputs.parameters.out-zarr }}"
+      script:
+        image: downscalecmip6.azurecr.io/dodola:0.3.0
+        env:
+          - name: IN1_ZARR
+            value: "{{ inputs.parameters.in1-zarr }}"
+          - name: IN2_ZARR
+            value: "{{ inputs.parameters.in2-zarr }}"
+          - name: OUT_ZARR
+            value: "{{ inputs.parameters.out-zarr }}"
+          - name: AZURE_STORAGE_ACCOUNT_NAME
+            valueFrom:
+              secretKeyRef:
+                name: workerstoragecreds-secret
+                key: azurestorageaccount
+          - name: AZURE_STORAGE_ACCOUNT_KEY
+            valueFrom:
+              secretKeyRef:
+                name: workerstoragecreds-secret
+                key: azurestoragekey
+        command: [ python ]
+        source: |
+          import os
+          import xarray as xr
+
+          print(os.environ.get("IN1_ZARR"))  # DEBUG
+          print(os.environ.get("IN2_ZARR"))  # DEBUG
+
+          ds1 = xr.open_zarr(os.environ.get("IN1_ZARR"))
+          ds2 = xr.open_zarr(os.environ.get("IN2_ZARR"))
+          # # Seems a bit more reliable this week if we pre-load:
+          # ds1.load()
+          # ds2.load()
+
+          print("ds1:")  # DEBUG
+          print(ds1)  # DEBUG
+          print("ds2:")  # DEBUG
+          print(ds2)  # DEBUG
+
+          ds = xr.concat([ds1, ds2], dim="time")
+          ds = ds.chunk({"time": 365, "lat": -1, "lon": -1, "bnds": 2})
+
+          # Hack to get around issue with writing chunks to zarr in xarray v0.17.0
+          for v in ds.data_vars.keys():
+              del ds[v].encoding["chunks"]
+          # TODO: For whatever reason these where not removed in the above loop, even if iter over ds.keys()...
+          del ds["lat_bnds"].encoding["chunks"]
+          del ds["lon_bnds"].encoding["chunks"]
+
+          print(os.environ.get("OUT_ZARR"))  # DEBUG
+          ds.to_zarr(
+              os.environ.get("OUT_ZARR"),
+              mode="w",
+          )
+          print("Output written")  # DEBUG
+        resources:
+          requests:
+            memory: 48Gi
+            cpu: "1000m"
+          limits:
+            memory: 48Gi
+            cpu: "2000m"
+      activeDeadlineSeconds: 3600
+      retryStrategy:
+        limit: 2
+        retryPolicy: "Always"
+
+
+    - name: compute-dtr
+      inputs:
+        parameters:
+          - name: tasmax-zarr
+          - name: tasmin-zarr
+          - name: out-zarr
+            value: "az://scratch/{{ workflow.name }}/{{ pod.name }}/out.zarr"
+      outputs:
+        parameters:
+          - name: out-zarr
+            value: "{{ inputs.parameters.out-zarr }}"
+      script:
+        image: downscalecmip6.azurecr.io/dodola:0.4.0
+        env:
+          - name: TASMAX_ZARR
+            value: "{{ inputs.parameters.tasmax-zarr }}"
+          - name: TASMIN_ZARR
+            value: "{{ inputs.parameters.tasmin-zarr }}"
+          - name: OUT_ZARR
+            value: "{{ inputs.parameters.out-zarr }}"
+          - name: AZURE_STORAGE_ACCOUNT_NAME
+            valueFrom:
+              secretKeyRef:
+                name: workerstoragecreds-secret
+                key: azurestorageaccount
+          - name: AZURE_STORAGE_ACCOUNT_KEY
+            valueFrom:
+              secretKeyRef:
+                name: workerstoragecreds-secret
+                key: azurestoragekey
+        command: [ python ]
+        source: |
+          import os
+          import xarray as xr
+
+          tasmin_zarr = os.environ.get("TASMIN_ZARR")
+          tasmax_zarr = os.environ.get("TASMAX_ZARR")
+          out_zarr = os.environ.get("OUT_ZARR")
+
+          tasmin = xr.open_zarr(tasmin_zarr)["tasmin"]
+          print(f"Read {tasmin_zarr}")  # DEBUG
+          tasmax = xr.open_zarr(tasmax_zarr)["tasmax"]
+          print(f"Read {tasmax_zarr}")  # DEBUG
+
+          dtr = tasmax - tasmin
+
+          dtr.to_dataset(name="dtr").to_zarr(
+              out_zarr,
+              mode="w"
+          )
+          print(f"Written to {out_zarr}")  # DEBUG
+        resources:
+          requests:
+            memory: 16Gi
+            cpu: "1000m"
+          limits:
+            memory: 16Gi
+            cpu: "2000m"
+      activeDeadlineSeconds: 3600
+      retryStrategy:
+        limit: 2
+        retryPolicy: "Always"
