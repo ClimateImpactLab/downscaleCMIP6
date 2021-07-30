@@ -238,7 +238,7 @@ spec:
             arguments:
               parameters:
                 - name: in-zarr
-                  value: "{{ tasks.gcm-future-wetdaycorrect.outputs.parameters.out-zarr }}"
+                  value: "{{ tasks.gcm-future-cyclic-rechunk.outputs.parameters.out-zarr }}"
                 - name: regrid-method
                   value: "bilinear"
                 - name: domain-file
@@ -446,7 +446,7 @@ spec:
           - name: out-zarr
             value: "{{ inputs.parameters.out-zarr }}"
       container:
-        image: downscalecmip6.azurecr.io/dodola:0.4.2
+        image: downscalecmip6.azurecr.io/dodola:0.4.1
         env:
           - name: AZURE_STORAGE_ACCOUNT_NAME
             valueFrom:
