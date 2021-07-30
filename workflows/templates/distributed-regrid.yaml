@@ -1,0 +1,266 @@
+apiVersion: argoproj.io/v1alpha1
+kind: WorkflowTemplate
+metadata:
+  name: distributed-regrid
+spec:
+  entrypoint: main
+  arguments:
+    parameters:
+      - name: in-zarr
+        value: "az://in-path.zarr"
+      - name: out-zarr
+        value: "az://out-path.zarr"
+      - name: regrid-method
+        value: "bilinear"
+      - name: domain-file
+        value: "az://support/domain.0p25x0p25.zarr"
+      - name: firstyear
+        value: 2015
+      - name: lastyear
+        value: 2100
+      - name: nontime-variables
+        value: "lat lon"
+  templates:
+
+    - name: main
+      inputs:
+        parameters:
+          - name: in-zarr
+          - name: out-zarr
+          - name: regrid-method
+          - name: domain-file
+          - name: firstyear
+          - name: lastyear
+          # Space delimited list of all variables/coords in "in-zarr" without need for time dimension.
+          - name: nontime-variables
+            value: "lat lon"
+      outputs:
+        parameters:
+          - name: out-zarr
+            valueFrom:
+              parameter: "{{ inputs.parameters.out-zarr }}"
+      dag:
+        tasks:
+          - name: prime-regrid-zarr
+            template: prime-regrid-zarr
+            arguments:
+              parameters:
+                - name: in-zarr
+                  value: "{{ inputs.parameters.in-zarr }}"
+                - name: out-zarr
+                  value: "{{ inputs.parameters.out-zarr }}"
+                - name: regrid-method
+                  value: "{{ inputs.parameters.regrid-method }}"
+                - name: domain-file
+                  value: "{{ inputs.parameters.domain-file }}"
+                - name: nontime-variables
+                  value: "{{ inputs.parameters.nontime-variables }}"
+                - name: firstyear
+                  value: "{{ inputs.parameters.firstyear }}"
+                - name: lastyear
+                  value: "{{ inputs.parameters.lastyear }}"
+          - name: regrid-year-to-primedzarr
+            template: regrid-select-year-to-primedzarr
+            dependencies: [ prime-regrid-zarr ]
+            arguments:
+              parameters:
+                - name: in-zarr
+                  value: "{{ inputs.parameters.in-zarr }}"
+                - name: out-zarr
+                  value: "{{ inputs.parameters.out-zarr }}"
+                - name: regrid-method
+                  value: "{{ inputs.parameters.regrid-method }}"
+                - name: domain-file
+                  value: "{{ inputs.parameters.domain-file }}"
+                - name: nontime-variables
+                  value: "{{ inputs.parameters.nontime-variables }}"
+                - name: select-year
+                  value: "{{ item }}"
+            withSequence:
+              start: "{{ inputs.parameters.firstyear }}"
+              end: "{{ inputs.parameters.lastyear }}"
+
+    # Sets up output zarr file and metadata without writing time-related data to the zarr store.
+    - name: prime-regrid-zarr
+      inputs:
+        parameters:
+          - name: in-zarr
+          - name: out-zarr
+          - name: firstyear
+          - name: lastyear
+          - name: regrid-method
+          - name: domain-file
+          - name: nontime-variables
+            value: "lat lon"
+      outputs:
+        parameters:
+          - name: out-zarr
+            value: "{{ inputs.parameters.out-zarr }}"
+      script:
+        image: downscalecmip6.azurecr.io/dodola:dev
+        env:
+          - name: IN_ZARR
+            value: "{{ inputs.parameters.in-zarr }}"
+          - name: OUT_ZARR
+            value: "{{ inputs.parameters.out-zarr }}"
+          - name: FIRSTYEAR
+            value: "{{ inputs.parameters.firstyear }}"
+          - name: LASTYEAR
+            value: "{{ inputs.parameters.lastyear }}"
+          - name: REGRID_METHOD
+            value: "{{ inputs.parameters.regrid-method }}"
+          - name: DOMAIN_FILE
+            value: "{{ inputs.parameters.domain-file }}"
+          - name: NONTIME_VARIABLES
+            value: "{{ inputs.parameters.nontime-variables }}"
+          - name: AZURE_STORAGE_ACCOUNT_NAME
+            valueFrom:
+              secretKeyRef:
+                name: workerstoragecreds-secret
+                key: azurestorageaccount
+          - name: AZURE_STORAGE_ACCOUNT_KEY
+            valueFrom:
+              secretKeyRef:
+                name: workerstoragecreds-secret
+                key: azurestoragekey
+        command: [ python ]
+        source: |
+          import os
+          import dodola.repository
+          from dodola.core import xesmf_regrid
+          import xarray as xr
+
+          in_zarr = os.environ["IN_ZARR"]
+          out_zarr = os.environ["OUT_ZARR"]
+          firstyear = int(os.environ["FIRSTYEAR"])
+          lastyear = int(os.environ["LASTYEAR"])
+          regrid_method = os.environ["REGRID_METHOD"]
+          domain_file = os.environ["DOMAIN_FILE"]
+          # Space-delim string of variables and coordinates that do use "time" dimension.
+          non_time = os.environ["NONTIME_VARIABLES"].strip().rsplit()
+
+          # Setup regrid calculation for a time range.
+          ds_in = dodola.repository.read(in_zarr).sel(time=slice(str(firstyear), str(lastyear + 1)))
+          domain_fl = dodola.repository.read(domain_file)
+          ds_out = xesmf_regrid(ds_in, domain_fl, regrid_method)
+
+          print(ds_out)  # DEBUG
+
+          # Output metadata to Zarr store.
+          ds_out.to_zarr(
+              out_zarr,
+              mode="w",
+              compute=False,
+              consolidated=True
+          )
+
+          print(ds_out[non_time])  # DEBUG
+
+          # Append variables that do not depend on "time"
+          if non_time:
+              ds_out[non_time].to_zarr(
+                  out_zarr,
+                  mode="a",
+                  compute=True,
+                  consolidated=True
+              )
+        resources:
+          requests:
+            memory: 4Gi
+            cpu: "1000m"
+          limits:
+            memory: 4Gi
+            cpu: "1000m"
+      activeDeadlineSeconds: 900
+      retryStrategy:
+        limit: 2
+        retryPolicy: "Always"
+
+
+    # Write select year of time-indexed data to a pre-primed zarr file.
+    - name: regrid-select-year-to-primedzarr
+      inputs:
+        parameters:
+          - name: in-zarr
+          - name: out-zarr
+          - name: select-year
+          - name: regrid-method
+          - name: domain-file
+          - name: nontime-variables
+            value: "lat lon"
+      outputs:
+        parameters:
+          - name: out-zarr
+            value: "{{ inputs.parameters.out-zarr }}"
+      script:
+        image: downscalecmip6.azurecr.io/dodola:dev
+        env:
+          - name: IN_ZARR
+            value: "{{ inputs.parameters.in-zarr }}"
+          - name: OUT_ZARR
+            value: "{{ inputs.parameters.out-zarr }}"
+          - name: SELTIME
+            value: "{{ inputs.parameters.select-year }}"
+          - name: REGRID_METHOD
+            value: "{{ inputs.parameters.regrid-method }}"
+          - name: DOMAIN_FILE
+            value: "{{ inputs.parameters.domain-file }}"
+          - name: NONTIME_VARIABLES
+            value: "{{ inputs.parameters.nontime-variables }}"
+          - name: AZURE_STORAGE_ACCOUNT_NAME
+            valueFrom:
+              secretKeyRef:
+                name: workerstoragecreds-secret
+                key: azurestorageaccount
+          - name: AZURE_STORAGE_ACCOUNT_KEY
+            valueFrom:
+              secretKeyRef:
+                name: workerstoragecreds-secret
+                key: azurestoragekey
+        command: [ python ]
+        source: |
+          import os
+          import dodola.repository
+          from dodola.core import xesmf_regrid
+          import xarray as xr
+          import numpy as np
+
+          in_zarr = os.environ["IN_ZARR"]
+          out_zarr = os.environ["OUT_ZARR"]
+          sel_time = os.environ["SELTIME"]
+          regrid_method = os.environ["REGRID_METHOD"]
+          domain_file = os.environ["DOMAIN_FILE"]
+          # Space-delim string of variables and coordinates that do use "time" dimension.
+          # If data has something like `lat_b` or `height`, and you care about getting it in output,
+          # those names need to be in this variable!
+          # TODO: We could make this dynamically find non-time dependent variables/coord variables.
+          non_time = os.environ["NONTIME_VARIABLES"].strip().rsplit()
+
+          # Setup regrid calculation for a time range.
+          # Clip out target year from input data. This is a mess because we need the matches AND their index along
+          # time, given the full dataset so that we can write back to the correct region in the output zarr store.
+          ds_in = dodola.repository.read(in_zarr)
+
+          ds_in = ds_in.sel(time=sel_time)
+          domain_fl = dodola.repository.read(domain_file)
+          ds_out = xesmf_regrid(ds_in, domain_fl, regrid_method)
+
+          with xr.open_zarr(out_zarr, consolidated=True) as out_store:
+              target_idx_slice = out_store["time"].to_index().get_loc(sel_time)
+
+          if non_time:
+              ds_out = ds_out.drop_vars(non_time)
+
+          # Write to isolated region of Zarr store so can be done by independent processes.
+          ds_out.to_zarr(out_zarr, region={"time": target_idx_slice})
+        resources:
+          requests:
+            memory: 8Gi
+            cpu: "1000m"
+          limits:
+            memory: 8Gi
+            cpu: "1000m"
+      activeDeadlineSeconds: 900
+      retryStrategy:
+        limit: 2
+        retryPolicy: "Always"

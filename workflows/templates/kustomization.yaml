@@ -4,4 +4,5 @@ resources:
   - clean-cmip6.yaml
   - clean-era5.yaml
   - dc6.yaml
+  - distributed-regrid.yaml
   - downloadraw.yaml
