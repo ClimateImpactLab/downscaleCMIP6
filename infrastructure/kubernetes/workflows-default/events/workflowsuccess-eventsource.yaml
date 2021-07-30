@@ -34,7 +34,7 @@ spec:
         labels:
           - key: component
             operation: ==
-            value: "cleancmip6"
+            value: "clean-cmip6"
           - key: workflows.argoproj.io/completed
             operation: ==
             value: "true"
