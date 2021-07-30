@@ -39,14 +39,32 @@ spec:
     - name: main
       dag:
         tasks:
-          - name: reference-regrid
-            template: regrid
+          - name: reference-add-cyclic
+            template: add-cyclic
             arguments:
               parameters:
                 - name: in-zarr
                   value: "{{ workflow.parameters.reference-zarr }}"
-                - name: out-zarr
-                  value: "az://scratch/{{ workflow.name }}/reference-regrid.zarr"
+          - name: reference-cyclic-rechunk
+            dependencies: [ reference-add-cyclic ]
+            template: rechunk
+            arguments:
+              parameters:
+                - name: in-zarr
+                  value: "{{ tasks.reference-add-cyclic.outputs.parameters.out-zarr }}"
+                - name: time-chunk
+                  value: "365"
+                - name: lat-chunk
+                  value: -1
+                - name: lon-chunk
+                  value: -1
+          - name: reference-regrid
+            dependencies: [ reference-cyclic-rechunk ]
+            template: regrid
+            arguments:
+              parameters:
+                - name: in-zarr
+                  value: "{{ tasks.reference-cyclic-rechunk.outputs.parameters.out-zarr }}"
                 - name: regrid-method
                   value: "bilinear"
                 - name: domain-file
@@ -58,8 +76,6 @@ spec:
               parameters:
                 - name: in-zarr
                   value: "{{ tasks.reference-regrid.outputs.parameters.out-zarr }}"
-                - name: out-zarr
-                  value: "az://scratch/{{ workflow.name }}/reference-rechunk.zarr"
                 - name: time-chunk
                   value: "-1"
                 - name: lat-chunk
@@ -80,15 +96,33 @@ spec:
                   value: pre
                 - name: correct-bool
                   value: "{{ workflow.parameters.correct-wetday-frequency }}"
-          - name: gcm-historical-regrid
+          - name: gcm-historical-add-cyclic
             dependencies: [ gcm-historical-wetdaycorrect ]
-            template: regrid
+            template: add-cyclic
             arguments:
               parameters:
                 - name: in-zarr
                   value: "{{ tasks.gcm-historical-wetdaycorrect.outputs.parameters.out-zarr }}"
-                - name: out-zarr
-                  value: "az://scratch/{{ workflow.name }}/gcm-historical-regrid.zarr"
+          - name: gcm-historical-cyclic-rechunk
+            dependencies: [ gcm-historical-add-cyclic ]
+            template: rechunk
+            arguments:
+              parameters:
+                - name: in-zarr
+                  value: "{{ tasks.gcm-historical-add-cyclic.outputs.parameters.out-zarr }}"
+                - name: time-chunk
+                  value: "365"
+                - name: lat-chunk
+                  value: -1
+                - name: lon-chunk
+                  value: -1
+          - name: gcm-historical-regrid
+            dependencies: [ gcm-historical-cyclic-rechunk ]
+            template: regrid
+            arguments:
+              parameters:
+                - name: in-zarr
+                  value: "{{ tasks.gcm-historical-cyclic-rechunk.outputs.parameters.out-zarr }}"
                 - name: regrid-method
                   value: "bilinear"
                 - name: domain-file
@@ -100,8 +134,6 @@ spec:
               parameters:
                 - name: in-zarr
                   value: "{{ tasks.gcm-historical-regrid.outputs.parameters.out-zarr }}"
-                - name: out-zarr
-                  value: "az://scratch/{{ workflow.name }}/gcm-historical-rechunk.zarr"
                 - name: time-chunk
                   value: "-1"
                 - name: lat-chunk
@@ -122,15 +154,33 @@ spec:
                   value: pre
                 - name: correct-bool
                   value: "{{ workflow.parameters.correct-wetday-frequency }}"
-          - name: gcm-training-regrid
+          - name: gcm-training-add-cyclic
             dependencies: [ gcm-training-wetdaycorrect ]
-            template: regrid
+            template: add-cyclic
             arguments:
               parameters:
                 - name: in-zarr
                   value: "{{ tasks.gcm-training-wetdaycorrect.outputs.parameters.out-zarr }}"
-                - name: out-zarr
-                  value: "az://scratch/{{ workflow.name }}/gcm-training-regrid.zarr"
+          - name: gcm-training-cyclic-rechunk
+            dependencies: [ gcm-training-add-cyclic ]
+            template: rechunk
+            arguments:
+              parameters:
+                - name: in-zarr
+                  value: "{{ tasks.gcm-training-add-cyclic.outputs.parameters.out-zarr }}"
+                - name: time-chunk
+                  value: "365"
+                - name: lat-chunk
+                  value: -1
+                - name: lon-chunk
+                  value: -1
+          - name: gcm-training-regrid
+            dependencies: [ gcm-training-cyclic-rechunk ]
+            template: regrid
+            arguments:
+              parameters:
+                - name: in-zarr
+                  value: "{{ tasks.gcm-training-cyclic-rechunk.outputs.parameters.out-zarr }}"
                 - name: regrid-method
                   value: "bilinear"
                 - name: domain-file
@@ -142,8 +192,6 @@ spec:
               parameters:
                 - name: in-zarr
                   value: "{{ tasks.gcm-training-regrid.outputs.parameters.out-zarr }}"
-                - name: out-zarr
-                  value: "az://scratch/{{ workflow.name }}/gcm-training-rechunk.zarr"
                 - name: time-chunk
                   value: "-1"
                 - name: lat-chunk
@@ -164,15 +212,33 @@ spec:
                   value: pre
                 - name: correct-bool
                   value: "{{ workflow.parameters.correct-wetday-frequency }}"
-          - name: gcm-future-regrid
+          - name: gcm-future-add-cyclic
             dependencies: [ gcm-future-wetdaycorrect ]
+            template: add-cyclic
+            arguments:
+              parameters:
+                - name: in-zarr
+                  value: "{{ tasks.gcm-future-wetdaycorrect.outputs.parameters.out-zarr }}"
+          - name: gcm-future-cyclic-rechunk
+            dependencies: [ gcm-future-add-cyclic ]
+            template: rechunk
+            arguments:
+              parameters:
+                - name: in-zarr
+                  value: "{{ tasks.gcm-future-add-cyclic.outputs.parameters.out-zarr }}"
+                - name: time-chunk
+                  value: "365"
+                - name: lat-chunk
+                  value: -1
+                - name: lon-chunk
+                  value: -1
+          - name: gcm-future-regrid
+            dependencies: [ gcm-future-cyclic-rechunk ]
             template: regrid
             arguments:
               parameters:
                 - name: in-zarr
                   value: "{{ tasks.gcm-future-wetdaycorrect.outputs.parameters.out-zarr }}"
-                - name: out-zarr
-                  value: "az://scratch/{{ workflow.name }}/gcm-future-regrid.zarr"
                 - name: regrid-method
                   value: "bilinear"
                 - name: domain-file
@@ -184,8 +250,6 @@ spec:
               parameters:
                 - name: in-zarr
                   value: "{{ tasks.gcm-future-regrid.outputs.parameters.out-zarr }}"
-                - name: out-zarr
-                  value: "az://scratch/{{ workflow.name }}/gcm-future-rechunk.zarr"
                 - name: time-chunk
                   value: "-1"
                 - name: lat-chunk
@@ -220,8 +284,6 @@ spec:
               parameters:
                 - name: in-zarr
                   value: "{{ tasks.biascorrect.outputs.parameters.out-zarr }}"
-                - name: out-zarr
-                  value: "az://scratch/{{ workflow.name }}/biascorrected-rechunked.zarr"
                 - name: time-chunk
                   value: 100
                 - name: lat-chunk
@@ -234,8 +296,6 @@ spec:
               parameters:
                 - name: in-zarr
                   value: "{{ workflow.parameters.climatology-zarr }}"
-                - name: out-zarr
-                  value: "az://scratch/{{ workflow.name }}/coarse-climatology-rechunk.zarr"
                 - name: time-chunk
                   value: -1
                 - name: lat-chunk
@@ -251,8 +311,6 @@ spec:
               parameters:
                 - name: in-zarr
                   value: "{{ tasks.coarse-climatology-rechunk.outputs.parameters.out-zarr }}"
-                - name: out-zarr
-                  value: "az://scratch/{{ workflow.name }}/coarse-climatology-regrid.zarr"
                 - name: regrid-method
                   value: "bilinear"
                 - name: domain-file
@@ -263,8 +321,6 @@ spec:
               parameters:
                 - name: in-zarr
                   value: "{{ workflow.parameters.climatology-zarr }}"
-                - name: out-zarr
-                  value: "az://scratch/{{ workflow.name }}/fine-climatology-rechunk.zarr"
                 - name: time-chunk
                   value: 100
                 - name: lat-chunk
@@ -280,8 +336,6 @@ spec:
               parameters:
                 - name: in-zarr
                   value: "{{ tasks.fine-climatology-rechunk.outputs.parameters.out-zarr }}"
-                - name: out-zarr
-                  value: "az://scratch/{{ workflow.name }}/fine-climatology-regrid.zarr"
                 - name: regrid-method
                   value: "bilinear"
                 - name: domain-file
@@ -329,6 +383,7 @@ spec:
         parameters:
           - name: in-zarr
           - name: out-zarr
+            value: "az://scratch/{{ workflow.name }}/{{ pod.name }}/out.zarr"
           - name: regrid-method
           - name: domain-file
       outputs:
@@ -377,6 +432,7 @@ spec:
         parameters:
           - name: in-zarr
           - name: out-zarr
+            value: "az://scratch/{{ workflow.name }}/{{ pod.name }}/out.zarr"
           - name: time-chunk
             value: 365
           - name: lat-chunk
@@ -390,7 +446,7 @@ spec:
           - name: out-zarr
             value: "{{ inputs.parameters.out-zarr }}"
       container:
-        image: downscalecmip6.azurecr.io/dodola:0.2.0
+        image: downscalecmip6.azurecr.io/dodola:0.4.2
         env:
           - name: AZURE_STORAGE_ACCOUNT_NAME
             valueFrom:
@@ -455,8 +511,6 @@ spec:
                   value: "{{ inputs.parameters.ref-zarr }}"
                 - name: hist-zarr
                   value: "{{ inputs.parameters.hist-zarr }}"
-                - name: out-zarr
-                  value: "az://scratch/{{workflow.name}}/qdm-model.zarr"
                 - name: kind
                   value: "{{ inputs.parameters.kind }}"
           - name: qdm-adjust-year
@@ -492,7 +546,8 @@ spec:
           - name: variable
           - name: ref-zarr  # Needs to be az://... format
           - name: hist-zarr  # Needs to be az://... format
-          - name: out-zarr  # Needs to be az://... format
+          - name: out-zarr
+            value: "az://scratch/{{ workflow.name }}/{{ pod.name }}/out.zarr"
           - name: kind
       outputs:
         parameters:
@@ -609,7 +664,8 @@ spec:
       inputs:
         parameters:
           - name: in-dir  # DIR with container containing all the nc files. No az://!
-          - name: out-zarr  # Needs to have "az://..." format
+          - name: out-zarr
+            value: "az://scratch/{{ workflow.name }}/{{ pod.name }}/out.zarr"
       outputs:
         parameters:
           - name: out-zarr
@@ -709,8 +765,6 @@ spec:
               parameters:
                 - name: in-zarr
                   value: "{{ inputs.parameters.in-zarr }}"
-                - name: out-zarr
-                  value: "az://scratch/{{workflow.name}}/downscaling/renamed.zarr"
                 - name: rename-from
                   value: "{{ inputs.parameters.out-variable }}"
                 - name: rename-to
@@ -721,8 +775,6 @@ spec:
               parameters:
                 - name: in-zarr
                   value: "{{ inputs.parameters.yclimocoarse-zarr }}"
-                - name: out-zarr
-                  value: "az://scratch/{{workflow.name}}/downscaling/coarseclimo-renamed.zarr"
                 - name: rename-from
                   value: "{{ inputs.parameters.out-variable }}"
                 - name: rename-to
@@ -733,8 +785,6 @@ spec:
               parameters:
                 - name: in-zarr
                   value: "{{ inputs.parameters.yclimofine-zarr }}"
-                - name: out-zarr
-                  value: "az://scratch/{{workflow.name}}/downscaling/fineclimo-renamed.zarr"
                 - name: rename-from
                   value: "{{ inputs.parameters.out-variable }}"
                 - name: rename-to
@@ -750,8 +800,6 @@ spec:
                   value: "{{ inputs.parameters.train-variable }}"
                 - name: yclimocoarse-zarr
                   value: "{{ tasks.rename-coarseclimo-ds.outputs.parameters.out-zarr }}"
-                - name: out-zarr
-                  value: "az://scratch/{{ workflow.name }}/adjustmentfactors-original.zarr"
           - name: regrid-adjustmentfactors
             template: regrid
             dependencies: [ fit-adjustmentfactors ]
@@ -759,8 +807,6 @@ spec:
               parameters:
                 - name: in-zarr
                   value: "{{ tasks.fit-adjustmentfactors.outputs.parameters.out-zarr }}"
-                - name: out-zarr
-                  value: "{{ inputs.parameters.adjustmentfactors-out-zarr }}"
                 - name: regrid-method
                   value: "bilinear"
                 - name: domain-file
@@ -789,6 +835,7 @@ spec:
           - name: yclimocoarse-zarr
           - name: train-variable
           - name: out-zarr
+            value: "az://scratch/{{ workflow.name }}/{{ pod.name }}/out.zarr"
       outputs:
         parameters:
           - name: out-zarr
@@ -860,6 +907,7 @@ spec:
         parameters:
           - name: in-zarr
           - name: out-zarr
+            value: "az://scratch/{{ workflow.name }}/{{ pod.name }}/out.zarr"
           - name: time-chunk
             value: 365
           - name: lat-chunk
@@ -917,6 +965,7 @@ spec:
           - name: train-variable
           - name: out-variable
           - name: out-zarr
+            value: "az://scratch/{{ workflow.name }}/{{ pod.name }}/out.zarr"
       outputs:
         parameters:
           - name: out-zarr
@@ -984,6 +1033,7 @@ spec:
           - name: rename-from
           - name: rename-to
           - name: out-zarr
+            value: "az://scratch/{{ workflow.name }}/{{ pod.name }}/out.zarr"
       outputs:
         parameters:
           - name: out-zarr
@@ -1079,6 +1129,7 @@ spec:
         parameters:
           - name: in-zarr
           - name: out-zarr
+            value: "az://scratch/{{ workflow.name }}/{{ pod.name }}/out.zarr"
           - name: process  # pre or post
       outputs:
         parameters:
@@ -1115,6 +1166,55 @@ spec:
       activeDeadlineSeconds: 600
       retryStrategy:
         limit: 3
+        retryPolicy: "Always"
+
+
+    - name: add-cyclic
+      inputs:
+        parameters:
+          - name: in-zarr
+          - name: out-zarr
+            value: "az://scratch/{{ workflow.name }}/{{ pod.name }}/out.zarr"
+      outputs:
+        parameters:
+          - name: out-zarr
+            value: "{{ inputs.parameters.out-zarr }}"
+      script:
+        image: downscalecmip6.azurecr.io/dodola:dev
+        env:
+          - name: IN
+            value: "{{ inputs.parameters.in-zarr }}"
+          - name: OUT
+            value: "{{ inputs.parameters.out-zarr }}"
+          - name: AZURE_STORAGE_ACCOUNT_NAME
+            valueFrom:
+              secretKeyRef:
+                name: workerstoragecreds-secret
+                key: azurestorageaccount
+          - name: AZURE_STORAGE_ACCOUNT_KEY
+            valueFrom:
+              secretKeyRef:
+                name: workerstoragecreds-secret
+                key: azurestoragekey
+        command: [ python ]
+        source: |
+          import os
+          import dodola.repository as storage
+          from dodola.core import _add_cyclic
+
+          ds = storage.read(os.environ.get("IN"))
+          ds = _add_cyclic(ds, dim="lon")
+          storage.write(os.environ.get("OUT"), ds)
+        resources:
+          requests:
+            memory: 32Gi
+            cpu: "1000m"
+          limits:
+            memory: 32Gi
+            cpu: "4000m"
+      activeDeadlineSeconds: 480
+      retryStrategy:
+        limit: 4
         retryPolicy: "Always"
 
 
