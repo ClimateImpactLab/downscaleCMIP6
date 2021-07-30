@@ -1,0 +1,687 @@
+apiVersion: argoproj.io/v1alpha1
+kind: WorkflowTemplate
+metadata:
+  name: dc6
+  labels:
+    component: dc6
+spec:
+  workflowMetadata:
+    labels:
+      component: dc6
+  entrypoint: biascorrect-variable
+  arguments:
+    parameters:
+      - name: variable-id
+        value: "tasmin"
+      - name: source-id
+        value: "GFDL-ESM4"
+      - name: ssps
+        value: |
+          [
+            { "activityID": "ScenarioMIP", "experimentID": "ssp370", "tableID": "day", "variableID": "tasmin", "sourceID": "GFDL-ESM4", "institutionID": "NOAA-GFDL", "memberID": "r1i1p1f1", "gridLabel": "gr1", "version": "20180701" },
+            { "activityID": "ScenarioMIP", "experimentID": "ssp245", "tableID": "day", "variableID": "tasmin", "sourceID": "GFDL-ESM4", "institutionID": "NOAA-GFDL", "memberID": "r1i1p1f1", "gridLabel": "gr1", "version": "20180701" },
+            { "activityID": "ScenarioMIP", "experimentID": "ssp126", "tableID": "day", "variableID": "tasmin", "sourceID": "GFDL-ESM4", "institutionID": "NOAA-GFDL", "memberID": "r1i1p1f1", "gridLabel": "gr1", "version": "20180701" }
+          ]
+      - name: regrid-method
+        value: "bilinear"
+      - name: correct-wetday-frequency  # "true" or "false" STRING!
+        value: "false"
+      - name: domainfile1x1
+        value: "az://support/domain.1x1.zarr"
+      - name: qdm-kind #additive or multiplicative
+        value: "additive"
+  templates:
+
+    - name: biascorrect-variable
+      inputs:
+        parameters:
+          - name: variable-id
+          - name: source-id
+          - name: ssps
+          - name: regrid-method
+          - name: correct-wetday-frequency
+          - name: domainfile1x1
+          - name: qdm-kind
+      outputs:
+        parameters:
+          - name: out-zarr-qdm-model
+            valueFrom:
+              parameter: "{{ tasks.move-chunks-to-space.outputs.parameters.out-zarr }}"
+          - name: out-zarr-historical
+            valueFrom:
+              parameter: "{{ tasks.move-chunks-to-space.outputs.parameters.out-zarr }}"
+          - name: out-zarr-ssps
+            valueFrom:
+              parameter: "{{ tasks.move-chunks-to-space.outputs.parameters.out-zarr }}"
+      dag:
+        tasks:
+          - name: preprocess-historical
+            template: preprocess
+            arguments:
+              parameters:
+                - name: in-zarr
+                  value: "az://clean/{{ inputs.parameters.source-id }}/historical/{{ inputs.parameters.variable-id }}.zarr"
+                - name: regrid-method
+                  value: "{{ inputs.parameters.regrid-method }}"
+                - name: domain-file
+                  value: "{{ inputs.parameters.domainfile1x1 }}"
+                - name: correct-wetday-frequency
+                  value: "{{ inputs.parameters.correct-wetday-frequency }}"
+          - name: preprocess-reference
+            template: preprocess
+            arguments:
+              parameters:
+                - name: in-zarr
+                  value: "az://scratch/clean-dev/ERA-5/{{ inputs.parameters.variable-id }}.1995-2015.F320.zarr"
+                - name: regrid-method
+                  value: "{{ inputs.parameters.regrid-method }}"
+                - name: domain-file
+                  value: "{{ inputs.parameters.domainfile1x1 }}"
+                # Reference is never WDF corrected, as this in preprocessing with ERA-5
+                - name: correct-wetday-frequency
+                  value: "false"
+          - name: preprocess-training
+            template: preprocess
+            arguments:
+              parameters:
+                - name: in-zarr
+                  value: "az://clean/{{ inputs.parameters.source-id }}/training/{{ inputs.parameters.variable-id }}.zarr"
+                - name: regrid-method
+                  value: "{{ inputs.parameters.regrid-method }}"
+                - name: domain-file
+                  value: "{{ inputs.parameters.domainfile1x1 }}"
+                - name: correct-wetday-frequency
+                  value: "{{ inputs.parameters.correct-wetday-frequency }}"
+          - name: preprocess-ssps
+            template: preprocess
+            arguments:
+              parameters:
+                - name: in-zarr
+                  value: "az://clean/{{ inputs.parameters.source-id }}/{{ item.experimentID }}/{{ inputs.parameters.variable-id }}.zarr"
+                - name: regrid-method
+                  value: "{{ inputs.parameters.regrid-method }}"
+                - name: domain-file
+                  value: "{{ inputs.parameters.domainfile1x1 }}"
+                - name: correct-wetday-frequency
+                  value: "{{ inputs.parameters.correct-wetday-frequency }}"
+            withParam: "{{ inputs.parameters.ssps }}"
+          - name: train-qdm
+            dependencies: [ preprocess-reference, preprocess-training ]
+            template: train-qdm
+            arguments:
+              parameters:
+                - name: variable
+                  value: "{{ inputs.parameters.variable-id }}"
+                - name: ref-zarr
+                  value: "{{ tasks.preprocess-reference.outputs.parameters.out-zarr }}"
+                - name: hist-zarr
+                  value: "{{ tasks.preprocess-training.outputs.parameters.out-zarr }}"
+                - name: kind
+                  value: "{{ inputs.parameters.qdm-kind }}"
+          - name: biascorrect-historical
+            dependencies: [ train-qdm, preprocess-historical ]
+            template: apply-qdm
+            arguments:
+              parameters:
+                - name: variable
+                  value: "{{ inputs.parameters.variable-id }}"
+                - name: future-zarr
+                  value: "{{ tasks.preprocess-historical.outputs.parameters.out-zarr }}"
+                - name: qdm-model
+                  value: "{{ tasks.train-qdm.outputs.parameters.out-zarr }}"
+                - name: firstyear
+                  value: 1950
+                - name: lastyear
+                  value: 2014
+                - name: out-key
+                  value: "historical-{{ inputs.parameters.variable-id }}-qdm-years"
+          - name: biascorrect-ssps
+            dependencies: [ train-qdm, preprocess-ssps]
+            template: apply-qdm
+            arguments:
+              parameters:
+                - name: variable
+                  value: "{{ inputs.parameters.variable-id }}"
+                - name: future-zarr
+                  value: "{{ item.out-zarr }}"
+                - name: qdm-model
+                  value: "{{ tasks.train-qdm.outputs.parameters.out-zarr }}"
+                - name: firstyear
+                  value: 2015
+                - name: lastyear
+                  value: 2100
+                - name: out-key
+                  value: "{{=sprig.randAlphaNum(7)}}-{{ inputs.parameters.variable-id }}-qdm-years"
+            withParam: "{{ tasks.preprocess-ssps.outputs.parameters }}"
+
+
+    - name: preprocess
+      inputs:
+        parameters:
+          - name: in-zarr
+          - name: regrid-method
+          - name: domain-file
+          - name: correct-wetday-frequency  # "true" or "false" STRING!
+      outputs:
+        parameters:
+          - name: out-zarr
+            valueFrom:
+              parameter: "{{ tasks.move-chunks-to-space.outputs.parameters.out-zarr }}"
+      dag:
+        tasks:
+          - name: check-wetday-frequency
+            template: wdf-check
+            arguments:
+              parameters:
+                - name: in-zarr
+                  value: "{{ inputs.parameters.in-zarr }}"
+                - name: uncorrected-out-zarr
+                  value: "{{ inputs.parameters.in-zarr }}"
+                - name: process
+                  value: "pre"
+                - name: correct-bool
+                  value: "{{ inputs.parameters.correct-wetday-frequency }}"
+          - name: add-cyclic
+            dependencies: [ check-wetday-frequency ]
+            template: add-cyclic
+            arguments:
+              parameters:
+                - name: in-zarr
+                  value: "{{ tasks.check-wetday-frequency.outputs.parameters.out-zarr }}"
+          - name: move-chunks-to-time
+            dependencies: [ add-cyclic ]
+            template: rechunk
+            arguments:
+              parameters:
+                - name: in-zarr
+                  value: "{{ tasks.add-cyclic.outputs.parameters.out-zarr }}"
+                - name: time-chunk
+                  value: "365"
+                - name: lat-chunk
+                  value: -1
+                - name: lon-chunk
+                  value: -1
+          - name: regrid
+            dependencies: [ move-chunks-to-time ]
+            template: regrid
+            arguments:
+              parameters:
+                - name: in-zarr
+                  value: "{{ tasks.move-chunks-to-time.outputs.parameters.out-zarr }}"
+                - name: regrid-method
+                  value: "{{ inputs.parameters.regrid-method }}"
+                - name: domain-file
+                  value: "{{ inputs.parameters.domain-file }}"
+          - name: move-chunks-to-space
+            dependencies: [ regrid ]
+            template: rechunk
+            arguments:
+              parameters:
+                - name: in-zarr
+                  value: "{{ tasks.regrid.outputs.parameters.out-zarr }}"
+                - name: time-chunk
+                  value: "-1"
+                - name: lat-chunk
+                  value: 10
+                - name: lon-chunk
+                  value: 10
+
+
+    - name: regrid
+      inputs:
+        parameters:
+          - name: in-zarr
+          - name: out-zarr
+            value: "az://scratch/{{ workflow.name }}/{{ pod.name }}/out.zarr"
+          - name: regrid-method
+          - name: domain-file
+      outputs:
+        parameters:
+          - name: out-zarr
+            value: "{{ inputs.parameters.out-zarr }}"
+      container:
+        image: downscalecmip6.azurecr.io/dodola:0.4.1
+        env:
+          - name: AZURE_STORAGE_ACCOUNT_NAME
+            valueFrom:
+              secretKeyRef:
+                name: workerstoragecreds-secret
+                key: azurestorageaccount
+          - name: AZURE_STORAGE_ACCOUNT_KEY
+            valueFrom:
+              secretKeyRef:
+                name: workerstoragecreds-secret
+                key: azurestoragekey
+        command: [ "dodola" ]
+        args:
+          - "regrid"
+          - "{{ inputs.parameters.in-zarr }}"
+          - "--astype=float32"
+          - "--out"
+          - "{{ inputs.parameters.out-zarr }}"
+          - "--method"
+          - "{{ inputs.parameters.regrid-method }}"
+          - "--domain-file"
+          - "{{ inputs.parameters.domain-file }}"
+        resources:
+          requests:
+            memory: 48Gi
+            cpu: "1000m"
+          limits:
+            memory: 48Gi
+            cpu: "2000m"
+      activeDeadlineSeconds: 3600
+      retryStrategy:
+        limit: 2
+        retryPolicy: "Always"
+
+
+    - name: rechunk
+      inputs:
+        parameters:
+          - name: in-zarr
+          - name: out-zarr
+            value: "az://scratch/{{ workflow.name }}/{{ pod.name }}/out.zarr"
+          - name: time-chunk
+            value: 365
+          - name: lat-chunk
+            value: 10
+          - name: lon-chunk
+            value: 10
+          - name: time-dim-name
+            value: time
+      outputs:
+        parameters:
+          - name: out-zarr
+            value: "{{ inputs.parameters.out-zarr }}"
+      container:
+        image: downscalecmip6.azurecr.io/dodola:dev
+        env:
+          - name: AZURE_STORAGE_ACCOUNT_NAME
+            valueFrom:
+              secretKeyRef:
+                name: workerstoragecreds-secret
+                key: azurestorageaccount
+          - name: AZURE_STORAGE_ACCOUNT_KEY
+            valueFrom:
+              secretKeyRef:
+                name: workerstoragecreds-secret
+                key: azurestoragekey
+        command: [ dodola ]
+        args:
+          - "rechunk"
+          - "{{ inputs.parameters.in-zarr }}"
+          - "--out"
+          - "{{ inputs.parameters.out-zarr }}"
+          - "--chunk"
+          - "{{ inputs.parameters.time-dim-name }}={{ inputs.parameters.time-chunk }}"
+          - "--chunk"
+          - "lat={{ inputs.parameters.lat-chunk }}"
+          - "--chunk"
+          - "lon={{ inputs.parameters.lon-chunk }}"
+        resources:
+          requests:
+            memory: 32Gi
+            cpu: "1000m"
+          limits:
+            memory: 32Gi
+            cpu: "2000m"
+      activeDeadlineSeconds: 1800
+      retryStrategy:
+        limit: 1
+        retryPolicy: "Always"
+
+
+    - name: apply-qdm
+      inputs:
+        parameters:
+          - name: variable
+          - name: future-zarr
+          - name: qdm-model
+          - name: firstyear
+          - name: lastyear
+          - name: out-key
+            value: "qdm-years"
+      outputs:
+        parameters:
+          - name: out-zarr
+            valueFrom:
+              parameter: "{{ tasks.netcdfs2zarr.outputs.parameters.out-zarr }}"
+      dag:
+        tasks:
+          - name: qdm-adjust-year
+            template: qdm-adjust-year
+            arguments:
+              parameters:
+                - name: future-zarr
+                  value: "{{ inputs.parameters.future-zarr }}"
+                - name: variable
+                  value: "{{ inputs.parameters.variable }}"
+                - name: year
+                  value: "{{item}}"
+                - name: qdm-model-zarr
+                  value: "{{ inputs.parameters.qdm-model }}"
+                - name: out-key
+                  value: "{{ workflow.name }}/{{ inputs.parameters.out-key }}/{{ inputs.parameters.year }}.nc"
+            withSequence:
+              start: "{{ inputs.parameters.firstyear }}"
+              end: "{{ inputs.parameters.lastyear }}"
+          - name: netcdfs2zarr
+            dependencies: [ qdm-adjust-year ]
+            template: netcdfs2zarr
+            arguments:
+              parameters:
+                - name: in-dir
+                  value: "scratch/{{workflow.name}}/qdm-years/"
+                - name: out-zarr
+                  value: "{{ inputs.parameters.out-zarr }}"
+
+
+    - name: train-qdm
+      inputs:
+        parameters:
+          - name: variable
+          - name: ref-zarr
+          - name: hist-zarr
+          - name: out-zarr
+            value: "az://scratch/{{ workflow.name }}/{{ pod.name }}/out.zarr"
+          - name: kind
+      outputs:
+        parameters:
+          - name: out-zarr
+            value: "{{ inputs.parameters.out-zarr }}"
+      container:
+        image: downscalecmip6.azurecr.io/dodola:0.4.1
+        env:
+          - name: AZURE_STORAGE_ACCOUNT_NAME
+            valueFrom:
+              secretKeyRef:
+                name: workerstoragecreds-secret
+                key: azurestorageaccount
+          - name: AZURE_STORAGE_ACCOUNT_KEY
+            valueFrom:
+              secretKeyRef:
+                name: workerstoragecreds-secret
+                key: azurestoragekey
+        command: [ "dodola" ]
+        args:
+          - "train-qdm"
+          - "--historical"
+          - "{{ inputs.parameters.hist-zarr }}"
+          - "--reference"
+          - "{{ inputs.parameters.ref-zarr }}"
+          - "--out"
+          - "{{ inputs.parameters.out-zarr }}"
+          - "--variable"
+          - "{{ inputs.parameters.variable }}"
+          - "--kind"
+          - "{{ inputs.parameters.kind }}"
+        resources:
+          requests:
+            memory: 48Gi
+            cpu: "2000m"
+          limits:
+            memory: 48Gi
+            cpu: "2500m"
+        volumeMounts:
+          - name: out
+            mountPath: /mnt/out
+      volumes:
+        - name: out
+          emptyDir: { }
+      activeDeadlineSeconds: 172800
+      retryStrategy:
+        limit: 4
+        retryPolicy: "Always"
+
+
+    - name: qdm-adjust-year
+      inputs:
+        parameters:
+          - name: future-zarr
+          - name: year
+          - name: qdm-model-zarr
+          - name: variable
+          - name: out-key
+            value: "{{ workflow.name }}/qdm-years/{{ inputs.parameters.year }}.nc"
+      outputs:
+        artifacts:
+          - name: adjusted
+            path: "/mnt/out/{{ inputs.parameters.year }}.nc"
+            archive:
+              none: { }
+            s3:
+              key: "{{ inputs.parameters.out-key }}"
+      container:
+        image: downscalecmip6.azurecr.io/dodola:0.4.1
+        env:
+          - name: AZURE_STORAGE_ACCOUNT_NAME
+            valueFrom:
+              secretKeyRef:
+                name: workerstoragecreds-secret
+                key: azurestorageaccount
+          - name: AZURE_STORAGE_ACCOUNT_KEY
+            valueFrom:
+              secretKeyRef:
+                name: workerstoragecreds-secret
+                key: azurestoragekey
+        command: [ dodola ]
+        args:
+          - "apply-qdm"
+          - "--simulation"
+          - "{{ inputs.parameters.future-zarr }}"
+          - "--out"
+          - "/mnt/out/{{ inputs.parameters.year }}.nc"
+          - "--year"
+          - "{{ inputs.parameters.year }}"
+          - "--variable"
+          - "{{ inputs.parameters.variable }}"
+          - "--qdm"
+          - "{{ inputs.parameters.qdm-model-zarr }}"
+        resources:
+          requests:
+            memory: 42Gi
+            cpu: "2000m"
+          limits:
+            memory: 42Gi
+            cpu: "2000m"
+        # emptyDir volume as k8sapi can't output to base image layer:
+        volumeMounts:
+          - name: out
+            mountPath: /mnt/out
+      volumes:
+        - name: out
+          emptyDir: { }
+      activeDeadlineSeconds: 3600
+      retryStrategy:
+        limit: 4
+        retryPolicy: "Always"
+
+
+    - name: netcdfs2zarr
+      inputs:
+        parameters:
+          - name: in-dir  # DIR with container containing all the nc files. No az://!
+          - name: out-zarr
+            value: "az://scratch/{{ workflow.name }}/{{ pod.name }}/out.zarr"
+      outputs:
+        parameters:
+          - name: out-zarr
+            value: "{{ inputs.parameters.out-zarr }}"
+      script:
+        image: downscalecmip6.azurecr.io/dodola:0.4.1
+        env:
+          - name: IN
+            value: "{{ inputs.parameters.in-dir }}"
+          - name: OUT
+            value: "{{ inputs.parameters.out-zarr }}"
+          - name: AZURE_STORAGE_ACCOUNT_NAME
+            valueFrom:
+              secretKeyRef:
+                name: workerstoragecreds-secret
+                key: azurestorageaccount
+          - name: AZURE_STORAGE_ACCOUNT_KEY
+            valueFrom:
+              secretKeyRef:
+                name: workerstoragecreds-secret
+                key: azurestoragekey
+        command: [ python ]
+        source: |
+          # Real workflow begins here:
+          import os
+          import numpy as np
+          import xarray as xr
+          from adlfs import AzureBlobFileSystem
+
+
+          fs = AzureBlobFileSystem()
+          # Grab dir of yearly NetCDFs, read into single remote Zarr.
+          local_stash = "/mnt/in/"
+          fs.get(rpath=os.environ.get("IN"), lpath=local_stash, recursive=True)
+
+          d = xr.open_mfdataset(
+              f"{local_stash}*.nc",
+              concat_dim="time"
+          )
+          d.to_zarr(
+              os.environ.get("OUT"),
+              mode="w",
+              compute=True
+          )
+        resources:
+          requests:
+            memory: 42Gi
+            cpu: "1000m"
+          limits:
+            memory: 42Gi
+            cpu: "8000m"
+        volumeMounts:
+          - name: in
+            mountPath: /mnt/in
+      volumes:
+        - name: in
+          emptyDir: { }
+      activeDeadlineSeconds: 480
+      retryStrategy:
+        limit: 4
+        retryPolicy: "Always"
+
+
+    # Easier way to do conditional wet day frequency in Argo 3.1. This evaluates whether we do wet day frequency
+    # correction or not and outputs the location of the corrected or uncorrected file if appropriate.
+    # It's pretty clunky. Sorry. There has to be a better way to do this.
+    - name: wdf-check
+      inputs:
+        parameters:
+          - name: in-zarr
+          - name: process  # "pre" or "post"
+          - name: correct-bool  # Do the correction? true or false
+      steps:
+        - - name: correct-wetday-frequency
+            template: correct-wetday-frequency
+            when: "{{ inputs.parameters.correct-bool }} == true"
+            arguments:
+              parameters:
+                - name: in-zarr
+                  value: "{{ inputs.parameters.in-zarr }}"
+                - name: process  # pre or post
+                  value: "{{ inputs.parameters.process }}"
+      outputs:
+        parameters:
+          - name: out-zarr
+            valueFrom:
+              expression: "inputs.parameters['correct-bool'] == true ? steps.correct-wetday-frequency.outputs.parameters['out-zarr'] : inputs.parameters['in-zarr']"
+
+
+    - name: correct-wetday-frequency
+      inputs:
+        parameters:
+          - name: in-zarr
+          - name: out-zarr
+            value: "az://scratch/{{ workflow.name }}/{{ pod.name }}/out.zarr"
+          - name: process  # pre or post
+      outputs:
+        parameters:
+          - name: out-zarr
+            value: "{{ inputs.parameters.out-zarr }}"
+      container:
+        image: downscalecmip6.azurecr.io/dodola:0.4.1
+        env:
+          - name: AZURE_STORAGE_ACCOUNT_NAME
+            valueFrom:
+              secretKeyRef:
+                name: workerstoragecreds-secret
+                key: azurestorageaccount
+          - name: AZURE_STORAGE_ACCOUNT_KEY
+            valueFrom:
+              secretKeyRef:
+                name: workerstoragecreds-secret
+                key: azurestoragekey
+        command: [ dodola ]
+        args:
+          - "correct-wetday-frequency"
+          - "{{ inputs.parameters.in-zarr }}"
+          - "--out"
+          - "{{ inputs.parameters.out-zarr }}"
+          - "--process"
+          - "{{ inputs.parameters.process }}"
+        resources:
+          requests:
+            memory: 8Gi
+            cpu: "1000m"
+          limits:
+            memory: 8Gi
+            cpu: "2000m"
+      activeDeadlineSeconds: 600
+      retryStrategy:
+        limit: 3
+        retryPolicy: "Always"
+
+
+    - name: add-cyclic
+      inputs:
+        parameters:
+          - name: in-zarr
+          - name: out-zarr
+            value: "az://scratch/{{ workflow.name }}/{{ pod.name }}/out.zarr"
+      outputs:
+        parameters:
+          - name: out-zarr
+            value: "{{ inputs.parameters.out-zarr }}"
+      script:
+        image: downscalecmip6.azurecr.io/dodola:dev
+        env:
+          - name: IN
+            value: "{{ inputs.parameters.in-zarr }}"
+          - name: OUT
+            value: "{{ inputs.parameters.out-zarr }}"
+          - name: AZURE_STORAGE_ACCOUNT_NAME
+            valueFrom:
+              secretKeyRef:
+                name: workerstoragecreds-secret
+                key: azurestorageaccount
+          - name: AZURE_STORAGE_ACCOUNT_KEY
+            valueFrom:
+              secretKeyRef:
+                name: workerstoragecreds-secret
+                key: azurestoragekey
+        command: [ python ]
+        source: |
+          import os
+          import dodola.repository as storage
+          from dodola.core import _add_cyclic
+
+          ds = storage.read(os.environ.get("IN"))
+          ds = _add_cyclic(ds, dim="lon")
+          storage.write(os.environ.get("OUT"), ds)
+        resources:
+          requests:
+            memory: 32Gi
+            cpu: "1000m"
+          limits:
+            memory: 32Gi
+            cpu: "4000m"
+      activeDeadlineSeconds: 480
+      retryStrategy:
+        limit: 4
+        retryPolicy: "Always"

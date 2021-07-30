@@ -1,0 +1,77 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Sensor
+metadata:
+  name: clean-cmip6-pr-sensor
+spec:
+  template:
+    serviceAccountName: argoworkflow-trigger-sa
+  dependencies:
+    - name: cleaned-variable
+      eventSourceName: workflowsuccess-eventsource
+      eventName: cleancmip6-success
+      filters:
+        data:
+          # TODO: Check other variables that are input to workflows below.
+          - path: body.spec.arguments.parameters.0.name
+            type: string
+            value:
+              - "variable-id"
+          - path: body.spec.arguments.parameters.0.value
+            type: string
+            value:
+              - "pr"
+  triggers:
+    - template:
+        name: biascorrect-pr-trigger
+        conditions: cleaned-variable
+        k8s:
+          group: argoproj.io
+          version: v1alpha1
+          resource: workflows
+          operation: create
+          source:
+            resource:
+              apiVersion: argoproj.io/v1alpha1
+              kind: Workflow
+              metadata:
+                generateName: biascorrect-
+                labels:
+                  climatevariable: unknown
+                  sourceid: unknown
+              spec:
+                workflowTemplateRef:
+                  name: dc6
+                arguments:
+                  parameters:
+                    - name: variable-id
+                    - name: source-id
+                    - name: ssps
+                    - name: qdm-kind
+                      value: "multiplicative"
+                    - name: correct-wetday-frequency
+                      value: "true"
+                    - name: regrid-method
+                      value: "conservative"
+          # TODO: Add label pointing to workflow this is triggered from.
+          # TODO: Has to be a better way to do this.
+          parameters:
+            - src:
+                dependencyName: cleaned-variable
+                dataKey: body.spec.arguments.parameters.0.value
+              dest: metadata.labels.climatevariable
+            - src:
+                dependencyName: cleaned-variable
+                dataKey: body.spec.arguments.parameters.1.value
+              dest: metadata.labels.sourceid
+            - src:
+                dependencyName: cleaned-variable
+                dataKey: body.spec.arguments.parameters.0.value
+              dest: spec.arguments.parameters.0.value
+            - src:
+                dependencyName: cleaned-variable
+                dataKey: body.spec.arguments.parameters.1.value
+              dest: spec.arguments.parameters.1.value
+            - src:
+                dependencyName: cleaned-variable
+                dataKey: body.spec.arguments.parameters.3.value
+              dest: spec.arguments.parameters.2.value
