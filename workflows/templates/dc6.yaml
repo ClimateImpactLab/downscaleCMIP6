@@ -358,11 +358,11 @@ spec:
                 - name: variable
                   value: "{{ inputs.parameters.variable }}"
                 - name: year
-                  value: "{{item}}"
+                  value: "{{ item }}"
                 - name: qdm-model-zarr
                   value: "{{ inputs.parameters.qdm-model }}"
                 - name: out-key
-                  value: "{{ workflow.name }}/{{ inputs.parameters.out-key }}/{{ inputs.parameters.year }}.nc"
+                  value: "{{ workflow.name }}/{{ inputs.parameters.out-key }}/{{ item }}.nc"
             withSequence:
               start: "{{ inputs.parameters.firstyear }}"
               end: "{{ inputs.parameters.lastyear }}"
