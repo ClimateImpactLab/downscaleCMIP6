@@ -1,0 +1,12 @@
+variable-id: "tasmin"
+source-id: "ACCESS-ESM1-5"
+historical: |
+  [
+    { "activity-id": "CMIP", "experiment-id": "historical", "table-id": "day", "variable-id": "tasmin", "source-id": "ACCESS-ESM1-5", "institution-id": "CSIRO", "member-id": "r1i1p1f1", "grid-label": "gn", "version": "20191115" }
+  ]
+ssps: |
+  [
+    { "activity-id": "ScenarioMIP", "experiment-id": "ssp370", "table-id": "day", "variable-id": "tasmin", "source-id": "ACCESS-ESM1-5", "institution-id": "CSIRO", "member-id": "r1i1p1f1", "grid-label": "gn", "version": "20191115" },
+    { "activity-id": "ScenarioMIP", "experiment-id": "ssp245", "table-id": "day", "variable-id": "tasmin", "source-id": "ACCESS-ESM1-5", "institution-id": "CSIRO", "member-id": "r1i1p1f1", "grid-label": "gn", "version": "20191115" },
+    { "activity-id": "ScenarioMIP", "experiment-id": "ssp126", "table-id": "day", "variable-id": "tasmin", "source-id": "ACCESS-ESM1-5", "institution-id": "CSIRO", "member-id": "r1i1p1f1", "grid-label": "gn", "version": "20191115" }
+  ]
