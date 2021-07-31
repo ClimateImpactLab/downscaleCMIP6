@@ -12,29 +12,29 @@ spec:
   entrypoint: main
   arguments:
     parameters:
-      - name: variableID
+      - name: variable-id
         value: "tasmin"
-      - name: sourceID
+      - name: source-id
         value: "GFDL-ESM4"
       - name: historical
         value: |
           [
-            { "activityID": "CMIP", "experimentID": "historical", "tableID": "day", "variableID": "tasmin", "sourceID": "GFDL-ESM4", "institutionID": "NOAA-GFDL", "memberID": "r1i1p1f1", "gridLabel": "gr1", "version": "20190726" }
+            { "activity-id": "CMIP", "experiment-id": "historical", "table-id": "day", "variable-id": "tasmin", "source-id": "GFDL-ESM4", "institution-id": "NOAA-GFDL", "member-id": "r1i1p1f1", "grid-label": "gr1", "version": "20190726" }
           ]
       - name: ssps
         value: |
           [
-            { "activityID": "ScenarioMIP", "experimentID": "ssp370", "tableID": "day", "variableID": "tasmin", "sourceID": "GFDL-ESM4", "institutionID": "NOAA-GFDL", "memberID": "r1i1p1f1", "gridLabel": "gr1", "version": "20180701" },
-            { "activityID": "ScenarioMIP", "experimentID": "ssp245", "tableID": "day", "variableID": "tasmin", "sourceID": "GFDL-ESM4", "institutionID": "NOAA-GFDL", "memberID": "r1i1p1f1", "gridLabel": "gr1", "version": "20180701" },
-            { "activityID": "ScenarioMIP", "experimentID": "ssp126", "tableID": "day", "variableID": "tasmin", "sourceID": "GFDL-ESM4", "institutionID": "NOAA-GFDL", "memberID": "r1i1p1f1", "gridLabel": "gr1", "version": "20180701" }
+            { "activity-id": "ScenarioMIP", "experiment-id": "ssp370", "table-id": "day", "variable-id": "tasmin", "source-id": "GFDL-ESM4", "institution-id": "NOAA-GFDL", "member-id": "r1i1p1f1", "grid-label": "gr1", "version": "20180701" },
+            { "activity-id": "ScenarioMIP", "experiment-id": "ssp245", "table-id": "day", "variable-id": "tasmin", "source-id": "GFDL-ESM4", "institution-id": "NOAA-GFDL", "member-id": "r1i1p1f1", "grid-label": "gr1", "version": "20180701" },
+            { "activity-id": "ScenarioMIP", "experiment-id": "ssp126", "table-id": "day", "variable-id": "tasmin", "source-id": "GFDL-ESM4", "institution-id": "NOAA-GFDL", "member-id": "r1i1p1f1", "grid-label": "gr1", "version": "20180701" }
           ]
   templates:
 
     - name: main
       inputs:
         parameters:
-          - name: variableID
-          - name: sourceID
+          - name: variable-id
+          - name: source-id
           - name: historical
           - name: ssps
       dag:
@@ -44,50 +44,50 @@ spec:
             arguments:
               parameters:
                 - name: experiment-id
-                  value: "{{item.experimentID}}"
+                  value: "{{item.experiment-id}}"
                 - name: activity-id
-                  value: "{{item.activityID}}"
+                  value: "{{item.activity-id}}"
                 - name: table-id
-                  value: "{{item.tableID}}"
+                  value: "{{item.table-id}}"
                 - name: variable-id
-                  value: "{{item.variableID}}"
+                  value: "{{item.variable-id}}"
                 - name: source-id
-                  value: "{{item.sourceID}}"
+                  value: "{{item.source-id}}"
                 - name: institution-id
-                  value: "{{item.institutionID}}"
+                  value: "{{item.institution-id}}"
                 - name: member-id
-                  value: "{{item.memberID}}"
+                  value: "{{item.member-id}}"
                 - name: grid-label
-                  value: "{{item.gridLabel}}"
+                  value: "{{item.grid-label}}"
                 - name: version
                   value: "{{item.version}}"
                 - name: out-url
-                  value: "az://raw/{{inputs.parameters.sourceID}}/historical/{{inputs.parameters.variableID}}.zarr"
+                  value: "az://raw/{{inputs.parameters.source-id}}/historical/{{inputs.parameters.variable-id}}.zarr"
             withParam: "{{ inputs.parameters.historical }}"
           - name: download-ssps
             template: download-gcm
             arguments:
               parameters:
                 - name: experiment-id
-                  value: "{{item.experimentID}}"
+                  value: "{{item.experiment-id}}"
                 - name: activity-id
-                  value: "{{item.activityID}}"
+                  value: "{{item.activity-id}}"
                 - name: table-id
-                  value: "{{item.tableID}}"
+                  value: "{{item.table-id}}"
                 - name: variable-id
-                  value: "{{item.variableID}}"
+                  value: "{{item.variable-id}}"
                 - name: source-id
-                  value: "{{item.sourceID}}"
+                  value: "{{item.source-id}}"
                 - name: institution-id
-                  value: "{{item.institutionID}}"
+                  value: "{{item.institution-id}}"
                 - name: member-id
-                  value: "{{item.memberID}}"
+                  value: "{{item.member-id}}"
                 - name: grid-label
-                  value: "{{item.gridLabel}}"
+                  value: "{{item.grid-label}}"
                 - name: version
                   value: "{{item.version}}"
                 - name: out-url
-                  value: "az://raw/{{inputs.parameters.sourceID}}/{{item.experimentID}}/{{inputs.parameters.variableID}}.zarr"
+                  value: "az://raw/{{inputs.parameters.source-id}}/{{item.experiment-id}}/{{inputs.parameters.variable-id}}.zarr"
             withParam: "{{ inputs.parameters.ssps }}"
 
 

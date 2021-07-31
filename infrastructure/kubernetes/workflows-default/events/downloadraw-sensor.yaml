@@ -15,7 +15,7 @@ spec:
           - path: body.spec.arguments.parameters.0.name
             type: string
             value:
-              - "variableID"
+              - "variable-id"
           - path: body.spec.arguments.parameters.0.value
             type: string
             value:
@@ -39,7 +39,7 @@ spec:
                 generateName: clean-cmip6-
                 labels:
                   climatevariable: unknown
-                  sourceid: unknown
+                  source-id: unknown
               spec:
                 arguments:
                   parameters:
@@ -59,7 +59,7 @@ spec:
             - src:
                 dependencyName: downloaded-generic-variable
                 dataKey: body.spec.arguments.parameters.1.value
-              dest: metadata.labels.sourceid
+              dest: metadata.labels.source-id
             - src:
                 dependencyName: downloaded-generic-variable
                 dataKey: body.spec.arguments.parameters.0.value

@@ -37,7 +37,7 @@ spec:
                 generateName: biascorrect-
                 labels:
                   climatevariable: unknown
-                  sourceid: unknown
+                  source-id: unknown
               spec:
                 workflowTemplateRef:
                   name: dc6
@@ -58,7 +58,7 @@ spec:
             - src:
                 dependencyName: cleaned-variable
                 dataKey: body.spec.arguments.parameters.1.value
-              dest: metadata.labels.sourceid
+              dest: metadata.labels.source-id
             - src:
                 dependencyName: cleaned-variable
                 dataKey: body.spec.arguments.parameters.0.value

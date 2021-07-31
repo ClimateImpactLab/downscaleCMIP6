@@ -18,9 +18,9 @@ spec:
       - name: ssps
         value: |
           [
-            { "activityID": "ScenarioMIP", "experimentID": "ssp370", "tableID": "day", "variableID": "tasmin", "sourceID": "GFDL-ESM4", "institutionID": "NOAA-GFDL", "memberID": "r1i1p1f1", "gridLabel": "gr1", "version": "20180701" },
-            { "activityID": "ScenarioMIP", "experimentID": "ssp245", "tableID": "day", "variableID": "tasmin", "sourceID": "GFDL-ESM4", "institutionID": "NOAA-GFDL", "memberID": "r1i1p1f1", "gridLabel": "gr1", "version": "20180701" },
-            { "activityID": "ScenarioMIP", "experimentID": "ssp126", "tableID": "day", "variableID": "tasmin", "sourceID": "GFDL-ESM4", "institutionID": "NOAA-GFDL", "memberID": "r1i1p1f1", "gridLabel": "gr1", "version": "20180701" }
+            { "activity-id": "ScenarioMIP", "experiment-id": "ssp370", "table-id": "day", "variable-id": "tasmin", "source-id": "GFDL-ESM4", "institution-id": "NOAA-GFDL", "member-id": "r1i1p1f1", "grid-label": "gr1", "version": "20180701" },
+            { "activity-id": "ScenarioMIP", "experiment-id": "ssp245", "table-id": "day", "variable-id": "tasmin", "source-id": "GFDL-ESM4", "institution-id": "NOAA-GFDL", "member-id": "r1i1p1f1", "grid-label": "gr1", "version": "20180701" },
+            { "activity-id": "ScenarioMIP", "experiment-id": "ssp126", "table-id": "day", "variable-id": "tasmin", "source-id": "GFDL-ESM4", "institution-id": "NOAA-GFDL", "member-id": "r1i1p1f1", "grid-label": "gr1", "version": "20180701" }
           ]
       - name: regrid-method
         value: "bilinear"
@@ -97,7 +97,7 @@ spec:
             arguments:
               parameters:
                 - name: in-zarr
-                  value: "az://clean/{{ inputs.parameters.source-id }}/{{ item.experimentID }}/{{ inputs.parameters.variable-id }}.zarr"
+                  value: "az://clean/{{ inputs.parameters.source-id }}/{{ item.experiment-id }}/{{ inputs.parameters.variable-id }}.zarr"
                 - name: regrid-method
                   value: "{{ inputs.parameters.regrid-method }}"
                 - name: domain-file

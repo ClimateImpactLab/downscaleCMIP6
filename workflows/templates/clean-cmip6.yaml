@@ -86,9 +86,9 @@ spec:
                 - name: historical-zarr
                   value: "{{ tasks.slice-historical.outputs.parameters.out-zarr }}"
                 - name: scratch
-                  value: "{{ inputs.parameters.scratch }}{{ item.experimentID }}/"
+                  value: "{{ inputs.parameters.scratch }}{{ item.experiment-id }}/"
                 - name: ssp
-                  value: "{{ item.experimentID }}"
+                  value: "{{ item.experiment-id }}"
             withParam: "{{ inputs.parameters.ssps }}"
 
 
