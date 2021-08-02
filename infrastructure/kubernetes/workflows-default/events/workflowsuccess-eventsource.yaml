@@ -22,6 +22,9 @@ spec:
           - key: workflows.argoproj.io/completed
             operation: ==
             value: "true"
+          - key: workflows.argoproj.io/phase
+            operation: ==
+            value: "Succeeded"
     cleancmip6-success:
       namespace: argo
       group: argoproj.io
@@ -38,6 +41,9 @@ spec:
           - key: workflows.argoproj.io/completed
             operation: ==
             value: "true"
+          - key: workflows.argoproj.io/phase
+            operation: ==
+            value: "Succeeded"
     dc6-success:
       namespace: argo
       group: argoproj.io
@@ -54,3 +60,6 @@ spec:
           - key: workflows.argoproj.io/completed
             operation: ==
             value: "true"
+          - key: workflows.argoproj.io/phase
+            operation: ==
+            value: "Succeeded"
