@@ -153,7 +153,7 @@ spec:
                 - name: lastyear
                   value: 2100
                 - name: out-zarr
-                  value: "az://scratch/{{ workflow.name }}/biascorrected-{{=sprig.randAlphaNum(7}}.zarr"
+                  value: "az://scratch/{{ workflow.name }}/biascorrected-{{=sprig.randAlphaNum(7)}}.zarr"
                 - name: out-key
                   value: "{{=sprig.randAlphaNum(7)}}-{{ inputs.parameters.variable-id }}-qdm-years"
             withParam: "{{ tasks.preprocess-ssps.outputs.parameters }}"
