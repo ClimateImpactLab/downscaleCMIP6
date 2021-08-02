@@ -17,16 +17,6 @@ spec:
         value: "{{workflows.parameters.source-id}}"
       - name: ssps
         value: "{{workflows.parameters.ssps}}"
-      - name: histslice-from-time
-        value: "1950"
-      - name: histslice-to-time
-        value: "2014"
-      - name: referenceslicehist-from-time
-        value: "1994-12-17"
-      - name: referenceslicehist-to-time
-        value: "2015-01-15"
-      - name: scratch
-        value: "az://scratch/{{ workflow.name }}/{{ inputs.parameters.variable-id }}/"
   templates:
 
     - name: clean-generic-variable
@@ -36,10 +26,15 @@ spec:
           - name: source-id
           - name: ssps
           - name: histslice-from-time
+            value: "1950"
           - name: histslice-to-time
+            value: "2014"
           - name: referenceslicehist-from-time
+            value: "1994-12-17"
           - name: referenceslicehist-to-time
+            value: "2015-01-15"
           - name: scratch
+            value: "az://scratch/{{ workflow.name }}/{{ inputs.parameters.variable-id }}/"
       dag:
         tasks:
           - name: standardize-historical-run
