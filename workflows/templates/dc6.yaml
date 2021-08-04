@@ -244,7 +244,7 @@ spec:
           - name: out-zarr
             value: "{{ inputs.parameters.out-zarr }}"
       container:
-        image: downscalecmip6.azurecr.io/dodola:0.4.1
+        image: downscalecmip6.azurecr.io/dodola:dev
         env:
           - name: AZURE_STORAGE_ACCOUNT_NAME
             valueFrom:
@@ -396,7 +396,7 @@ spec:
           - name: out-zarr
             value: "{{ inputs.parameters.out-zarr }}"
       container:
-        image: downscalecmip6.azurecr.io/dodola:0.4.1
+        image: downscalecmip6.azurecr.io/dodola:dev
         env:
           - name: AZURE_STORAGE_ACCOUNT_NAME
             valueFrom:
@@ -458,7 +458,7 @@ spec:
             s3:
               key: "{{ inputs.parameters.out-key }}"
       container:
-        image: downscalecmip6.azurecr.io/dodola:0.4.1
+        image: downscalecmip6.azurecr.io/dodola:dev
         env:
           - name: AZURE_STORAGE_ACCOUNT_NAME
             valueFrom:
@@ -514,7 +514,7 @@ spec:
           - name: out-zarr
             value: "{{ inputs.parameters.out-zarr }}"
       script:
-        image: downscalecmip6.azurecr.io/dodola:0.4.1
+        image: downscalecmip6.azurecr.io/dodola:dev
         env:
           - name: IN
             value: "{{ inputs.parameters.in-dir }}"
@@ -610,7 +610,7 @@ spec:
           - name: out-zarr
             value: "{{ inputs.parameters.out-zarr }}"
       container:
-        image: downscalecmip6.azurecr.io/dodola:0.4.1
+        image: downscalecmip6.azurecr.io/dodola:dev
         env:
           - name: AZURE_STORAGE_ACCOUNT_NAME
             valueFrom:
