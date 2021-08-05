@@ -168,7 +168,7 @@ spec:
         print("Authenticated with storage")
 
         store = fs.get_mapper(os.environ.get("OUTPATH"))
-        d[k[0]].to_zarr(store, mode="w", compute=True)
+        d[k[0]].to_zarr(store, mode="w", compute=True, consolidated=True)
         print(f"Output written to {os.environ.get('OUTPATH')}")
       resources:
         requests:

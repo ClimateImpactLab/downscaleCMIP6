@@ -109,7 +109,7 @@ spec:
           - name: out-zarr
             value: "{{ inputs.parameters.out-url }}"
       script:
-        image: downscalecmip6.azurecr.io/dodola:dev
+        image: downscalecmip6.azurecr.io/dodola:0.5.0
         env:
           - name: ACTIVITY_ID
             value: "{{inputs.parameters.activity-id}}"

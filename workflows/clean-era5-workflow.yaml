@@ -10,9 +10,9 @@ spec:
   arguments:
     parameters:
     - name: in-zarr
-      value: "clean-dev/ERA-5/F320/tasmax.1995-2015.F320.v2.zarr"
+      value: "az://clean-dev/ERA-5/F320/tasmax.1995-2015.F320.v2.zarr"
     - name: out-zarr
-      value: "scratch/clean-dev/ERA-5/tasmax.1995-2015.F320.zarr"
+      value: "az://scratch/clean-dev/ERA-5/tasmax.1995-2015.F320.zarr"
   templates:
 
   - name: main
@@ -37,7 +37,7 @@ spec:
       - name: out-zarr
         value: "{{ inputs.parameters.out-zarr }}"
     container:
-      image: downscalecmip6.azurecr.io/dodola:0.1.0
+      image: downscalecmip6.azurecr.io/dodola:0.5.0
       env:
       - name: IN_ZARR
         value: "{{  inputs.parameters.in-zarr }}"
@@ -83,7 +83,7 @@ spec:
       - name: out-zarr
         value: "{{ inputs.parameters.out-zarr }}"
     script:
-      image: downscalecmip6.azurecr.io/dodola:0.1.0
+      image: downscalecmip6.azurecr.io/dodola:0.5.0
       env:
       - name: IN_ZARR
         value: "{{  inputs.parameters.in-zarr }}"
@@ -116,15 +116,7 @@ spec:
 
         fs = AzureBlobFileSystem()
 
-        ds = xr.open_zarr(
-            fs.get_mapper(in_store_path),
-            # chunks="auto",
-            # chunks={
-            #     "latitude": 10,
-            #     "longitude": 10,
-            #     "time": 365,
-            # }
-        )
+        ds = xr.open_zarr(in_store_path)
         print(f"opening {in_store_path}")
 
         if "tmax" in ds.variables:
@@ -139,10 +131,7 @@ spec:
 
         print(f"standardized tmax/latitude/longitude name to tasmax/lat/lon")
 
-        ds.to_zarr(
-            store=fs.get_mapper(out_store_path),
-            mode="w",
-        )
+        ds.to_zarr(out_store_path, mode="w")
         print(f"written to {out_store_path}")
 
         print("ERA-5 cleaning done")
@@ -172,7 +161,7 @@ spec:
         - name: out-zarr
           value: "{{ inputs.parameters.out-zarr }}"
     container:
-      image: downscalecmip6.azurecr.io/dodola:0.4.0
+      image: downscalecmip6.azurecr.io/dodola:0.5.0
       env:
         - name: AZURE_STORAGE_ACCOUNT_NAME
           valueFrom:
@@ -189,9 +178,9 @@ spec:
       command: [dodola]
       args:
         - "rechunk"
-        - "az://{{ inputs.parameters.in-zarr }}"
+        - "{{ inputs.parameters.in-zarr }}"
         - "--out"
-        - "az://{{ inputs.parameters.out-zarr }}"
+        - "{{ inputs.parameters.out-zarr }}"
         - "--chunk"
         - "time={{ inputs.parameters.time-chunk }}"
         - "--chunk"
