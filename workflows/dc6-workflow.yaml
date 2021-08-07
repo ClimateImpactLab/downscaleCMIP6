@@ -20,9 +20,9 @@ spec:
       - name: target-variable
         value: tasmax
       - name: biascorrect-firstfutureyear
-        value: 1980
+        value: 2015
       - name: biascorrect-lastfutureyear
-        value: 2099
+        value: 2100
       - name: biascorrect-kind
         value: additive  # multiplicative
       - name: domainfile1x1
