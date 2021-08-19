@@ -131,6 +131,8 @@ spec:
             ds = ds.rename({"precip": "pr"})
         ds = ds.rename({"latitude": "lat", "longitude": "lon"})
 
+        ds = ds.drop_vars("dayofyear", errors="ignore")
+
         print(f"standardized tmax/latitude/longitude name to tasmax/lat/lon")
 
         ds.to_zarr(out_store_path, mode="w")
