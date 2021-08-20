@@ -42,14 +42,6 @@ spec:
           - name: correct-wetday-frequency
           - name: domainfile1x1
           - name: qdm-kind
-      outputs:
-        parameters:
-          - name: out-zarr-historical
-            valueFrom:
-              parameter: "{{ tasks.biascorrect-historical.outputs.parameters.out-zarr }}"
-          - name: out-zarr-ssps
-            valueFrom:
-              parameter: "{{ tasks.biascorrect-ssps.outputs.parameters }}"
       dag:
         tasks:
           - name: preprocess-historical
