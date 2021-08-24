@@ -2,11 +2,11 @@ variable-id: "pr"
 source-id: "GFDL-ESM4"
 historical: |
   [
-    { "activity-id": "CMIP", "experiment-id": "historical", "table-id": "day", "variable-id": "tasmin", "source-id": "GFDL-ESM4", "institution-id": "NOAA-GFDL", "member-id": "r1i1p1f1", "grid-label": "gr1", "version": "20190726" }
+    { "activity-id": "CMIP", "experiment-id": "historical", "table-id": "day", "variable-id": "pr", "source-id": "GFDL-ESM4", "institution-id": "NOAA-GFDL", "member-id": "r1i1p1f1", "grid-label": "gr1", "version": "20190726" }
   ]
 ssps: |
   [
-    { "activity-id": "ScenarioMIP", "experiment-id": "ssp370", "table-id": "day", "variable-id": "tasmin", "source-id": "GFDL-ESM4", "institution-id": "NOAA-GFDL", "member-id": "r1i1p1f1", "grid-label": "gr1", "version": "20180701" },
-    { "activity-id": "ScenarioMIP", "experiment-id": "ssp245", "table-id": "day", "variable-id": "tasmin", "source-id": "GFDL-ESM4", "institution-id": "NOAA-GFDL", "member-id": "r1i1p1f1", "grid-label": "gr1", "version": "20180701" },
-    { "activity-id": "ScenarioMIP", "experiment-id": "ssp126", "table-id": "day", "variable-id": "tasmin", "source-id": "GFDL-ESM4", "institution-id": "NOAA-GFDL", "member-id": "r1i1p1f1", "grid-label": "gr1", "version": "20180701" }
+    { "activity-id": "ScenarioMIP", "experiment-id": "ssp370", "table-id": "day", "variable-id": "pr", "source-id": "GFDL-ESM4", "institution-id": "NOAA-GFDL", "member-id": "r1i1p1f1", "grid-label": "gr1", "version": "20180701" },
+    { "activity-id": "ScenarioMIP", "experiment-id": "ssp245", "table-id": "day", "variable-id": "pr", "source-id": "GFDL-ESM4", "institution-id": "NOAA-GFDL", "member-id": "r1i1p1f1", "grid-label": "gr1", "version": "20180701" },
+    { "activity-id": "ScenarioMIP", "experiment-id": "ssp126", "table-id": "day", "variable-id": "pr", "source-id": "GFDL-ESM4", "institution-id": "NOAA-GFDL", "member-id": "r1i1p1f1", "grid-label": "gr1", "version": "20180701" }
   ]
