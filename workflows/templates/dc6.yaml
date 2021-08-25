@@ -322,6 +322,8 @@ spec:
           - name: kind
           - name: first-year
           - name: last-year
+          - name: include-quantiles
+            value: "true"
       outputs:
         parameters:
           - name: out-zarr
@@ -341,6 +343,8 @@ spec:
                   value: "{{ inputs.parameters.first-year }}"
                 - name: last-year
                   value: "{{ inputs.parameters.last-year }}"
+                - name: include-quantiles
+                  value: "{{ inputs.parameters.include-quantiles }}"
           - name: with-lat-chunk
             depends: "prime-output-zarrstore"
             template: with-lat-chunk
@@ -366,6 +370,8 @@ spec:
                   value: "{{=asInt(item) * 10 + 10 }}"
                 - name: out-zarr
                   value: "{{ tasks.prime-output-zarrstore.outputs.parameters.out-zarr }}"
+                - name: include-quantiles
+                  value: "{{ inputs.parameters.include-quantiles }}"
             withSequence:
               start: "0"
               end: "17"
@@ -380,6 +386,8 @@ spec:
           - name: last-year
           - name: out-zarr
             value: "az://scratch/{{ workflow.name }}/{{ pod.name }}/qdm_adjusted.zarr"
+          - name: include-quantiles
+            value: "false"
       outputs:
         parameters:
           - name: out-zarr
@@ -409,11 +417,16 @@ spec:
           first_year = int({{ inputs.parameters.first-year }})
           last_year = int({{ inputs.parameters.last-year }})
           variable = "{{ inputs.parameters.variable }}"
+          include_quantiles = "{{ inputs.parameters.include-quantiles }}".lower() == "true"
+          print(f"{include_quantiles=}")  # DEBUG
 
           timeslice = slice(str(first_year), str(last_year + 1))
 
           primed_out = dodola.repository.read(simulation_zarr).sel(time=timeslice).chunk({"time": -1, "lat": 10, "lon":-1})
-
+          if include_quantiles:
+              quantiles_variable = "sim_q"
+              primed_out[quantiles_variable] = xr.zeros_like(primed_out[variable])
+              primed_out = primed_out.set_coords(quantiles_variable)
           print(primed_out)  # DEBUG
 
           primed_out.to_zarr(
@@ -458,6 +471,8 @@ spec:
           - name: lat-slice-max
           - name: first-year
           - name: last-year
+          - name: include-quantiles
+            value: "false"
       outputs:
         parameters:
           - name: out-zarr
@@ -502,6 +517,9 @@ spec:
                   value: "{{ inputs.parameters.lat-slice-max }}"
                 - name: out-zarr
                   value: "{{ inputs.parameters.out-zarr }}"
+                - name: include-quantiles
+                  value: "{{ inputs.parameters.include-quantiles }}"
+
 
     - name: train-qdm
       inputs:
@@ -589,6 +607,8 @@ spec:
           - name: last-year
           - name: lat-slice-min
           - name: lat-slice-max
+          - name: include-quantiles
+            value: "false"
           - name: out-zarr
             value: "az://scratch/{{ workflow.name }}/{{ pod.name }}/qdm_adjusted.zarr"
       outputs:
@@ -625,6 +645,8 @@ spec:
           first_year = int({{ inputs.parameters.first-year }})
           last_year = int({{ inputs.parameters.last-year }})
           variable = "{{ inputs.parameters.variable }}"
+          include_quantiles = "{{ inputs.parameters.include-quantiles }}".lower() == "true"
+          print(f"{include_quantiles=}")  # DEBUG
 
           latslice = slice(min_slice, max_slice)
 
@@ -635,23 +657,27 @@ spec:
 
           qdm.load()
           simulation.load()
-          simulation_delayed = dask.delayed(simulation)
-          qdm_delayed = dask.delayed(qdm)
 
+          # TODO: Return this to dask.delayeds instead of raw for loops.
           qdm_list = []
           for year in range(first_year, last_year + 1):
-              adj = dask.delayed(adjust_quantiledeltamapping_year)(simulation_delayed, qdm_delayed, year, variable)
-              qdm_list.append(adj)
+              adj = adjust_quantiledeltamapping_year(
+                  simulation=simulation,
+                  qdm=qdm,
+                  year=year,
+                  variable=variable,
+                  include_quantiles=include_quantiles
+              )
+              qdm_list.append(adj.astype("float32"))
 
-          out_all_years = dask.delayed(xr.concat)(qdm_list, dim="time")
-          out_all_years = out_all_years.compute()
-
-          print(out_all_years)  # DEBUG
+          out_all_years = xr.concat(qdm_list, dim="time")
+          #out_all_years = out_all_years.compute()
 
           if nonlat_variables:
               out_all_years = out_all_years.drop_vars(nonlat_variables)
 
           out_all_years = out_all_years.transpose("time", "lat", "lon")
+          print(f"{out_all_years=}")  # DEBUG
 
           # Output to region of existing zarr store.
           out_all_years.to_zarr(out_zarr, region={"lat": latslice}, mode="a")
