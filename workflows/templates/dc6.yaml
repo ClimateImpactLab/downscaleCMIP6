@@ -684,11 +684,11 @@ spec:
           print(f"Output written to {out_zarr}")  # DEBUG
         resources:
           requests:
-            memory: 48Gi
+            memory: 32Gi
             cpu: "1000m"
           limits:
-            memory: 48Gi
-            cpu: "12000m"
+            memory: 32Gi
+            cpu: "8000m"
       activeDeadlineSeconds: 900
       retryStrategy:
         limit: 3
