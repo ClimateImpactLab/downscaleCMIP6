@@ -57,7 +57,7 @@ spec:
                 - name: correct-wetday-frequency
                   value: "{{ inputs.parameters.correct-wetday-frequency }}"
           - name: preprocess-reference
-            template: preprocess
+            template: preprocess-reference
             arguments:
               parameters:
                 - name: in-zarr
@@ -66,9 +66,6 @@ spec:
                   value: "{{ inputs.parameters.regrid-method }}"
                 - name: domain-file
                   value: "{{ inputs.parameters.domainfile1x1 }}"
-                # Reference is never WDF corrected, as this in preprocessing with ERA-5
-                - name: correct-wetday-frequency
-                  value: "false"
           - name: preprocess-training
             template: preprocess
             arguments:
@@ -175,6 +172,58 @@ spec:
               parameters:
                 - name: in-zarr
                   value: "{{ tasks.add-cyclic.outputs.parameters.out-zarr }}"
+                - name: time-chunk
+                  value: "365"
+                - name: lat-chunk
+                  value: -1
+                - name: lon-chunk
+                  value: -1
+          - name: regrid
+            dependencies: [ move-chunks-to-time ]
+            template: regrid
+            arguments:
+              parameters:
+                - name: in-zarr
+                  value: "{{ tasks.move-chunks-to-time.outputs.parameters.out-zarr }}"
+                - name: regrid-method
+                  value: "{{ inputs.parameters.regrid-method }}"
+                - name: domain-file
+                  value: "{{ inputs.parameters.domain-file }}"
+          - name: move-chunks-to-space
+            dependencies: [ regrid ]
+            template: rechunk
+            arguments:
+              parameters:
+                - name: in-zarr
+                  value: "{{ tasks.regrid.outputs.parameters.out-zarr }}"
+                - name: time-chunk
+                  value: "-1"
+                - name: lat-chunk
+                  value: 10
+                - name: lon-chunk
+                  value: 10
+
+
+    # ERA-5 does not need wet-day freq correction or wrap-around grid points...
+    - name: preprocess-reference
+      inputs:
+        parameters:
+          - name: in-zarr
+          - name: regrid-method
+          - name: domain-file
+      outputs:
+        parameters:
+          - name: out-zarr
+            valueFrom:
+              parameter: "{{ tasks.move-chunks-to-space.outputs.parameters.out-zarr }}"
+      dag:
+        tasks:
+          - name: move-chunks-to-time
+            template: rechunk
+            arguments:
+              parameters:
+                - name: in-zarr
+                  value: "{{ inputs.parameters.in-zarr }}"
                 - name: time-chunk
                   value: "365"
                 - name: lat-chunk
