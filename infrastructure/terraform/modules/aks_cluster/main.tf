@@ -95,7 +95,7 @@ resource "azurerm_kubernetes_cluster_node_pool" "nodepoolworker" {
   node_count            = 0
   enable_auto_scaling   = true
   min_count             = 0
-  max_count             = 20
+  max_count             = 15
   priority              = "Spot"
   spot_max_price        = -1
   eviction_policy       = "Delete"
