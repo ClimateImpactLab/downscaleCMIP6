@@ -30,7 +30,7 @@ resource "azurerm_storage_account" "storageacc" {
 }
 
 resource "azurerm_storage_data_lake_gen2_filesystem" "raw-cmip6" {
-  name               = "raw"
+  name               = "raw-cmip6"
   storage_account_id = azurerm_storage_account.storageacc.id
   lifecycle {
     prevent_destroy = true
@@ -38,7 +38,7 @@ resource "azurerm_storage_data_lake_gen2_filesystem" "raw-cmip6" {
 }
 
 resource "azurerm_storage_data_lake_gen2_filesystem" "raw-era5" {
-  name               = "raw"
+  name               = "raw-era5"
   storage_account_id = azurerm_storage_account.storageacc.id
   lifecycle {
     prevent_destroy = true
