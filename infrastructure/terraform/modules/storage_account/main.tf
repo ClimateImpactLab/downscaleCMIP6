@@ -29,8 +29,40 @@ resource "azurerm_storage_account" "storageacc" {
   }
 }
 
+resource "azurerm_storage_data_lake_gen2_filesystem" "raw-cmip6" {
+  name               = "raw"
+  storage_account_id = azurerm_storage_account.storageacc.id
+  lifecycle {
+    prevent_destroy = true
+  }
+}
+
+resource "azurerm_storage_data_lake_gen2_filesystem" "raw-era5" {
+  name               = "raw"
+  storage_account_id = azurerm_storage_account.storageacc.id
+  lifecycle {
+    prevent_destroy = true
+  }
+}
+
 resource "azurerm_storage_data_lake_gen2_filesystem" "raw" {
   name               = "raw"
+  storage_account_id = azurerm_storage_account.storageacc.id
+  lifecycle {
+    prevent_destroy = true
+  }
+}
+
+resource "azurerm_storage_data_lake_gen2_filesystem" "clean-cmip6" {
+  name               = "clean-cmip6"
+  storage_account_id = azurerm_storage_account.storageacc.id
+  lifecycle {
+    prevent_destroy = true
+  }
+}
+
+resource "azurerm_storage_data_lake_gen2_filesystem" "clean-era5" {
+  name               = "clean-era5"
   storage_account_id = azurerm_storage_account.storageacc.id
   lifecycle {
     prevent_destroy = true
@@ -53,8 +85,32 @@ resource "azurerm_storage_data_lake_gen2_filesystem" "clean-dev" {
   }
 }
 
+resource "azurerm_storage_data_lake_gen2_filesystem" "biascorrected" {
+  name               = "biascorrected"
+  storage_account_id = azurerm_storage_account.storageacc.id
+  lifecycle {
+    prevent_destroy = true
+  }
+}
+
+resource "azurerm_storage_data_lake_gen2_filesystem" "downscaled" {
+  name               = "downscaled"
+  storage_account_id = azurerm_storage_account.storageacc.id
+  lifecycle {
+    prevent_destroy = true
+  }
+}
+
 resource "azurerm_storage_data_lake_gen2_filesystem" "support" {
   name               = "support"
+  storage_account_id = azurerm_storage_account.storageacc.id
+  lifecycle {
+    prevent_destroy = true
+  }
+}
+
+resource "azurerm_storage_data_lake_gen2_filesystem" "qc" {
+  name               = "qualitycontrol"
   storage_account_id = azurerm_storage_account.storageacc.id
   lifecycle {
     prevent_destroy = true
