@@ -8,6 +8,8 @@ Create the Namespace with
 kubectl create namespace "ingress-nginx"
 ```
 
+Be sure the IP address in `ingress-nginx.controller.service.loadBalancerIP` matches the IP address provisioned in Terraform.
+
 ## Deploy (`argocd`)
 
 You can deploy this in a dev environment with `argocd` from the CLI with
