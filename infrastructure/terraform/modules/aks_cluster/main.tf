@@ -73,9 +73,6 @@ resource "azurerm_kubernetes_cluster" "k8scluster" {
       enabled                    = true
       log_analytics_workspace_id = azurerm_log_analytics_workspace.loganalytics_workspace.id
     }
-    kube_dashboard {
-      enabled = true
-    }
   }
   tags = {
     managed-by = "terraform"
