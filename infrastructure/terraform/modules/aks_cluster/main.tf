@@ -48,7 +48,7 @@ resource "azurerm_kubernetes_cluster" "k8scluster" {
   default_node_pool {
     name                 = "core"
     node_count           = 1
-    vm_size              = "Standard_B2S"
+    vm_size              = "Standard_B2ms"
     enable_auto_scaling  = true
     min_count            = 1
     max_count            = 10
@@ -87,32 +87,32 @@ resource "azurerm_kubernetes_cluster" "k8scluster" {
   }
 }
 
-# resource "azurerm_kubernetes_cluster_node_pool" "nodepoolworker" {
-#   name                  = "worker"
-#   kubernetes_cluster_id = azurerm_kubernetes_cluster.k8scluster.id
-#   orchestrator_version  = var.kubernetes_version
-#   vm_size               = "Standard_E8as_v4"
-#   node_count            = 0
-#   enable_auto_scaling   = true
-#   min_count             = 0
-#   max_count             = 15
-#   priority              = "Spot"
-#   spot_max_price        = -1
-#   eviction_policy       = "Delete"
-#   node_labels = {
-#     "kubernetes.azure.com/scalesetpriority" = "spot"
-#     "dedicated"                             = "worker"
-#   }
-#   node_taints = [
-#     "dedicated=worker:NoSchedule",
-#     "kubernetes.azure.com/scalesetpriority=spot:NoSchedule"
-#   ]
-#   tags = {
-#     managed-by = "terraform"
-#   }
-#   lifecycle {
-#     ignore_changes = [
-#       node_count
-#     ]
-#   }
-# }
+resource "azurerm_kubernetes_cluster_node_pool" "nodepoolworker" {
+  name                  = "worker"
+  kubernetes_cluster_id = azurerm_kubernetes_cluster.k8scluster.id
+  orchestrator_version  = var.kubernetes_version
+  vm_size               = "Standard_E8as_v4"
+  node_count            = 0
+  enable_auto_scaling   = true
+  min_count             = 0
+  max_count             = 15
+  priority              = "Spot"
+  spot_max_price        = -1
+  eviction_policy       = "Delete"
+  node_labels = {
+    "kubernetes.azure.com/scalesetpriority" = "spot"
+    "dedicated"                             = "worker"
+  }
+  node_taints = [
+    "dedicated=worker:NoSchedule",
+    "kubernetes.azure.com/scalesetpriority=spot:NoSchedule"
+  ]
+  tags = {
+    managed-by = "terraform"
+  }
+  lifecycle {
+    ignore_changes = [
+      node_count
+    ]
+  }
+}
