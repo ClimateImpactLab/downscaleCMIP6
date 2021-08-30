@@ -14,7 +14,7 @@ variable "k8scluster_name" {
 }
 
 variable "kubernetes_version" {
-  default     = "1.19.9"
+  default     = "1.20.7"
   description = "The Kubernetes version to use in AKS"
 }
 
