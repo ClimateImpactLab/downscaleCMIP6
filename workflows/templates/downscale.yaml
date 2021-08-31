@@ -1,0 +1,1017 @@
+apiVersion: argoproj.io/v1alpha1
+kind: WorkflowTemplate
+metadata:
+  name: downscale-aiqpd
+  labels:
+    component: downscale
+spec:
+  workflowMetadata:
+    labels:
+      component: downscale
+  entrypoint: main
+  arguments:
+    parameters:
+      - name: reference-zarr
+        value: "az://scratch/clean-dev/ERA-5/tasmin.1995-2015.F320.zarr"
+      - name: variable-id
+        value: "tasmin"
+      - name: regrid-method
+        value: "bilinear"
+      - name: domainfile1x1
+        value: "az://support/domain.1x1.zarr"
+      - name: domainfile0p25x0p25
+        value: "az://support/domain.0p25x0p25.zarr"
+      - name: qdm-kind #additive or multiplicative
+        value: "additive"
+      - name: qdm-biascorrected-zarr
+        value: "az://scratch/dc6-qdm-chunks-test-fwxj6/dc6-qdm-chunks-test-fwxj6-4261986766/qdm_adjusted.zarr"
+      - name: qdm-quantiles-zarr
+        value: "az://scratch/qdm-sepoutput-test-glndj/qdm-sepoutput-test-glndj-651835519/simq.zarr"
+      - name: firstyear
+        value: 1950
+      - name: lastyear
+        value: 2014
+  templates:
+
+    - name: main
+      inputs:
+        parameters:
+          - name: reference-zarr
+          - name: variable-id
+          - name: regrid-method
+          - name: domainfile1x1
+          - name: domainfile0p25x0p25
+          - name: qdm-kind
+          - name: qdm-biascorrected-zarr
+          - name: qdm-quantiles-zarr
+          - name: firstyear
+          - name: lastyear
+      dag:
+        tasks:
+          - name: preprocess-quantiles
+            template: preprocess-biascorrected
+            arguments:
+              parameters:
+                - name: in-zarr
+                  value: "{{ inputs.parameters.qdm-quantiles-zarr }}"
+                - name: regrid-method
+                  value: "nearest_s2d"
+                - name: domain-file
+                  value: "{{ inputs.parameters.domainfile0p25x0p25 }}"
+                - name: firstyear
+                  value: "{{ inputs.parameters.firstyear }}"
+                - name: lastyear
+                  value: "{{ inputs.parameters.lastyear }}"
+          - name: preprocess-biascorrected
+            template: preprocess-biascorrected
+            arguments:
+              parameters:
+                - name: in-zarr
+                  value: "{{ inputs.parameters.qdm-biascorrected-zarr }}"
+                - name: regrid-method
+                  value: "nearest_s2d"
+                - name: domain-file
+                  value: "{{ inputs.parameters.domainfile0p25x0p25 }}"
+                - name: firstyear
+                  value: "{{ inputs.parameters.firstyear }}"
+                - name: lastyear
+                  value: "{{ inputs.parameters.lastyear }}"
+#            template: broadcast-to-match
+#            arguments:
+#              parameters:
+#                - name: in-zarr
+#                  value: "{{ inputs.parameters.qdm-biascorrected }}"
+#                - name: to-match-zarr
+#                  value: "{{ inputs.parameters.domainfile0p25x0p25 }}"
+          - name: regrid-fine-reference
+            template: preprocess
+            arguments:
+              parameters:
+                - name: in-zarr
+                  value: "{{ inputs.parameters.reference-zarr }}"
+                - name: regrid-method
+                  value: "{{ inputs.parameters.regrid-method }}"
+                - name: domain-file
+                  value: "{{ inputs.parameters.domainfile0p25x0p25 }}"
+          - name: regrid-reference-to-coarse
+            template: regrid
+            arguments:
+              parameters:
+                - name: in-zarr
+                  value: "{{ inputs.parameters.reference-zarr }}"
+                - name: regrid-method
+                  value: "{{ inputs.parameters.regrid-method }}"
+                - name: domain-file
+                  value: "{{ inputs.parameters.domainfile1x1 }}"
+          - name: regrid-coarse-reference
+            dependencies: [ regrid-reference-to-coarse ]
+            template: preprocess
+            arguments:
+              parameters:
+                - name: in-zarr
+                  value: "{{ tasks.regrid-reference-to-coarse.outputs.parameters.out-zarr }}"
+                - name: regrid-method
+                  value: "{{ inputs.parameters.regrid-method }}"
+                - name: domain-file
+                  value: "{{ inputs.parameters.domainfile0p25x0p25 }}"
+          - name: train-aiqpd
+            dependencies: [ regrid-coarse-reference, regrid-fine-reference ]
+            template: train-aiqpd
+            arguments:
+              parameters:
+                - name: variable
+                  value: "{{ inputs.parameters.variable-id }}"
+                - name: coarse-reference-zarr
+                  value: "{{ tasks.regrid-coarse-reference.outputs.parameters.out-zarr }}"
+                - name: fine-reference-zarr
+                  value: "{{ tasks.regrid-fine-reference.outputs.parameters.out-zarr }}"
+                - name: kind
+                  value: "{{ inputs.parameters.qdm-kind }}"
+                - name: lat-slice-min
+                  value: "{{=asInt(item) * 8 }}"
+                - name: lat-slice-max
+                  value: "{{=asInt(item) * 8 + 8 }}"
+            withSequence:
+              start: "0"
+              end: "89"
+          - name: apply-aiqpd
+            dependencies: [ train-aiqpd, preprocess-biascorrected, preprocess-quantiles ]
+            template: apply-aiqpd
+            arguments:
+              parameters:
+                - name: variable
+                  value: "{{ inputs.parameters.variable-id }}"
+                - name: simulation-zarr
+                  value: "{{ tasks.preprocess-biascorrected.outputs.parameters.out-zarr }}"
+                - name: quantiles-zarr
+                  value: "{{ tasks.preprocess-quantiles.outputs.parameters.out-zarr }}"
+                - name: aiqpd-model-zarr
+                  value: "{{ item.out-zarr }}"
+                - name: kind
+                  value: "{{ inputs.parameters.qdm-kind }}"
+                - name: lat-slice-min
+                  value: "{{ item.lat-slice-min }}"
+                - name: lat-slice-max
+                  value: "{{ item.lat-slice-max }}"
+            withParam: "{{ tasks.train-aiqpd.outputs.parameters }}"
+
+
+    - name: preprocess
+      inputs:
+        parameters:
+          - name: in-zarr
+          - name: regrid-method
+          - name: domain-file
+      outputs:
+        parameters:
+          - name: out-zarr
+            valueFrom:
+              parameter: "{{ tasks.move-chunks-to-space.outputs.parameters.out-zarr }}"
+      dag:
+        tasks:
+          - name: move-chunks-to-time
+            template: rechunk
+            arguments:
+              parameters:
+                - name: in-zarr
+                  value: "{{ inputs.parameters.in-zarr }}"
+                - name: time-chunk
+                  value: "73"
+                - name: lat-chunk
+                  value: -1
+                - name: lon-chunk
+                  value: -1
+          - name: regrid
+            dependencies: [ move-chunks-to-time ]
+            template: regrid
+            arguments:
+              parameters:
+                - name: in-zarr
+                  value: "{{ tasks.move-chunks-to-time.outputs.parameters.out-zarr }}"
+                - name: regrid-method
+                  value: "{{ inputs.parameters.regrid-method }}"
+                - name: domain-file
+                  value: "{{ inputs.parameters.domain-file }}"
+          - name: move-chunks-to-space
+            dependencies: [ regrid ]
+            template: rechunk
+            arguments:
+              parameters:
+                - name: in-zarr
+                  value: "{{ tasks.regrid.outputs.parameters.out-zarr }}"
+                - name: time-chunk
+                  value: "-1"
+                - name: lat-chunk
+                  value: 8
+                - name: lon-chunk
+                  value: 10
+
+
+    - name: preprocess-biascorrected
+      inputs:
+        parameters:
+          - name: in-zarr
+          - name: regrid-method
+          - name: domain-file
+          - name: firstyear
+          - name: lastyear
+      outputs:
+        parameters:
+          - name: out-zarr
+            valueFrom:
+              parameter: "{{ tasks.regrid.outputs.parameters.out-zarr }}"
+      dag:
+        tasks:
+          - name: move-chunks-to-time
+            template: rechunk
+            arguments:
+              parameters:
+                - name: in-zarr
+                  value: "{{ inputs.parameters.in-zarr }}"
+                - name: time-chunk
+                  value: "73"
+                - name: lat-chunk
+                  value: -1
+                - name: lon-chunk
+                  value: -1
+          - name: regrid
+            dependencies: [ move-chunks-to-time ]
+            template: distributed-regrid
+            arguments:
+              parameters:
+                - name: in-zarr
+                  value: "{{ tasks.move-chunks-to-time.outputs.parameters.out-zarr }}"
+                - name: regrid-method
+                  value: "{{ inputs.parameters.regrid-method }}"
+                - name: domain-file
+                  value: "{{ inputs.parameters.domain-file }}"
+                - name: firstyear
+                  value: "{{ inputs.parameters.firstyear }}"
+                - name: lastyear
+                  value: "{{ inputs.parameters.lastyear }}"
+
+
+    - name: regrid
+      inputs:
+        parameters:
+          - name: in-zarr
+          - name: out-zarr
+            value: "az://scratch/{{ workflow.name }}/{{ pod.name }}/regridded.zarr"
+          - name: regrid-method
+          - name: domain-file
+      outputs:
+        parameters:
+          - name: out-zarr
+            value: "{{ inputs.parameters.out-zarr }}"
+      container:
+        image: downscalecmip6.azurecr.io/dodola:0.5.0
+        env:
+          - name: AZURE_STORAGE_ACCOUNT_NAME
+            valueFrom:
+              secretKeyRef:
+                name: workerstoragecreds-secret
+                key: azurestorageaccount
+          - name: AZURE_STORAGE_ACCOUNT_KEY
+            valueFrom:
+              secretKeyRef:
+                name: workerstoragecreds-secret
+                key: azurestoragekey
+        command: [ "dodola" ]
+        args:
+          - "regrid"
+          - "{{ inputs.parameters.in-zarr }}"
+          - "--astype=float32"
+          - "--out"
+          - "{{ inputs.parameters.out-zarr }}"
+          - "--method"
+          - "{{ inputs.parameters.regrid-method }}"
+          - "--domain-file"
+          - "{{ inputs.parameters.domain-file }}"
+        resources:
+          requests:
+            memory: 48Gi
+            cpu: "1000m"
+          limits:
+            memory: 48Gi
+            cpu: "2000m"
+      activeDeadlineSeconds: 3600
+      retryStrategy:
+        limit: 2
+        retryPolicy: "Always"
+
+
+    # Like normal dodola rechunk but setting `safe_chunks=False` explicitly on write.
+    - name: regrid-safechunks
+      inputs:
+        parameters:
+          - name: in-zarr
+          - name: out-zarr
+            value: "az://scratch/{{ workflow.name }}/{{ pod.name }}/regridded.zarr"
+          - name: time-chunk
+            value: 365
+          - name: lat-chunk
+            value: 10
+          - name: lon-chunk
+            value: 10
+          - name: time-dim-name
+            value: time
+      outputs:
+        parameters:
+          - name: out-zarr
+            value: "{{ inputs.parameters.out-zarr }}"
+      script:
+        image: downscalecmip6.azurecr.io/dodola:0.5.0
+        env:
+          - name: AZURE_STORAGE_ACCOUNT_NAME
+            valueFrom:
+              secretKeyRef:
+                name: workerstoragecreds-secret
+                key: azurestorageaccount
+          - name: AZURE_STORAGE_ACCOUNT_KEY
+            valueFrom:
+              secretKeyRef:
+                name: workerstoragecreds-secret
+                key: azurestoragekey
+        command: [ python ]
+        source: |
+          import os
+          import dodola.repository
+
+          x = "{{ inputs.parameters.in-zarr }}"
+          out_zarr = "{{ inputs.parameters.out-zarr }}"
+          chunk = [
+              "{{ inputs.parameters.time-dim-name }}={{ inputs.parameters.time-chunk }}",
+              "lat={{ inputs.parameters.lat-chunk }}",
+              "lon={{ inputs.parameters.lon-chunk }}",
+          ]
+          target_chunks = {c.split("=")[0]: int(c.split("=")[1]) for c in chunk}
+
+          ds = dodola.repository.read(x)
+
+          # Simple, stable, but not for more specialized rechunking needs.
+          # In that case use "rechunker" package, or similar.
+          ds = ds.chunk(target_chunks)
+
+          # Hack to get around issue with writing chunks to zarr in xarray ~v0.17.0
+          # https://github.com/pydata/xarray/issues/2300
+          for v in ds.data_vars.keys():
+              del ds[v].encoding["chunks"]
+
+          ds.to_zarr(out_zarr, mode="w", compute=True, safe_chunks=False)
+          print(f"Output written to {out_zarr}")  # DEBUG
+        resources:
+          requests:
+            memory: 48Gi
+            cpu: "1000m"
+          limits:
+            memory: 48Gi
+            cpu: "2000m"
+      activeDeadlineSeconds: 1800
+      retryStrategy:
+        limit: 1
+        retryPolicy: "Always"
+
+
+    - name: broadcast-to-match
+      inputs:
+        parameters:
+          - name: in-zarr
+          - name: to-match-zarr
+#          - name: variable
+          - name: out-zarr
+            value: "az://scratch/{{ workflow.name }}/{{ pod.name }}/rechunked.zarr"
+      outputs:
+        parameters:
+          - name: out-zarr
+            value: "{{ inputs.parameters.out-zarr }}"
+      script:
+        image: downscalecmip6.azurecr.io/dodola:0.5.0
+        env:
+          - name: AZURE_STORAGE_ACCOUNT_NAME
+            valueFrom:
+              secretKeyRef:
+                name: workerstoragecreds-secret
+                key: azurestorageaccount
+          - name: AZURE_STORAGE_ACCOUNT_KEY
+            valueFrom:
+              secretKeyRef:
+                name: workerstoragecreds-secret
+                key: azurestoragekey
+        command: [ python ]
+        source: |
+          import xarray as xr
+          import dodola.repository
+
+          in_zarr = "{{ inputs.parameters.in-zarr }}"
+          to_match_zarr = "{{ inputs.parameters.to-match-zarr }}"
+          out_zarr = "{{ inputs.parameters.out-zarr }}"
+          #variable = "{{ inputs.parameters.variable }}"
+
+          ds = dodola.repository.read(in_zarr)
+          ds_to_match = dodola.repository.read(to_match_zarr)
+
+          print(f"{ds=}") # DEBUG
+          print(f"{ds_to_match=}") # DEBUG
+
+          #ds_out = ds[variable].broadcast_like(ds_to_match, exclude=["time"])
+          ds_out = ds.broadcast_like(ds_to_match, exclude=["time"])
+
+          print(f"{ds_out=}") # DEBUG
+
+          ds_out = ds_out.chunk({"lat": 8, "lon": 10, "time": -1})
+
+          ds_out.to_zarr(out_zarr, mode="w", compute=True, safe_chunks=False)
+          print(f"Output written to {out_zarr}")  # DEBUG
+        resources:
+          requests:
+            memory: 48Gi
+            cpu: "1000m"
+          limits:
+            memory: 48Gi
+            cpu: "12000m"
+      activeDeadlineSeconds: 1800
+      retryStrategy:
+        limit: 1
+        retryPolicy: "Always"
+
+
+    - name: rechunk
+      inputs:
+        parameters:
+          - name: in-zarr
+          - name: out-zarr
+            value: "az://scratch/{{ workflow.name }}/{{ pod.name }}/rechunked.zarr"
+          - name: time-chunk
+            value: 365
+          - name: lat-chunk
+            value: 10
+          - name: lon-chunk
+            value: 10
+          - name: time-dim-name
+            value: time
+      outputs:
+        parameters:
+          - name: out-zarr
+            value: "{{ inputs.parameters.out-zarr }}"
+      container:
+        image: downscalecmip6.azurecr.io/dodola:0.5.0
+        env:
+          - name: AZURE_STORAGE_ACCOUNT_NAME
+            valueFrom:
+              secretKeyRef:
+                name: workerstoragecreds-secret
+                key: azurestorageaccount
+          - name: AZURE_STORAGE_ACCOUNT_KEY
+            valueFrom:
+              secretKeyRef:
+                name: workerstoragecreds-secret
+                key: azurestoragekey
+        command: [ dodola ]
+        args:
+          - "rechunk"
+          - "{{ inputs.parameters.in-zarr }}"
+          - "--out"
+          - "{{ inputs.parameters.out-zarr }}"
+          - "--chunk"
+          - "{{ inputs.parameters.time-dim-name }}={{ inputs.parameters.time-chunk }}"
+          - "--chunk"
+          - "lat={{ inputs.parameters.lat-chunk }}"
+          - "--chunk"
+          - "lon={{ inputs.parameters.lon-chunk }}"
+        resources:
+          requests:
+            memory: 48Gi
+            cpu: "1000m"
+          limits:
+            memory: 48Gi
+            cpu: "2000m"
+      activeDeadlineSeconds: 1800
+      retryStrategy:
+        limit: 1
+        retryPolicy: "Always"
+
+
+    - name: aiqpd
+      inputs:
+        parameters:
+          - name: coarse-reference-zarr
+          - name: fine-reference-zarr
+          - name: simulation-zarr
+          - name: quantiles-zarr
+          - name: variable
+          - name: kind
+          - name: lat-slice-min
+          - name: lat-slice-max
+      outputs:
+        parameters:
+          - name: out-zarr
+            valueFrom:
+              parameter: "{{ steps.apply.outputs.parameters.out-zarr }}"
+      steps:
+      - - name: train
+          template: train-aiqpd
+          arguments:
+            parameters:
+              - name: variable
+                value: "{{ inputs.parameters.variable }}"
+              - name: coarse-reference-zarr
+                value: "{{ inputs.parameters.coarse-reference-zarr }}"
+              - name: fine-reference-zarr
+                value: "{{ inputs.parameters.fine-reference-zarr }}"
+              - name: kind
+                value: "{{ inputs.parameters.kind }}"
+              - name: lat-slice-min
+                value: "{{ inputs.parameters.lat-slice-min }}"
+              - name: lat-slice-max
+                value: "{{ inputs.parameters.lat-slice-max }}"
+      - - name: apply
+          template: apply-aiqpd
+          arguments:
+            parameters:
+              - name: variable
+                value: "{{ inputs.parameters.variable }}"
+              - name: simulation-zarr
+                value: "{{ inputs.parameters.simulation-zarr }}"
+              - name: quantiles-zarr
+                value: "{{ inputs.parameters.quantiles-zarr }}"
+              - name: aiqpd-model-zarr
+                value: "{{ steps.train.outputs.parameters.out-zarr }}"
+              - name: kind
+                value: "{{ inputs.parameters.kind }}"
+              - name: lat-slice-min
+                value: "{{ inputs.parameters.lat-slice-min }}"
+              - name: lat-slice-max
+                value: "{{ inputs.parameters.lat-slice-max }}"
+
+
+    - name: train-aiqpd
+      inputs:
+        parameters:
+          - name: coarse-reference-zarr
+          - name: fine-reference-zarr
+          - name: variable
+          - name: kind
+          - name: lat-slice-min
+          - name: lat-slice-max
+          - name: time-sel-start
+            value: "1994-12-17"
+          - name: time-sel-stop
+            value: "2015-01-15"
+          - name: out-zarr
+            value: "az://scratch/{{ workflow.name }}/{{ pod.name }}/aiqpd-model.zarr"
+      outputs:
+        parameters:
+          - name: lat-slice-min
+            value: "{{ inputs.parameters.lat-slice-min }}"
+          - name: lat-slice-max
+            value: "{{ inputs.parameters.lat-slice-max }}"
+          - name: out-zarr
+            value: "{{ inputs.parameters.out-zarr }}"
+      script:
+        image: downscalecmip6.azurecr.io/dodola:dev
+        env:
+          - name: AZURE_STORAGE_ACCOUNT_NAME
+            valueFrom:
+              secretKeyRef:
+                name: workerstoragecreds-secret
+                key: azurestorageaccount
+          - name: AZURE_STORAGE_ACCOUNT_KEY
+            valueFrom:
+              secretKeyRef:
+                name: workerstoragecreds-secret
+                key: azurestoragekey
+        command: [ python ]
+        source: |
+          import os
+          import dodola.repository
+          from dodola.core import train_analogdownscaling
+
+          kind_map = {"multiplicative": "*", "additive": "+"}
+
+          cref_zarr = "{{ inputs.parameters.coarse-reference-zarr }}"
+          fref_zarr = "{{ inputs.parameters.fine-reference-zarr }}"
+          out_zarr = "{{ inputs.parameters.out-zarr }}"
+
+          time_sel_start = "{{ inputs.parameters.time-sel-start }}"
+          time_sel_stop = "{{ inputs.parameters.time-sel-stop }}"
+          min_slice = int({{ inputs.parameters.lat-slice-min }})
+          max_slice = int({{ inputs.parameters.lat-slice-max }})
+
+          variable = "{{ inputs.parameters.variable }}"
+          kind = kind_map["{{ inputs.parameters.kind }}"]
+
+          latslice = slice(min_slice, max_slice)
+          print(f"{latslice=}")  # DEBUG
+          timeslice = slice(time_sel_start, time_sel_stop)
+          print(f"{timeslice=}")  # DEBUG
+
+          print(f"reading {cref_zarr}")
+          creference = dodola.repository.read(cref_zarr)
+          print(f"{creference=}")  # DEBUG
+          creference = creference.sel(time=timeslice)
+          creference = creference.isel(lat=latslice)
+          print(f"{creference=}")  # DEBUG
+
+          print(f"reading {fref_zarr}")
+          freference = dodola.repository.read(fref_zarr)
+          print(f"{freference=}")  # DEBUG
+          freference = freference.sel(time=timeslice)
+          freference = freference.isel(lat=latslice)
+          print(f"{freference=}")  # DEBUG
+
+          creference.load()
+          freference.load()
+
+          aiqpd = train_analogdownscaling(
+              coarse_reference=creference,
+              fine_reference=freference,
+              variable=variable,
+              kind=kind,
+              quantiles_n=620,
+              window_n=31,
+          )
+
+          print(f"{aiqpd.ds=}")  # DEBUG
+
+          dodola.repository.write(out_zarr, aiqpd.ds)
+          print(f"Output written to {out_zarr}")  # DEBUG
+        resources:
+          requests:
+            memory: 48Gi
+            cpu: "1000m"
+          limits:
+            memory: 48Gi
+            cpu: "12000m"
+      activeDeadlineSeconds: 900
+      retryStrategy:
+        limit: 2
+        retryPolicy: "Always"
+
+
+    - name: apply-aiqpd
+      inputs:
+        parameters:
+          - name: simulation-zarr
+          - name: quantiles-zarr
+          - name: aiqpd-model-zarr
+          - name: variable
+          - name: kind
+          - name: lat-slice-min
+          - name: lat-slice-max
+          - name: out-zarr
+            value: "az://scratch/{{ workflow.name }}/{{ pod.name }}/aiqpd_adjusted.zarr"
+      outputs:
+        parameters:
+          - name: lat-slice-min
+            value: "{{ inputs.parameters.lat-slice-min }}"
+          - name: lat-slice-max
+            value: "{{ inputs.parameters.lat-slice-max }}"
+          - name: out-zarr
+            value: "{{ inputs.parameters.out-zarr }}"
+      script:
+        image: downscalecmip6.azurecr.io/dodola:dev
+        env:
+          - name: AZURE_STORAGE_ACCOUNT_NAME
+            valueFrom:
+              secretKeyRef:
+                name: workerstoragecreds-secret
+                key: azurestorageaccount
+          - name: AZURE_STORAGE_ACCOUNT_KEY
+            valueFrom:
+              secretKeyRef:
+                name: workerstoragecreds-secret
+                key: azurestoragekey
+        command: [ python ]
+        source: |
+          import dodola.repository
+          #from dodola.core import adjust_analogdownscaling_year
+          from xclim import sdba
+          import xarray as xr
+
+          # Putting this prototype function here until it gets into dodola.
+          def adjust_analogdownscaling_year(simulation, aiqpd, variable):
+              """Apply AIQPD to downscale a year of bias corrected output.
+              Parameters
+              ----------
+              simulation : xr.Dataset
+                  Daily bias corrected data to be downscaled.
+              aiqpd : xr.Dataset or sdba.adjustment.AnalogQuantilePreservingDownscaling
+                  Trained ``xclim.sdba.adjustment.AnalogQuantilePreservingDownscaling``, or
+                  Dataset representation that will instantiate
+                  ``xclim.sdba.adjustment.AnalogQuantilePreservingDownscaling``.
+              variable : str
+                  Target variable in `simulation` to downscale. Downscaled output will share the
+                  same name.
+              Returns
+              -------
+              out : xr.Dataset
+                  AIQPD-downscaled values from `simulation`. May be a lazy-evaluated future, not
+                  yet computed.
+              """
+              variable = str(variable)
+              if isinstance(aiqpd, xr.Dataset):
+                  aiqpd = sdba.adjustment.AnalogQuantilePreservingDownscaling.from_dataset(aiqpd)
+
+              out = aiqpd.adjust(simulation[variable])
+
+              return out.to_dataset(name=variable)
+
+
+          kind_map = {"multiplicative": "*", "additive": "+"}
+
+          sim_zarr = "{{ inputs.parameters.simulation-zarr }}"
+          quantiles_zarr = "{{ inputs.parameters.quantiles-zarr }}"
+          aiqpd_model_zarr = "{{ inputs.parameters.aiqpd-model-zarr }}"
+          out_zarr = "{{ inputs.parameters.out-zarr }}"
+          min_slice = int({{ inputs.parameters.lat-slice-min }})
+          max_slice = int({{ inputs.parameters.lat-slice-max }})
+          variable = "{{ inputs.parameters.variable }}"
+          kind = kind_map["{{ inputs.parameters.kind }}"]
+
+          latslice = slice(min_slice, max_slice)
+          print(f"{latslice=}")  # DEBUG
+
+          sim_ds = dodola.repository.read(sim_zarr).isel(lat=latslice)
+          quantiles_ds = dodola.repository.read(quantiles_zarr).isel(lat=latslice)
+
+          sim_ds["sim_q"] = quantiles_ds["sim_q"]
+          sim_ds = sim_ds.set_coords(["sim_q"])
+          print(f"{sim_ds=}")  # DEBUG
+
+          aiqpd_ds = dodola.repository.read(aiqpd_model_zarr)
+          print(f"{aiqpd_ds=}")  # DEBUG
+
+          # zarr dimensions can be switched, and if dim order
+          # is not lat, lon, dayofyear, quantile, cannot broadcast
+          aiqpd_ds = aiqpd_ds.transpose("lon", "lat", "dayofyear", "quantiles")
+
+          # also needs to not be chunked
+          sim_ds = sim_ds.load()
+          aiqpd_ds = aiqpd_ds.load()
+
+          downscaled_ds = adjust_analogdownscaling_year(
+              simulation=sim_ds,
+              aiqpd=aiqpd_ds,
+              variable=variable
+          )
+          print(f"{downscaled_ds=}")  # DEBUG
+
+          dodola.repository.write(out_zarr, downscaled_ds)
+          print(f"Output written to {out_zarr}")  # DEBUG
+        resources:
+          requests:
+            memory: 48Gi
+            cpu: "1000m"
+          limits:
+            memory: 48Gi
+            cpu: "12000m"
+      activeDeadlineSeconds: 900
+      retryStrategy:
+        limit: 2
+        retryPolicy: "Always"
+
+
+    - name: distributed-regrid
+      inputs:
+        parameters:
+          - name: in-zarr
+          - name: regrid-method
+          - name: domain-file
+          - name: firstyear
+          - name: lastyear
+          # Space delimited list of all variables/coords in "in-zarr" without need for time dimension.
+          - name: nontime-variables
+            value: "lat lon"
+      outputs:
+        parameters:
+          - name: out-zarr
+            valueFrom:
+              parameter: "{{ tasks.prime-regrid-zarr.outputs.parameters.out-zarr }}"
+      dag:
+        tasks:
+          - name: prime-regrid-zarr
+            template: prime-regrid-zarr
+            arguments:
+              parameters:
+                - name: in-zarr
+                  value: "{{ inputs.parameters.in-zarr }}"
+                - name: regrid-method
+                  value: "{{ inputs.parameters.regrid-method }}"
+                - name: domain-file
+                  value: "{{ inputs.parameters.domain-file }}"
+                - name: nontime-variables
+                  value: "{{ inputs.parameters.nontime-variables }}"
+                - name: firstyear
+                  value: "{{ inputs.parameters.firstyear }}"
+                - name: lastyear
+                  value: "{{ inputs.parameters.lastyear }}"
+          - name: regrid-year-to-primedzarr
+            template: regrid-select-year-to-primedzarr
+            dependencies: [ prime-regrid-zarr ]
+            arguments:
+              parameters:
+                - name: in-zarr
+                  value: "{{ inputs.parameters.in-zarr }}"
+                - name: out-zarr
+                  value: "{{ tasks.prime-regrid-zarr.outputs.parameters.out-zarr }}"
+                - name: regrid-method
+                  value: "{{ inputs.parameters.regrid-method }}"
+                - name: domain-file
+                  value: "{{ inputs.parameters.domain-file }}"
+                - name: nontime-variables
+                  value: "{{ inputs.parameters.nontime-variables }}"
+                - name: select-year
+                  value: "{{ item }}"
+            withSequence:
+              start: "{{ inputs.parameters.firstyear }}"
+              end: "{{ inputs.parameters.lastyear }}"
+
+
+    # Sets up output zarr file and metadata without writing time-related data to the zarr store.
+    - name: prime-regrid-zarr
+      inputs:
+        parameters:
+          - name: in-zarr
+          - name: firstyear
+          - name: lastyear
+          - name: regrid-method
+          - name: domain-file
+          - name: nontime-variables
+            value: "lat lon"
+          - name: out-zarr
+            value: "az://scratch/{{ workflow.name }}/{{ pod.name }}/regridded.zarr"
+      outputs:
+        parameters:
+          - name: out-zarr
+            value: "{{ inputs.parameters.out-zarr }}"
+      script:
+        image: downscalecmip6.azurecr.io/dodola:0.5.0
+        env:
+          - name: IN_ZARR
+            value: "{{ inputs.parameters.in-zarr }}"
+          - name: OUT_ZARR
+            value: "{{ inputs.parameters.out-zarr }}"
+          - name: FIRSTYEAR
+            value: "{{ inputs.parameters.firstyear }}"
+          - name: LASTYEAR
+            value: "{{ inputs.parameters.lastyear }}"
+          - name: REGRID_METHOD
+            value: "{{ inputs.parameters.regrid-method }}"
+          - name: DOMAIN_FILE
+            value: "{{ inputs.parameters.domain-file }}"
+          - name: NONTIME_VARIABLES
+            value: "{{ inputs.parameters.nontime-variables }}"
+          - name: AZURE_STORAGE_ACCOUNT_NAME
+            valueFrom:
+              secretKeyRef:
+                name: workerstoragecreds-secret
+                key: azurestorageaccount
+          - name: AZURE_STORAGE_ACCOUNT_KEY
+            valueFrom:
+              secretKeyRef:
+                name: workerstoragecreds-secret
+                key: azurestoragekey
+        command: [ python ]
+        source: |
+          import os
+          import dodola.repository
+          from dodola.core import xesmf_regrid
+          import xarray as xr
+
+          in_zarr = os.environ["IN_ZARR"]
+          out_zarr = os.environ["OUT_ZARR"]
+          firstyear = int(os.environ["FIRSTYEAR"])
+          lastyear = int(os.environ["LASTYEAR"])
+          regrid_method = os.environ["REGRID_METHOD"]
+          domain_file = os.environ["DOMAIN_FILE"]
+          # Space-delim string of variables and coordinates that do use "time" dimension.
+          non_time = os.environ["NONTIME_VARIABLES"].strip().rsplit()
+
+          # Setup regrid calculation for a time range.
+          ds_in = dodola.repository.read(in_zarr).sel(time=slice(str(firstyear), str(lastyear + 1)))
+          domain_fl = dodola.repository.read(domain_file)
+          ds_out = xesmf_regrid(ds_in, domain_fl, regrid_method, astype="float32")
+          ds_out = ds_out.chunk({"time": 365, "lat": 8, "lon": -1})
+
+          print(f"{ds_out=}")  # DEBUG
+
+          # Output metadata to Zarr store.
+          ds_out.to_zarr(
+              out_zarr,
+              mode="w",
+              compute=False,
+              consolidated=True
+          )
+
+          print(f"{ds_out[non_time]=}")  # DEBUG
+
+          # Append variables that do not depend on "time"
+          if non_time:
+              ds_out[non_time].to_zarr(
+                  out_zarr,
+                  mode="a",
+                  compute=True,
+                  consolidated=True
+              )
+        resources:
+          requests:
+            memory: 4Gi
+            cpu: "1000m"
+          limits:
+            memory: 4Gi
+            cpu: "1000m"
+      activeDeadlineSeconds: 900
+      retryStrategy:
+        limit: 2
+        retryPolicy: "Always"
+
+
+    # Write select year of time-indexed data to a pre-primed zarr file.
+    - name: regrid-select-year-to-primedzarr
+      inputs:
+        parameters:
+          - name: in-zarr
+          - name: select-year
+          - name: regrid-method
+          - name: domain-file
+          - name: out-zarr
+          - name: nontime-variables
+            value: "lat lon"
+      outputs:
+        parameters:
+          - name: out-zarr
+            value: "{{ inputs.parameters.out-zarr }}"
+      script:
+        image: downscalecmip6.azurecr.io/dodola:0.5.0
+        env:
+          - name: IN_ZARR
+            value: "{{ inputs.parameters.in-zarr }}"
+          - name: OUT_ZARR
+            value: "{{ inputs.parameters.out-zarr }}"
+          - name: SELTIME
+            value: "{{ inputs.parameters.select-year }}"
+          - name: REGRID_METHOD
+            value: "{{ inputs.parameters.regrid-method }}"
+          - name: DOMAIN_FILE
+            value: "{{ inputs.parameters.domain-file }}"
+          - name: NONTIME_VARIABLES
+            value: "{{ inputs.parameters.nontime-variables }}"
+          - name: AZURE_STORAGE_ACCOUNT_NAME
+            valueFrom:
+              secretKeyRef:
+                name: workerstoragecreds-secret
+                key: azurestorageaccount
+          - name: AZURE_STORAGE_ACCOUNT_KEY
+            valueFrom:
+              secretKeyRef:
+                name: workerstoragecreds-secret
+                key: azurestoragekey
+        command: [ python ]
+        source: |
+          import os
+          import dodola.repository
+          from dodola.core import xesmf_regrid
+          import xarray as xr
+          import numpy as np
+
+          in_zarr = os.environ["IN_ZARR"]
+          out_zarr = os.environ["OUT_ZARR"]
+          sel_time = os.environ["SELTIME"]
+          regrid_method = os.environ["REGRID_METHOD"]
+          domain_file = os.environ["DOMAIN_FILE"]
+          # Space-delim string of variables and coordinates that do use "time" dimension.
+          # If data has something like `lat_b` or `height`, and you care about getting it in output,
+          # those names need to be in this variable!
+          # TODO: We could make this dynamically find non-time dependent variables/coord variables.
+          non_time = os.environ["NONTIME_VARIABLES"].strip().rsplit()
+
+          # Setup regrid calculation for a time range.
+          # Clip out target year from input data. This is a mess because we need the matches AND their index along
+          # time, given the full dataset so that we can write back to the correct region in the output zarr store.
+          ds_in = dodola.repository.read(in_zarr)
+
+          ds_in = ds_in.sel(time=sel_time)
+          domain_fl = dodola.repository.read(domain_file)
+
+          ds_out = xesmf_regrid(ds_in, domain_fl, regrid_method, astype="float32")
+          ds_out = ds_out.chunk({"time": 365, "lat": 8, "lon": -1})
+
+          with xr.open_zarr(out_zarr) as out_store:
+              target_idx_slice = out_store["time"].to_index().get_loc(sel_time)
+
+          if non_time:
+              ds_out = ds_out.drop_vars(non_time)
+
+          # Write to isolated region of Zarr store so can be done by independent processes.
+          ds_out.to_zarr(out_zarr, region={"time": target_idx_slice}, mode="a")
+        resources:
+          requests:
+            memory: 8Gi
+            cpu: "1000m"
+          limits:
+            memory: 8Gi
+            cpu: "1000m"
+      activeDeadlineSeconds: 900
+      retryStrategy:
+        limit: 2
+        retryPolicy: "Always"

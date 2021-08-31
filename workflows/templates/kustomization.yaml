@@ -6,3 +6,4 @@ resources:
   - dc6.yaml
   - distributed-regrid.yaml
   - download-cmip6.yaml
+  - downscale.yaml
