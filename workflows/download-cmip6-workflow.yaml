@@ -2,9 +2,9 @@
 apiVersion: argoproj.io/v1alpha1
 kind: Workflow
 metadata:
-  generateName: downloadraw-
+  generateName: download-cmip6-
   labels:
-    component: downloadraw
+    component: download-cmip6
     env: prod
 spec:
   entrypoint: main

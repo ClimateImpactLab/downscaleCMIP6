@@ -2,13 +2,13 @@
 apiVersion: argoproj.io/v1alpha1
 kind: WorkflowTemplate
 metadata:
-  name: downloadraw
+  name: download-cmip6
   labels:
-    component: downloadraw
+    component: download-cmip6
 spec:
   workflowMetadata:
     labels:
-      component: downloadraw
+      component: download-cmip6
   entrypoint: main
   arguments:
     parameters:

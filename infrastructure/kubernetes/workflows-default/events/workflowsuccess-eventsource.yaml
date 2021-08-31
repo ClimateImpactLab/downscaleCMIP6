@@ -6,7 +6,7 @@ spec:
   template:
     serviceAccountName: argoworkflow-eventsource-sa
   resource:
-    downloadraw-success:
+    download-cmip6-success:
       namespace: argo
       group: argoproj.io
       version: v1alpha1
@@ -18,7 +18,7 @@ spec:
         labels:
           - key: component
             operation: ==
-            value: "downloadraw"
+            value: "download-cmip6"
           - key: workflows.argoproj.io/completed
             operation: ==
             value: "true"
