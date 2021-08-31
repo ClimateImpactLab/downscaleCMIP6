@@ -42,7 +42,7 @@ spec:
             arguments:
               parameters:
                 - name: in-zarr
-                  value: "az://raw/{{inputs.parameters.source-id}}/historical/{{inputs.parameters.variable-id}}.zarr"
+                  value: "az://raw-cmip6/{{inputs.parameters.source-id}}/historical/{{inputs.parameters.variable-id}}.zarr"
           - name: slice-training
             template: timeslicezarr
             dependencies: [ standardize-historical-run ]
@@ -51,7 +51,7 @@ spec:
                 - name: in-zarr
                   value: "{{ tasks.standardize-historical-run.outputs.parameters.out-zarr }}"
                 - name: out-zarr
-                  value: "az://clean/{{inputs.parameters.source-id}}/training/{{inputs.parameters.variable-id}}.zarr"
+                  value: "az://clean-cmip6/{{inputs.parameters.source-id}}/training/{{inputs.parameters.variable-id}}.zarr"
                 - name: from-time
                   value: "{{ inputs.parameters.referenceslicehist-from-time }}"
                 - name: to-time
@@ -64,7 +64,7 @@ spec:
                 - name: in-zarr
                   value: "{{ tasks.standardize-historical-run.outputs.parameters.out-zarr }}"
                 - name: out-zarr
-                  value: "az://clean/{{inputs.parameters.source-id}}/historical/{{inputs.parameters.variable-id}}.zarr"
+                  value: "az://clean-cmip6/{{inputs.parameters.source-id}}/historical/{{inputs.parameters.variable-id}}.zarr"
                 - name: from-time
                   value: "{{ inputs.parameters.histslice-from-time }}"
                 - name: to-time
@@ -102,7 +102,7 @@ spec:
             arguments:
               parameters:
                 - name: in-zarr
-                  value: "az://raw/{{ inputs.parameters.source-id }}/{{ inputs.parameters.ssp }}/{{ inputs.parameters.variable-id }}.zarr"
+                  value: "az://raw-cmip6/{{ inputs.parameters.source-id }}/{{ inputs.parameters.ssp }}/{{ inputs.parameters.variable-id }}.zarr"
           - name: concat-histfuture
             dependencies: [ standardize-future-run ]
             template: timeconcatzarrs
@@ -113,7 +113,7 @@ spec:
                 - name: in2-zarr
                   value: "{{ tasks.standardize-future-run.outputs.parameters.out-zarr }}"
                 - name: out-zarr
-                  value: "az://clean/{{ inputs.parameters.source-id }}/{{ inputs.parameters.ssp }}/{{ inputs.parameters.variable-id }}.zarr"
+                  value: "az://clean-cmip6/{{ inputs.parameters.source-id }}/{{ inputs.parameters.ssp }}/{{ inputs.parameters.variable-id }}.zarr"
 
 
     - name: standardize-cmip6
