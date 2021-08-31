@@ -4,7 +4,7 @@ resources:
   - rbac
   - default-eventbus.yaml
   - workflowsuccess-eventsource.yaml
-  - downloadraw-sensor.yaml
+  - download-cmip6-sensor.yaml
   - clean-cmip6-tas-sensor.yaml
   - clean-cmip6-pr-sensor.yaml
   - clean-cmip6-dtr-sensor.yaml
