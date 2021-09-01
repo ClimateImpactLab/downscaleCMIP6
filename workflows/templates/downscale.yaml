@@ -1,15 +1,13 @@
 apiVersion: argoproj.io/v1alpha1
-#kind: WorkflowTemplate
-kind: Workflow
+kind: WorkflowTemplate
 metadata:
-#  name: downscale-aiqpd
-  generateName: downscale-aiqpd-test-
+  name: downscale
   labels:
     component: downscale
 spec:
-#  workflowMetadata:
-#    labels:
-#      component: downscale
+  workflowMetadata:
+    labels:
+      component: downscale
   parallelism: 50
   entrypoint: main
   arguments:
