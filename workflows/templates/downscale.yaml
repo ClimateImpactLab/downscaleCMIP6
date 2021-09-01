@@ -646,6 +646,9 @@ spec:
       retryStrategy:
         limit: 2
         retryPolicy: "Always"
+        backoff:
+          duration: 30s
+          factor: 2
 
 
     - name: apply-aiqpd
@@ -770,6 +773,9 @@ spec:
       retryStrategy:
         limit: 2
         retryPolicy: "Always"
+        backoff:
+          duration: 30s
+          factor: 2
 
 
     - name: distributed-regrid
