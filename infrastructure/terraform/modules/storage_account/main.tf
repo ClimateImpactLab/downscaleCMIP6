@@ -33,7 +33,7 @@ resource "azurerm_storage_data_lake_gen2_filesystem" "raw-cmip6" {
   name               = "raw-cmip6"
   storage_account_id = azurerm_storage_account.storageacc.id
   lifecycle {
-    prevent_destroy = true
+    prevent_destroy = false
   }
 }
 
@@ -41,7 +41,7 @@ resource "azurerm_storage_data_lake_gen2_filesystem" "raw-era5" {
   name               = "raw-era5"
   storage_account_id = azurerm_storage_account.storageacc.id
   lifecycle {
-    prevent_destroy = true
+    prevent_destroy = false
   }
 }
 
@@ -57,7 +57,7 @@ resource "azurerm_storage_data_lake_gen2_filesystem" "clean-cmip6" {
   name               = "clean-cmip6"
   storage_account_id = azurerm_storage_account.storageacc.id
   lifecycle {
-    prevent_destroy = true
+    prevent_destroy = false
   }
 }
 
@@ -65,7 +65,7 @@ resource "azurerm_storage_data_lake_gen2_filesystem" "clean-era5" {
   name               = "clean-era5"
   storage_account_id = azurerm_storage_account.storageacc.id
   lifecycle {
-    prevent_destroy = true
+    prevent_destroy = false
   }
 }
 
@@ -81,7 +81,7 @@ resource "azurerm_storage_data_lake_gen2_filesystem" "clean-dev" {
   name               = "clean-dev"
   storage_account_id = azurerm_storage_account.storageacc.id
   lifecycle {
-    prevent_destroy = true
+    prevent_destroy = false
   }
 }
 
