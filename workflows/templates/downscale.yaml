@@ -115,6 +115,8 @@ spec:
               parameters:
                 - name: simulation-zarr
                   value: "{{ tasks.preprocess-biascorrected.outputs.parameters.out-zarr}}"
+                - name: variable
+                  value: "{{ inputs.parameters.variable-id }}"
           - name: train-aiqpd
             dependencies: [ regrid-coarse-reference, regrid-fine-reference ]
             template: train-aiqpd
@@ -574,6 +576,7 @@ spec:
               variable=variable
           )
 
+          downscaled_ds = downscaled_ds.reset_coords(["sim_q"], drop=True)
           if nonlat_variables:
               downscaled_ds = downscaled_ds.drop_vars(nonlat_variables)
 
@@ -855,6 +858,7 @@ spec:
       inputs:
         parameters:
           - name: simulation-zarr
+          - name: variable
           - name: out-zarr
             value: "az://scratch/{{ workflow.name }}/{{ pod.name }}/downscaled.zarr"
           - name: nonlat-variables
@@ -884,9 +888,10 @@ spec:
           nonlat_variables = ["lon", "time"]
 
           simulation_zarr = "{{ inputs.parameters.simulation-zarr }}"
+          variable = "{{ inputs.parameters.variable }}"
           out_zarr = "{{ inputs.parameters.out-zarr }}"
 
-          ds_out = dodola.repository.read(simulation_zarr)
+          ds_out = dodola.repository.read(simulation_zarr)[[variable]]
           print(f"{ds_out=}")  # DEBUG
 
           # Output metadata to Zarr store.
