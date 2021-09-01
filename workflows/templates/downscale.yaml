@@ -701,9 +701,6 @@ spec:
               variable=variable
           )
 
-          with xr.open_zarr(out_zarr) as out_store:
-              target_idx_slice = out_store["lat"].to_index().get_loc(latslice)
-
           if nonlat_variables:
               downscaled_ds = downscaled_ds.drop_vars(nonlat_variables)
 
@@ -713,7 +710,7 @@ spec:
           # Output to region of existing zarr store.
           downscaled_ds[[variable]].to_zarr(
               out_zarr,
-              region={"lat": target_idx_slice},
+              region={"lat": latslice},
               mode="a"
           )
           print(f"Output written to {out_zarr}")  # DEBUG
