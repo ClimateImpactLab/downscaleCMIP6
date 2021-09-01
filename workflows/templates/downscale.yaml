@@ -128,12 +128,12 @@ spec:
                 - name: kind
                   value: "{{ inputs.parameters.qdm-kind }}"
                 - name: lat-slice-min
-                  value: "{{=asInt(item) * 8 }}"
+                  value: "{{=asInt(item) * 4 }}"
                 - name: lat-slice-max
-                  value: "{{=asInt(item) * 8 + 8 }}"
+                  value: "{{=asInt(item) * 4 + 4 }}"
             withSequence:
               start: "0"
-              end: "89"
+              end: "179"
           - name: apply-aiqpd
             dependencies: [ train-aiqpd, preprocess-biascorrected, preprocess-quantiles ]
             template: apply-aiqpd
@@ -200,11 +200,11 @@ spec:
                 - name: in-zarr
                   value: "{{ tasks.regrid.outputs.parameters.out-zarr }}"
                 - name: time-chunk
-                  value: "-1"
+                  value: 365
                 - name: lat-chunk
-                  value: 8
+                  value: 4
                 - name: lon-chunk
-                  value: 10
+                  value: -1
 
 
     - name: preprocess-biascorrected
@@ -418,7 +418,7 @@ spec:
 
           print(f"{ds_out=}") # DEBUG
 
-          ds_out = ds_out.chunk({"lat": 8, "lon": 10, "time": -1})
+          ds_out = ds_out.chunk({"lat": 4, "lon": 10, "time": -1})
 
           ds_out.to_zarr(out_zarr, mode="w", compute=True, safe_chunks=False)
           print(f"Output written to {out_zarr}")  # DEBUG
@@ -716,7 +716,7 @@ spec:
 
               return out.to_dataset(name=variable)
 
-
+          nonlat_variables = ["lon", "time"]
           kind_map = {"multiplicative": "*", "additive": "+"}
 
           sim_zarr = "{{ inputs.parameters.simulation-zarr }}"
@@ -732,22 +732,23 @@ spec:
           print(f"{latslice=}")  # DEBUG
 
           sim_ds = dodola.repository.read(sim_zarr).isel(lat=latslice)
-          quantiles_ds = dodola.repository.read(quantiles_zarr).isel(lat=latslice)
 
-          sim_ds["sim_q"] = quantiles_ds["sim_q"]
+          sim_ds["sim_q"] = dodola.repository.read(quantiles_zarr).isel(lat=latslice)["sim_q"]
           sim_ds = sim_ds.set_coords(["sim_q"])
           print(f"{sim_ds=}")  # DEBUG
+          print("loading data...")
+          sim_ds.load()
+          print("data loaded")
 
           aiqpd_ds = dodola.repository.read(aiqpd_model_zarr)
           print(f"{aiqpd_ds=}")  # DEBUG
+          print("loading data...")
+          aiqpd_ds.load()
+          print("data loaded")
 
           # zarr dimensions can be switched, and if dim order
           # is not lat, lon, dayofyear, quantile, cannot broadcast
-          aiqpd_ds = aiqpd_ds.transpose("lon", "lat", "dayofyear", "quantiles")
-
-          # also needs to not be chunked
-          sim_ds = sim_ds.load()
-          aiqpd_ds = aiqpd_ds.load()
+          #aiqpd_ds = aiqpd_ds.transpose("lon", "lat", "dayofyear", "quantiles")  # OOM error?
 
           downscaled_ds = adjust_analogdownscaling_year(
               simulation=sim_ds,
@@ -760,10 +761,10 @@ spec:
           print(f"Output written to {out_zarr}")  # DEBUG
         resources:
           requests:
-            memory: 48Gi
+            memory: 42Gi
             cpu: "1000m"
           limits:
-            memory: 48Gi
+            memory: 42Gi
             cpu: "12000m"
       activeDeadlineSeconds: 900
       retryStrategy:
@@ -891,7 +892,7 @@ spec:
           ds_in = dodola.repository.read(in_zarr).sel(time=slice(str(firstyear), str(lastyear + 1)))
           domain_fl = dodola.repository.read(domain_file)
           ds_out = xesmf_regrid(ds_in, domain_fl, regrid_method, astype="float32")
-          ds_out = ds_out.chunk({"time": 365, "lat": 8, "lon": -1})
+          ds_out = ds_out.chunk({"time": 365, "lat": 4, "lon": -1})
 
           print(f"{ds_out=}")  # DEBUG
 
@@ -994,7 +995,7 @@ spec:
           domain_fl = dodola.repository.read(domain_file)
 
           ds_out = xesmf_regrid(ds_in, domain_fl, regrid_method, astype="float32")
-          ds_out = ds_out.chunk({"time": 365, "lat": 8, "lon": -1})
+          ds_out = ds_out.chunk({"time": 365, "lat": 4, "lon": -1})
 
           with xr.open_zarr(out_zarr) as out_store:
               target_idx_slice = out_store["time"].to_index().get_loc(sel_time)
