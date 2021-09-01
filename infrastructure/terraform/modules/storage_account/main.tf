@@ -21,6 +21,7 @@ resource "azurerm_storage_account" "storageacc" {
   account_replication_type = "LRS"
   account_kind             = "StorageV2"
   is_hns_enabled           = "true"
+  allow_blob_public_access = "true"
   lifecycle {
     prevent_destroy = true
   }
