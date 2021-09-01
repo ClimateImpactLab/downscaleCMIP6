@@ -489,11 +489,11 @@ spec:
           print(f"{primed_out=}")  # DEBUG
 
           primed_out.to_zarr(
-            qdm_out_zarr,
-            mode="w",
-            compute=False,
-            consolidated=True,
-            safe_chunks=False
+              qdm_out_zarr,
+              mode="w",
+              compute=False,
+              consolidated=True,
+              safe_chunks=False
           )
           print(f"Output written to {qdm_out_zarr}")  # DEBUG
 
@@ -511,11 +511,11 @@ spec:
 
           if include_quantiles:
               simq_out.to_zarr(
-                simq_out_zarr,
-                mode="w",
-                compute=False,
-                consolidated=True,
-                safe_chunks=False
+                  simq_out_zarr,
+                  mode="w",
+                  compute=False,
+                  consolidated=True,
+                  safe_chunks=False
               )
               print(f"Output written to {simq_out_zarr}")  # DEBUG
 
