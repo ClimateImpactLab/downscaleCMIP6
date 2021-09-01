@@ -1,13 +1,16 @@
 apiVersion: argoproj.io/v1alpha1
-kind: WorkflowTemplate
+#kind: WorkflowTemplate
+kind: Workflow
 metadata:
-  name: downscale-aiqpd
+#  name: downscale-aiqpd
+  generateName: downscale-aiqpd-test-
   labels:
     component: downscale
 spec:
-  workflowMetadata:
-    labels:
-      component: downscale
+#  workflowMetadata:
+#    labels:
+#      component: downscale
+  parallelism: 50
   entrypoint: main
   arguments:
     parameters:
@@ -76,13 +79,6 @@ spec:
                   value: "{{ inputs.parameters.firstyear }}"
                 - name: lastyear
                   value: "{{ inputs.parameters.lastyear }}"
-#            template: broadcast-to-match
-#            arguments:
-#              parameters:
-#                - name: in-zarr
-#                  value: "{{ inputs.parameters.qdm-biascorrected }}"
-#                - name: to-match-zarr
-#                  value: "{{ inputs.parameters.domainfile0p25x0p25 }}"
           - name: regrid-fine-reference
             template: preprocess
             arguments:
@@ -114,6 +110,13 @@ spec:
                   value: "{{ inputs.parameters.regrid-method }}"
                 - name: domain-file
                   value: "{{ inputs.parameters.domainfile0p25x0p25 }}"
+          - name: prime-aiqpd-biascorrected-output-zarr
+            template: prime-aiqpd-biascorrected-output-zarr
+            dependencies: [ preprocess-biascorrected ]
+            arguments:
+              parameters:
+                - name: simulation-zarr
+                  value: "{{ tasks.preprocess-biascorrected.outputs.parameters.out-zarr}}"
           - name: train-aiqpd
             dependencies: [ regrid-coarse-reference, regrid-fine-reference ]
             template: train-aiqpd
@@ -135,7 +138,7 @@ spec:
               start: "0"
               end: "179"
           - name: apply-aiqpd
-            dependencies: [ train-aiqpd, preprocess-biascorrected, preprocess-quantiles ]
+            dependencies: [ train-aiqpd, preprocess-biascorrected, preprocess-quantiles, prime-aiqpd-biascorrected-output-zarr ]
             template: apply-aiqpd
             arguments:
               parameters:
@@ -153,6 +156,8 @@ spec:
                   value: "{{ item.lat-slice-min }}"
                 - name: lat-slice-max
                   value: "{{ item.lat-slice-max }}"
+                - name: out-zarr
+                  value: "{{ tasks.prime-aiqpd-biascorrected-output-zarr.outputs.parameters.out-zarr }}"
             withParam: "{{ tasks.train-aiqpd.outputs.parameters }}"
 
 
@@ -366,69 +371,6 @@ spec:
           limits:
             memory: 48Gi
             cpu: "2000m"
-      activeDeadlineSeconds: 1800
-      retryStrategy:
-        limit: 1
-        retryPolicy: "Always"
-
-
-    - name: broadcast-to-match
-      inputs:
-        parameters:
-          - name: in-zarr
-          - name: to-match-zarr
-#          - name: variable
-          - name: out-zarr
-            value: "az://scratch/{{ workflow.name }}/{{ pod.name }}/rechunked.zarr"
-      outputs:
-        parameters:
-          - name: out-zarr
-            value: "{{ inputs.parameters.out-zarr }}"
-      script:
-        image: downscalecmip6.azurecr.io/dodola:0.5.0
-        env:
-          - name: AZURE_STORAGE_ACCOUNT_NAME
-            valueFrom:
-              secretKeyRef:
-                name: workerstoragecreds-secret
-                key: azurestorageaccount
-          - name: AZURE_STORAGE_ACCOUNT_KEY
-            valueFrom:
-              secretKeyRef:
-                name: workerstoragecreds-secret
-                key: azurestoragekey
-        command: [ python ]
-        source: |
-          import xarray as xr
-          import dodola.repository
-
-          in_zarr = "{{ inputs.parameters.in-zarr }}"
-          to_match_zarr = "{{ inputs.parameters.to-match-zarr }}"
-          out_zarr = "{{ inputs.parameters.out-zarr }}"
-          #variable = "{{ inputs.parameters.variable }}"
-
-          ds = dodola.repository.read(in_zarr)
-          ds_to_match = dodola.repository.read(to_match_zarr)
-
-          print(f"{ds=}") # DEBUG
-          print(f"{ds_to_match=}") # DEBUG
-
-          #ds_out = ds[variable].broadcast_like(ds_to_match, exclude=["time"])
-          ds_out = ds.broadcast_like(ds_to_match, exclude=["time"])
-
-          print(f"{ds_out=}") # DEBUG
-
-          ds_out = ds_out.chunk({"lat": 4, "lon": 10, "time": -1})
-
-          ds_out.to_zarr(out_zarr, mode="w", compute=True, safe_chunks=False)
-          print(f"Output written to {out_zarr}")  # DEBUG
-        resources:
-          requests:
-            memory: 48Gi
-            cpu: "1000m"
-          limits:
-            memory: 48Gi
-            cpu: "12000m"
       activeDeadlineSeconds: 1800
       retryStrategy:
         limit: 1
@@ -758,9 +700,22 @@ spec:
               aiqpd=aiqpd_ds,
               variable=variable
           )
+
+          with xr.open_zarr(out_zarr) as out_store:
+              target_idx_slice = out_store["lat"].to_index().get_loc(latslice)
+
+          if nonlat_variables:
+              downscaled_ds = downscaled_ds.drop_vars(nonlat_variables)
+
+          downscaled_ds = downscaled_ds.transpose("time", "lat", "lon")
           print(f"{downscaled_ds=}")  # DEBUG
 
-          dodola.repository.write(out_zarr, downscaled_ds)
+          # Output to region of existing zarr store.
+          downscaled_ds[[variable]].to_zarr(
+              out_zarr,
+              region={"lat": target_idx_slice},
+              mode="a"
+          )
           print(f"Output written to {out_zarr}")  # DEBUG
         resources:
           requests:
@@ -839,6 +794,7 @@ spec:
       inputs:
         parameters:
           - name: in-zarr
+          # TODO: Should grab firstyear and lastyear from in-zarr and make them output.parameters.
           - name: firstyear
           - name: lastyear
           - name: regrid-method
@@ -1017,6 +973,75 @@ spec:
             cpu: "1000m"
           limits:
             memory: 8Gi
+            cpu: "1000m"
+      activeDeadlineSeconds: 900
+      retryStrategy:
+        limit: 2
+        retryPolicy: "Always"
+
+
+    # Sets up output zarr file and metadata without writing time-related data to the zarr store.
+    - name: prime-aiqpd-biascorrected-output-zarr
+      inputs:
+        parameters:
+          - name: simulation-zarr
+          - name: out-zarr
+            value: "az://scratch/{{ workflow.name }}/{{ pod.name }}/downscaled.zarr"
+          - name: nonlat-variables
+            value: "time lon"
+      outputs:
+        parameters:
+          - name: out-zarr
+            value: "{{ inputs.parameters.out-zarr }}"
+      script:
+        image: downscalecmip6.azurecr.io/dodola:0.5.0
+        env:
+          - name: AZURE_STORAGE_ACCOUNT_NAME
+            valueFrom:
+              secretKeyRef:
+                name: workerstoragecreds-secret
+                key: azurestorageaccount
+          - name: AZURE_STORAGE_ACCOUNT_KEY
+            valueFrom:
+              secretKeyRef:
+                name: workerstoragecreds-secret
+                key: azurestoragekey
+        command: [ python ]
+        source: |
+          import dodola.repository
+          import xarray as xr
+
+          nonlat_variables = ["lon", "time"]
+
+          simulation_zarr = "{{ inputs.parameters.simulation-zarr }}"
+          out_zarr = "{{ inputs.parameters.out-zarr }}"
+
+          ds_out = dodola.repository.read(simulation_zarr)
+          print(f"{ds_out=}")  # DEBUG
+
+          # Output metadata to Zarr store.
+          ds_out.to_zarr(
+              out_zarr,
+              mode="w",
+              compute=False,
+              consolidated=True
+          )
+
+          # Append variables that do not depend on "lat"
+          if nonlat_variables:
+              print(f"{ds_out[nonlat_variables]=}")  # DEBUG
+              ds_out[nonlat_variables].to_zarr(
+                  out_zarr,
+                  mode="a",
+                  compute=True,
+                  consolidated=True
+              )
+        resources:
+          requests:
+            memory: 4Gi
+            cpu: "1000m"
+          limits:
+            memory: 4Gi
             cpu: "1000m"
       activeDeadlineSeconds: 900
       retryStrategy:
