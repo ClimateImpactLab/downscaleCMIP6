@@ -359,59 +359,6 @@ spec:
         retryPolicy: "Always"
 
 
-    - name: aiqpd
-      inputs:
-        parameters:
-          - name: coarse-reference-zarr
-          - name: fine-reference-zarr
-          - name: simulation-zarr
-          - name: quantiles-zarr
-          - name: variable
-          - name: kind
-          - name: lat-slice-min
-          - name: lat-slice-max
-      outputs:
-        parameters:
-          - name: out-zarr
-            valueFrom:
-              parameter: "{{ steps.apply.outputs.parameters.out-zarr }}"
-      steps:
-      - - name: train
-          template: train-aiqpd
-          arguments:
-            parameters:
-              - name: variable
-                value: "{{ inputs.parameters.variable }}"
-              - name: coarse-reference-zarr
-                value: "{{ inputs.parameters.coarse-reference-zarr }}"
-              - name: fine-reference-zarr
-                value: "{{ inputs.parameters.fine-reference-zarr }}"
-              - name: kind
-                value: "{{ inputs.parameters.kind }}"
-              - name: lat-slice-min
-                value: "{{ inputs.parameters.lat-slice-min }}"
-              - name: lat-slice-max
-                value: "{{ inputs.parameters.lat-slice-max }}"
-      - - name: apply
-          template: apply-aiqpd
-          arguments:
-            parameters:
-              - name: variable
-                value: "{{ inputs.parameters.variable }}"
-              - name: simulation-zarr
-                value: "{{ inputs.parameters.simulation-zarr }}"
-              - name: quantiles-zarr
-                value: "{{ inputs.parameters.quantiles-zarr }}"
-              - name: aiqpd-model-zarr
-                value: "{{ steps.train.outputs.parameters.out-zarr }}"
-              - name: kind
-                value: "{{ inputs.parameters.kind }}"
-              - name: lat-slice-min
-                value: "{{ inputs.parameters.lat-slice-min }}"
-              - name: lat-slice-max
-                value: "{{ inputs.parameters.lat-slice-max }}"
-
-
     - name: train-aiqpd
       inputs:
         parameters:
