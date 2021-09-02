@@ -62,6 +62,15 @@ resource "azurerm_storage_data_lake_gen2_filesystem" "biascorrected" {
   }
 }
 
+resource "azurerm_storage_data_lake_gen2_filesystem" "biascorrectedstage" {
+  name               = "biascorrected-stage"
+  storage_account_id = azurerm_storage_account.storageacc.id
+  lifecycle {
+    prevent_destroy = true
+  }
+}
+
+
 resource "azurerm_storage_data_lake_gen2_filesystem" "downscaled" {
   name               = "downscaled"
   storage_account_id = azurerm_storage_account.storageacc.id
@@ -69,6 +78,15 @@ resource "azurerm_storage_data_lake_gen2_filesystem" "downscaled" {
     prevent_destroy = true
   }
 }
+
+resource "azurerm_storage_data_lake_gen2_filesystem" "downscaledstage" {
+  name               = "downscaled-stage"
+  storage_account_id = azurerm_storage_account.storageacc.id
+  lifecycle {
+    prevent_destroy = true
+  }
+}
+
 
 resource "azurerm_storage_data_lake_gen2_filesystem" "support" {
   name               = "support"
@@ -85,6 +103,15 @@ resource "azurerm_storage_data_lake_gen2_filesystem" "qc" {
     prevent_destroy = true
   }
 }
+
+resource "azurerm_storage_data_lake_gen2_filesystem" "qcstage" {
+  name               = "qualitycontrol-stage"
+  storage_account_id = azurerm_storage_account.storageacc.id
+  lifecycle {
+    prevent_destroy = true
+  }
+}
+
 
 resource "azurerm_storage_data_lake_gen2_filesystem" "scratch" {
   name               = "scratch"
