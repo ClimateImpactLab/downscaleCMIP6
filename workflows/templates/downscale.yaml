@@ -8,7 +8,7 @@ spec:
   workflowMetadata:
     labels:
       component: downscale
-  parallelism: 50
+  parallelism: 300
   entrypoint: main
   arguments:
     parameters:
@@ -25,13 +25,9 @@ spec:
       - name: qdm-kind #additive or multiplicative
         value: "additive"
       - name: qdm-biascorrected-zarr
-        value: "az://scratch/dc6-qdm-chunks-test-fwxj6/dc6-qdm-chunks-test-fwxj6-4261986766/qdm_adjusted.zarr"
+        value: "az://scratch/dc6-aiqpd-test-qpbqd/dc6-aiqpd-test-qpbqd-3905401878/qdm_adjusted.zarr"
       - name: qdm-quantiles-zarr
-        value: "az://scratch/qdm-sepoutput-test-glndj/qdm-sepoutput-test-glndj-651835519/simq.zarr"
-      - name: firstyear
-        value: 1950
-      - name: lastyear
-        value: 2014
+        value: "az://scratch/dc6-aiqpd-test-qpbqd/dc6-aiqpd-test-qpbqd-3905401878/simq.zarr"
   templates:
 
     - name: main
