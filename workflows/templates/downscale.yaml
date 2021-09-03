@@ -254,6 +254,8 @@ spec:
                   value: "{{ inputs.parameters.firstyear }}"
                 - name: lastyear
                   value: "{{ inputs.parameters.lastyear }}"
+                - name: add-cyclic-lon
+                  value: "true"
 
 
     - name: regrid
@@ -614,6 +616,8 @@ spec:
           - name: domain-file
           - name: firstyear
           - name: lastyear
+          - name: add-cyclic-lon
+            value: "false"
           # Space delimited list of all variables/coords in "in-zarr" without need for time dimension.
           - name: nontime-variables
             value: "lat lon"
@@ -657,6 +661,8 @@ spec:
                   value: "{{ inputs.parameters.nontime-variables }}"
                 - name: select-year
                   value: "{{ item }}"
+                - name: add-cyclic-lon
+                  value: "{{ inputs.parameters.add-cyclic-lon }}"
             withSequence:
               start: "{{ inputs.parameters.firstyear }}"
               end: "{{ inputs.parameters.lastyear }}"
@@ -771,6 +777,8 @@ spec:
           - name: regrid-method
           - name: domain-file
           - name: out-zarr
+          - name: add-cyclic-lon
+            value: "false"
           - name: nontime-variables
             value: "lat lon"
       outputs:
@@ -792,6 +800,8 @@ spec:
             value: "{{ inputs.parameters.domain-file }}"
           - name: NONTIME_VARIABLES
             value: "{{ inputs.parameters.nontime-variables }}"
+          - name: ADD_CYCLIC_LON
+            value: "{{ inputs.parameters.add-cyclic-lon }}"
           - name: AZURE_STORAGE_ACCOUNT_NAME
             valueFrom:
               secretKeyRef:
@@ -820,6 +830,7 @@ spec:
           # those names need to be in this variable!
           # TODO: We could make this dynamically find non-time dependent variables/coord variables.
           non_time = os.environ["NONTIME_VARIABLES"].strip().rsplit()
+          add_cyclic_lon =  os.environ["ADD_CYCLIC_LON"].lower() == "true"
 
           # Setup regrid calculation for a time range.
           # Clip out target year from input data. This is a mess because we need the matches AND their index along
@@ -827,9 +838,15 @@ spec:
           ds_in = dodola.repository.read(in_zarr)
 
           ds_in = ds_in.sel(time=sel_time)
+          ds_in.load()
           domain_fl = dodola.repository.read(domain_file)
+          domain_fl.load()
 
-          ds_out = xesmf_regrid(ds_in, domain_fl, regrid_method, astype="float32")
+          if add_cyclic_lon:
+              ds_out = xesmf_regrid(ds_in, domain_fl, regrid_method, astype="float32", add_cyclic="lon")
+          else:
+              ds_out = xesmf_regrid(ds_in, domain_fl, regrid_method, astype="float32")
+
           ds_out = ds_out.chunk({"time": 365, "lat": 2, "lon": -1})
 
           with xr.open_zarr(out_zarr) as out_store:
