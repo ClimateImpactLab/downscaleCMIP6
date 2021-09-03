@@ -45,8 +45,6 @@ spec:
           - name: qdm-kind
           - name: qdm-biascorrected-zarr
           - name: qdm-quantiles-zarr
-          - name: firstyear
-          - name: lastyear
       dag:
         tasks:
           - name: preprocess-quantiles
@@ -59,10 +57,6 @@ spec:
                   value: "nearest_s2d"
                 - name: domain-file
                   value: "{{ inputs.parameters.domainfile0p25x0p25 }}"
-                - name: firstyear
-                  value: "{{ inputs.parameters.firstyear }}"
-                - name: lastyear
-                  value: "{{ inputs.parameters.lastyear }}"
           - name: preprocess-biascorrected
             template: preprocess-biascorrected
             arguments:
@@ -73,10 +67,6 @@ spec:
                   value: "nearest_s2d"
                 - name: domain-file
                   value: "{{ inputs.parameters.domainfile0p25x0p25 }}"
-                - name: firstyear
-                  value: "{{ inputs.parameters.firstyear }}"
-                - name: lastyear
-                  value: "{{ inputs.parameters.lastyear }}"
           - name: regrid-fine-reference
             template: preprocess
             arguments:
@@ -218,8 +208,6 @@ spec:
           - name: in-zarr
           - name: regrid-method
           - name: domain-file
-          - name: firstyear
-          - name: lastyear
       outputs:
         parameters:
           - name: out-zarr
@@ -250,10 +238,6 @@ spec:
                   value: "{{ inputs.parameters.regrid-method }}"
                 - name: domain-file
                   value: "{{ inputs.parameters.domain-file }}"
-                - name: firstyear
-                  value: "{{ inputs.parameters.firstyear }}"
-                - name: lastyear
-                  value: "{{ inputs.parameters.lastyear }}"
                 - name: add-cyclic-lon
                   value: "true"
 
@@ -614,8 +598,6 @@ spec:
           - name: in-zarr
           - name: regrid-method
           - name: domain-file
-          - name: firstyear
-          - name: lastyear
           - name: add-cyclic-lon
             value: "false"
           # Space delimited list of all variables/coords in "in-zarr" without need for time dimension.
@@ -640,10 +622,6 @@ spec:
                   value: "{{ inputs.parameters.domain-file }}"
                 - name: nontime-variables
                   value: "{{ inputs.parameters.nontime-variables }}"
-                - name: firstyear
-                  value: "{{ inputs.parameters.firstyear }}"
-                - name: lastyear
-                  value: "{{ inputs.parameters.lastyear }}"
           - name: regrid-year-to-primedzarr
             template: regrid-select-year-to-primedzarr
             dependencies: [ prime-regrid-zarr ]
@@ -664,8 +642,8 @@ spec:
                 - name: add-cyclic-lon
                   value: "{{ inputs.parameters.add-cyclic-lon }}"
             withSequence:
-              start: "{{ inputs.parameters.firstyear }}"
-              end: "{{ inputs.parameters.lastyear }}"
+              start: "{{ tasks.prime-regrid-zarr.outputs.parameters.firstyear }}"
+              end: "{{ tasks.prime-regrid-zarr.outputs.parameters.lastyear }}"
 
 
     # Sets up output zarr file and metadata without writing time-related data to the zarr store.
@@ -673,9 +651,6 @@ spec:
       inputs:
         parameters:
           - name: in-zarr
-          # TODO: Should grab firstyear and lastyear from in-zarr and make them output.parameters.
-          - name: firstyear
-          - name: lastyear
           - name: regrid-method
           - name: domain-file
           - name: nontime-variables
@@ -686,6 +661,12 @@ spec:
         parameters:
           - name: out-zarr
             value: "{{ inputs.parameters.out-zarr }}"
+          - name: firstyear
+            valueFrom:
+              path: "/tmp/firstyear.txt"
+          - name: lastyear
+            valueFrom:
+              path: "/tmp/lastyear.txt"
       script:
         image: downscalecmip6.azurecr.io/dodola:0.5.0
         env:
@@ -693,10 +674,6 @@ spec:
             value: "{{ inputs.parameters.in-zarr }}"
           - name: OUT_ZARR
             value: "{{ inputs.parameters.out-zarr }}"
-          - name: FIRSTYEAR
-            value: "{{ inputs.parameters.firstyear }}"
-          - name: LASTYEAR
-            value: "{{ inputs.parameters.lastyear }}"
           - name: REGRID_METHOD
             value: "{{ inputs.parameters.regrid-method }}"
           - name: DOMAIN_FILE
@@ -722,16 +699,18 @@ spec:
 
           in_zarr = os.environ["IN_ZARR"]
           out_zarr = os.environ["OUT_ZARR"]
-          firstyear = int(os.environ["FIRSTYEAR"])
-          lastyear = int(os.environ["LASTYEAR"])
           regrid_method = os.environ["REGRID_METHOD"]
           domain_file = os.environ["DOMAIN_FILE"]
           # Space-delim string of variables and coordinates that do use "time" dimension.
           non_time = os.environ["NONTIME_VARIABLES"].strip().rsplit()
 
-          # Setup regrid calculation for a time range.
-          ds_in = dodola.repository.read(in_zarr).sel(time=slice(str(firstyear), str(lastyear + 1)))
+          ds_in = dodola.repository.read(in_zarr)
           domain_fl = dodola.repository.read(domain_file)
+
+          first_year = ds_in["time"].dt.year.min().item()
+          last_year = ds_in["time"].dt.year.max().item()
+          print(f"{first_year=}, {last_year=}")
+
           ds_out = xesmf_regrid(ds_in, domain_fl, regrid_method, astype="float32")
           ds_out = ds_out.chunk({"time": 365, "lat": 2, "lon": -1})
 
@@ -755,6 +734,11 @@ spec:
                   compute=True,
                   consolidated=True
               )
+
+          with open("/tmp/firstyear.txt", mode="w") as fl:
+              fl.write(str(first_year))
+          with open("/tmp/lastyear.txt", mode="w") as fl:
+              fl.write(str(last_year))
         resources:
           requests:
             memory: 4Gi
