@@ -367,7 +367,7 @@ spec:
           - name: out-zarr
             value: "{{ inputs.parameters.out-zarr }}"
       script:
-        image: downscalecmip6.azurecr.io/dodola:dev
+        image: downscalecmip6.azurecr.io/dodola:0.6.0
         env:
           - name: AZURE_STORAGE_ACCOUNT_NAME
             valueFrom:
@@ -471,7 +471,7 @@ spec:
           - name: out-zarr
             value: "{{ inputs.parameters.out-zarr }}"
       script:
-        image: downscalecmip6.azurecr.io/dodola:dev
+        image: downscalecmip6.azurecr.io/dodola:0.6.0
         env:
           - name: AZURE_STORAGE_ACCOUNT_NAME
             valueFrom:
