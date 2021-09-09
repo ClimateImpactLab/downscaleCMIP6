@@ -367,7 +367,7 @@ spec:
           - name: out-zarr
             value: "{{ inputs.parameters.out-zarr }}"
       script:
-        image: downscalecmip6.azurecr.io/dodola:dev
+        image: downscalecmip6.azurecr.io/dodola:0.6.0
         env:
           - name: AZURE_STORAGE_ACCOUNT_NAME
             valueFrom:
@@ -471,7 +471,7 @@ spec:
           - name: out-zarr
             value: "{{ inputs.parameters.out-zarr }}"
       script:
-        image: downscalecmip6.azurecr.io/dodola:dev
+        image: downscalecmip6.azurecr.io/dodola:0.6.0
         env:
           - name: AZURE_STORAGE_ACCOUNT_NAME
             valueFrom:
@@ -486,37 +486,8 @@ spec:
         command: [ python ]
         source: |
           import dodola.repository
-          #from dodola.core import adjust_analogdownscaling_year
-          from xclim import sdba
-          import xarray as xr
+          from dodola.core import adjust_analogdownscaling
 
-          # Putting this prototype function here until it gets into dodola.
-          def adjust_analogdownscaling_year(simulation, aiqpd, variable):
-              """Apply AIQPD to downscale a year of bias corrected output.
-              Parameters
-              ----------
-              simulation : xr.Dataset
-                  Daily bias corrected data to be downscaled.
-              aiqpd : xr.Dataset or sdba.adjustment.AnalogQuantilePreservingDownscaling
-                  Trained ``xclim.sdba.adjustment.AnalogQuantilePreservingDownscaling``, or
-                  Dataset representation that will instantiate
-                  ``xclim.sdba.adjustment.AnalogQuantilePreservingDownscaling``.
-              variable : str
-                  Target variable in `simulation` to downscale. Downscaled output will share the
-                  same name.
-              Returns
-              -------
-              out : xr.Dataset
-                  AIQPD-downscaled values from `simulation`. May be a lazy-evaluated future, not
-                  yet computed.
-              """
-              variable = str(variable)
-              if isinstance(aiqpd, xr.Dataset):
-                  aiqpd = sdba.adjustment.AnalogQuantilePreservingDownscaling.from_dataset(aiqpd)
-
-              out = aiqpd.adjust(simulation[variable])
-
-              return out.to_dataset(name=variable)
 
           nonlat_variables = ["lon", "time"]
           kind_map = {"multiplicative": "*", "additive": "+"}
@@ -552,7 +523,7 @@ spec:
           # is not lat, lon, dayofyear, quantile, cannot broadcast
           #aiqpd_ds = aiqpd_ds.transpose("lon", "lat", "dayofyear", "quantiles")  # OOM error?
 
-          downscaled_ds = adjust_analogdownscaling_year(
+          downscaled_ds = adjust_analogdownscaling(
               simulation=sim_ds,
               aiqpd=aiqpd_ds,
               variable=variable
