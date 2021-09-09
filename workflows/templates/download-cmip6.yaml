@@ -62,7 +62,7 @@ spec:
                 - name: version
                   value: "{{item.version}}"
                 - name: out-url
-                  value: "az://raw-cmip6/{{inputs.parameters.source-id}}/historical/{{inputs.parameters.variable-id}}.zarr"
+                  value: "az://raw-cmip6/{{inputs.parameters.activity-id}}/{{inputs.parameters.institution-id}}/{{inputs.parameters.source-id}}/{{inputs.parameters.experiment-id}}/{{inputs.parameters.member-id}}/{{inputs.parameters.table-id}}/{{inputs.parameters.variable-id}}/{{inputs.parameters.grid-label}}/v{{inputs.parameters.version}}.zarr"
             withParam: "{{ inputs.parameters.historical }}"
           - name: download-ssps
             template: download-gcm
@@ -87,7 +87,7 @@ spec:
                 - name: version
                   value: "{{item.version}}"
                 - name: out-url
-                  value: "az://raw-cmip6/{{inputs.parameters.source-id}}/{{item.experiment-id}}/{{inputs.parameters.variable-id}}.zarr"
+                  value: "az://raw-cmip6/{{inputs.parameters.activity-id}}/{{inputs.parameters.institution-id}}/{{inputs.parameters.source-id}}/{{inputs.parameters.experiment-id}}/{{inputs.parameters.member-id}}/{{inputs.parameters.table-id}}/{{inputs.parameters.variable-id}}/{{inputs.parameters.grid-label}}/v{{inputs.parameters.version}}.zarr"
             withParam: "{{ inputs.parameters.ssps }}"
 
 
