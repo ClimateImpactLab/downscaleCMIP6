@@ -7,6 +7,6 @@ historical: |
 ssps: |
   [
     { "activity-id": "ScenarioMIP", "experiment-id": "ssp370", "table-id": "day", "variable-id": "tasmax", "source-id": "INM-CM5-0", "institution-id": "INM", "member-id": "r1i1p1f1", "grid-label": "gr1", "version": "20190618" },
-    { "activity-id": "ScenarioMIP", "experiment-id": "ssp245", "table-id": "day", "variable-id": "tasmax", "source-id": "INM-CM5-0", "institution-id": "INM", "member-id": "r1i1p1f1", "grid-label": "gr1", "version": "20190618" },
-    { "activity-id": "ScenarioMIP", "experiment-id": "ssp126", "table-id": "day", "variable-id": "tasmax", "source-id": "INM-CM5-0", "institution-id": "INM", "member-id": "r1i1p1f1", "grid-label": "gr1", "version": "20190618" }
+    { "activity-id": "ScenarioMIP", "experiment-id": "ssp245", "table-id": "day", "variable-id": "tasmax", "source-id": "INM-CM5-0", "institution-id": "INM", "member-id": "r1i1p1f1", "grid-label": "gr1", "version": "20190619" },
+    { "activity-id": "ScenarioMIP", "experiment-id": "ssp126", "table-id": "day", "variable-id": "tasmax", "source-id": "INM-CM5-0", "institution-id": "INM", "member-id": "r1i1p1f1", "grid-label": "gr1", "version": "20190619" }
   ]
