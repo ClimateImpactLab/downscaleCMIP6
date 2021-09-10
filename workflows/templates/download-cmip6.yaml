@@ -147,6 +147,9 @@ spec:
           import intake
           import dodola.repository
 
+
+          outpath = os.environ.get("OUTPATH")
+
           print("Searching catalog")
           col = intake.open_esm_datastore("https://storage.googleapis.com/cmip6/pangeo-cmip6.json")
           cat = col.search(
@@ -164,16 +167,18 @@ spec:
           if len(k) != 1:
               raise ValueError("catalog does not have one entry, reconsider input IDs so only one entry")
           print(f"Found one catalog entry {k}")
-          print(d)  # DEBUG
+          print(d)
 
-          dodola.repository.write(os.environ.get("OUTPATH"), d[k[0]])
+          dodola.repository.write(outpath, d[k[0]])
+          print(f"Written to {outpath}")
         resources:
           requests:
-            memory: 14Gi
+            memory: 12Gi
             cpu: "200m"
           limits:
-            memory: 14Gi
-            cpu: "1000m"
+            # Historical EC-Earth-Consortium requires memory this high unless we stream.
+            memory: 32Gi
+            cpu: "6000m"
       activeDeadlineSeconds: 1500
       retryStrategy:
         limit: 4
