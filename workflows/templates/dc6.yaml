@@ -49,7 +49,7 @@ spec:
             arguments:
               parameters:
                 - name: in-zarr
-                  value: "az://clean/{{ inputs.parameters.source-id }}/historical/{{ inputs.parameters.variable-id }}.zarr"
+                  value: "az://clean-cmip6/{{ inputs.parameters.source-id }}/historical/{{ inputs.parameters.variable-id }}.zarr"
                 - name: regrid-method
                   value: "{{ inputs.parameters.regrid-method }}"
                 - name: domain-file
@@ -71,7 +71,7 @@ spec:
             arguments:
               parameters:
                 - name: in-zarr
-                  value: "az://clean/{{ inputs.parameters.source-id }}/training/{{ inputs.parameters.variable-id }}.zarr"
+                  value: "az://clean-cmip6/{{ inputs.parameters.source-id }}/training/{{ inputs.parameters.variable-id }}.zarr"
                 - name: regrid-method
                   value: "{{ inputs.parameters.regrid-method }}"
                 - name: domain-file
@@ -83,7 +83,7 @@ spec:
             arguments:
               parameters:
                 - name: in-zarr
-                  value: "az://clean/{{ inputs.parameters.source-id }}/{{ item.experiment-id }}/{{ inputs.parameters.variable-id }}.zarr"
+                  value: "az://clean-cmip6/{{ inputs.parameters.source-id }}/{{ item.experiment-id }}/{{ inputs.parameters.variable-id }}.zarr"
                 - name: regrid-method
                   value: "{{ inputs.parameters.regrid-method }}"
                 - name: domain-file
