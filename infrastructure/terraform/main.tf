@@ -42,6 +42,12 @@ resource "azurerm_public_ip" "primary" {
   tags = {
     managed-by = "terraform"
   }
+  lifecycle {
+    ignore_changes = [
+      domain_name_label,
+      tags
+    ]
+  }
 }
 
 
