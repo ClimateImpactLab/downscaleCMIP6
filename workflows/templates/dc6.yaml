@@ -61,7 +61,7 @@ spec:
             arguments:
               parameters:
                 - name: in-zarr
-                  value: "az://scratch/clean-dev/ERA-5/{{ inputs.parameters.variable-id }}.1995-2015.F320.zarr"
+                  value: "az://clean-era5/F320/{{ inputs.parameters.variable-id }}.1995-2015.F320.zarr"
                 - name: regrid-method
                   value: "{{ inputs.parameters.regrid-method }}"
                 - name: domain-file

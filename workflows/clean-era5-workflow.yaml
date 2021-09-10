@@ -10,9 +10,9 @@ spec:
   arguments:
     parameters:
     - name: in-zarr
-      value: "az://clean-dev/ERA-5/F320/tasmax.1995-2015.F320.v2.zarr"
+      value: "az://raw-era5/F320/tasmax.1995-2015.F320.v2.zarr"
     - name: out-zarr
-      value: "az://scratch/clean-dev/ERA-5/tasmax.1995-2015.F320.zarr"
+      value: "az://clean-era5/F320/tasmax.1995-2015.F320.zarr"
   templates:
 
   - name: main

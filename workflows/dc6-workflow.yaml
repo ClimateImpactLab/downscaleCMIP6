@@ -8,13 +8,13 @@ spec:
   arguments:
     parameters:
       - name: reference-zarr
-        value: "az://scratch/clean-dev/ERA-5/tasmax.1995-2015.F320.zarr"
+        value: "az://clean-era5/F320/tasmax.1995-2015.F320.zarr"
       - name: gcm-historical-zarr
-        value: "az://clean/ACCESS-ESM1-5/training/r1i1p1f1/tasmax.zarr"
+        value: "az://clean-cmip6/ACCESS-ESM1-5/training/r1i1p1f1/tasmax.zarr"
       - name: gcm-training-zarr
-        value: "az://clean/ACCESS-ESM1-5/training/r1i1p1f1/tasmax.zarr"
+        value: "az://clean-cmip6/ACCESS-ESM1-5/training/r1i1p1f1/tasmax.zarr"
       - name: gcm-future-zarr
-        value: "az://clean/ACCESS-ESM1-5/ssp370/r1i1p1f1/tasmax.zarr"
+        value: "az://clean-cmip6/ACCESS-ESM1-5/ssp370/r1i1p1f1/tasmax.zarr"
       - name: out-zarr
         value: "az://scratch/{{ workflow.name }}/out.zarr"
       - name: target-variable
@@ -30,7 +30,7 @@ spec:
       - name: domainfile0p25x0p25
         value: "az://support/domain.0p25x0p25.zarr"
       - name: climatology-zarr
-        value: "az://clean-dev/tasmax_1995_2015_climo_cleaned.zarr"
+        value: "az://clean-era5/tasmax_1995_2015_climo_cleaned.zarr"
       - name: correct-wetday-frequency
         value: false  # true or false
   entrypoint: main
