@@ -51,6 +51,14 @@ resource "azurerm_storage_data_lake_gen2_filesystem" "raw-era5" {
   name               = "raw-era6"
   storage_account_id = azurerm_storage_account.storageacc.id
   lifecycle {
+    prevent_destroy = false
+  }
+}
+
+resource "azurerm_storage_data_lake_gen2_filesystem" "raw_era5" {
+  name               = "raw-era5"
+  storage_account_id = azurerm_storage_account.storageacc.id
+  lifecycle {
     prevent_destroy = true
   }
 }
