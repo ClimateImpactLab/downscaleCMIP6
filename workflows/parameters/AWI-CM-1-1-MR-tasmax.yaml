@@ -1,0 +1,13 @@
+variable-id: "tasmax"
+source-id: "AWI-CM-1-1-MR"
+historical: |
+  [
+    { "activity-id": "CMIP", "experiment-id": "historical", "table-id": "day", "variable-id": "tasmax", "source-id": "AWI-CM-1-1-MR", "institution-id": "AWI", "member-id": "r1i1p1f1", "grid-label": "gn", "version": "20181218" }
+  ]
+ssps: |
+  [
+    { "activity-id": "ScenarioMIP", "experiment-id": "ssp370", "table-id": "day", "variable-id": "tasmax", "source-id": "AWI-CM-1-1-MR", "institution-id": "AWI", "member-id": "r1i1p1f1", "grid-label": "gn", "version": "20190529" },
+    { "activity-id": "ScenarioMIP", "experiment-id": "ssp245", "table-id": "day", "variable-id": "tasmax", "source-id": "AWI-CM-1-1-MR", "institution-id": "AWI", "member-id": "r1i1p1f1", "grid-label": "gn", "version": "20190529" },
+    { "activity-id": "ScenarioMIP", "experiment-id": "ssp126", "table-id": "day", "variable-id": "tasmax", "source-id": "AWI-CM-1-1-MR", "institution-id": "AWI", "member-id": "r1i1p1f1", "grid-label": "gn", "version": "20190529" }
+  ]
+
