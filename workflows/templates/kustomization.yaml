@@ -3,7 +3,7 @@ kind: Kustomization
 resources:
   - clean-cmip6.yaml
   - clean-era5.yaml
-  - dc6.yaml
+  - biascorrect.yaml
   - distributed-regrid.yaml
   - download-cmip6.yaml
   - downscale.yaml
