@@ -1,14 +1,14 @@
 apiVersion: argoproj.io/v1alpha1
 kind: WorkflowTemplate
 metadata:
-  name: dc6
+  name: biascorrect
   labels:
-    component: dc6
+    component: biascorrect
 spec:
   workflowMetadata:
     labels:
-      component: dc6
-  entrypoint: biascorrect-variable
+      component: biascorrect
+  entrypoint: biascorrect
   arguments:
     parameters:
       - name: variable-id
@@ -32,7 +32,7 @@ spec:
         value: "additive"
   templates:
 
-    - name: biascorrect-variable
+    - name: biascorrect
       inputs:
         parameters:
           - name: variable-id
