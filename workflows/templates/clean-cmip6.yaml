@@ -12,11 +12,16 @@ spec:
   arguments:
     parameters:
       - name: variable-id
-        value: "{{workflows.parameters.variable-id}}"
+        value: "tasmin"
       - name: source-id
-        value: "{{workflows.parameters.source-id}}"
+        value: "GFDL-ESM4"
       - name: ssps
-        value: "{{workflows.parameters.ssps}}"
+        value: |
+          [
+            { "activity-id": "ScenarioMIP", "experiment-id": "ssp370", "table-id": "day", "variable-id": "tasmin", "source-id": "GFDL-ESM4", "institution-id": "NOAA-GFDL", "member-id": "r1i1p1f1", "grid-label": "gr1", "version": "20180701" },
+            { "activity-id": "ScenarioMIP", "experiment-id": "ssp245", "table-id": "day", "variable-id": "tasmin", "source-id": "GFDL-ESM4", "institution-id": "NOAA-GFDL", "member-id": "r1i1p1f1", "grid-label": "gr1", "version": "20180701" },
+            { "activity-id": "ScenarioMIP", "experiment-id": "ssp126", "table-id": "day", "variable-id": "tasmin", "source-id": "GFDL-ESM4", "institution-id": "NOAA-GFDL", "member-id": "r1i1p1f1", "grid-label": "gr1", "version": "20180701" }
+          ]
   templates:
 
     - name: clean-generic-variable
