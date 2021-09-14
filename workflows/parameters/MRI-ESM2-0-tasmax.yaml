@@ -1,0 +1,12 @@
+variable-id: "tasmax"
+source-id: "MRI-ESM2-0"
+historical: |
+  [
+    { "activity-id": "CMIP", "experiment-id": "historical", "table-id": "day", "variable-id": "tasmax", "source-id": "MRI-ESM2-0", "institution-id": "MRI", "member-id": "r1i1p1f1", "grid-label": "gn", "version": "20190603" }
+  ]
+ssps: |
+  [
+    { "activity-id": "ScenarioMIP", "experiment-id": "ssp370", "table-id": "day", "variable-id": "tasmax", "source-id": "MRI-ESM2-0", "institution-id": "MRI", "member-id": "r1i1p1f1", "grid-label": "gn", "version": "20190603" },
+    { "activity-id": "ScenarioMIP", "experiment-id": "ssp245", "table-id": "day", "variable-id": "tasmax", "source-id": "MRI-ESM2-0", "institution-id": "MRI", "member-id": "r1i1p1f1", "grid-label": "gn", "version": "20190603" },
+    { "activity-id": "ScenarioMIP", "experiment-id": "ssp126", "table-id": "day", "variable-id": "tasmax", "source-id": "MRI-ESM2-0", "institution-id": "MRI", "member-id": "r1i1p1f1", "grid-label": "gn", "version": "20191108" }
+  ]
