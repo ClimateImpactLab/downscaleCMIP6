@@ -1,0 +1,12 @@
+variable-id: "tasmax"
+source-id: "MPI-ESM1-2-LR"
+historical: |
+  [
+    { "activity-id": "CMIP", "experiment-id": "historical", "table-id": "day", "variable-id": "tasmax", "source-id": "MPI-ESM1-2-LR", "institution-id": "MPI-M", "member-id": "r1i1p1f1", "grid-label": "gn", "version": "20190710" }
+  ]
+ssps: |
+  [
+    { "activity-id": "ScenarioMIP", "experiment-id": "ssp370", "table-id": "day", "variable-id": "tasmax", "source-id": "MPI-ESM1-2-LR", "institution-id": "MPI-M", "member-id": "r1i1p1f1", "grid-label": "gn", "version": "20190710" },
+    { "activity-id": "ScenarioMIP", "experiment-id": "ssp245", "table-id": "day", "variable-id": "tasmax", "source-id": "MPI-ESM1-2-LR", "institution-id": "MPI-M", "member-id": "r1i1p1f1", "grid-label": "gn", "version": "20190710" },
+    { "activity-id": "ScenarioMIP", "experiment-id": "ssp126", "table-id": "day", "variable-id": "tasmax", "source-id": "MPI-ESM1-2-LR", "institution-id": "MPI-M", "member-id": "r1i1p1f1", "grid-label": "gn", "version": "20190710" }
+  ]
