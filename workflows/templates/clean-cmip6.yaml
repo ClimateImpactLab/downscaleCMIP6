@@ -113,10 +113,11 @@ spec:
             template: timeconcatzarrs
             arguments:
               parameters:
+                  # Make first arg SSP zarr, so uses SSP attrs.
                 - name: in1-zarr
-                  value: "{{ inputs.parameters.historical-zarr }}"
-                - name: in2-zarr
                   value: "{{ tasks.standardize-future-run.outputs.parameters.out-zarr }}"
+                - name: in2-zarr
+                  value: "{{ inputs.parameters.historical-zarr }}"
                 - name: out-zarr
                   value: "az://clean-cmip6/{{ inputs.parameters.source-id }}/{{ inputs.parameters.ssp }}/{{ inputs.parameters.variable-id }}.zarr"
 
