@@ -26,8 +26,6 @@ spec:
         value: "bilinear"
       - name: correct-wetday-frequency  # "true" or "false" STRING!
         value: "false"
-      - name: domainfile1x1
-        value: "az://support/domain.1x1.zarr"
       - name: qdm-kind #additive or multiplicative
         value: "additive"
   templates:
@@ -39,9 +37,10 @@ spec:
           - name: source-id
           - name: ssps
           - name: regrid-method
+          - name: qdm-kind
           - name: correct-wetday-frequency
           - name: domainfile1x1
-          - name: qdm-kind
+            value: "az://support/domain.1x1.zarr"
       dag:
         tasks:
           - name: preprocess-historical
