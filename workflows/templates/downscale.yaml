@@ -238,7 +238,7 @@ spec:
                   value: "{{ inputs.parameters.coarse-reference-zarr }}"
                 - name: fine-reference-zarr
                   value: "{{ inputs.parameters.fine-reference-zarr }}"
-                - name: kind
+                - name: qdm-kind
                   value: "{{ inputs.parameters.qdm-kind }}"
                 - name: out-zarr
                   value: "{{ steps.prime-aiqpd-biascorrected-output-zarr.outputs.parameters.out-zarr }}"
@@ -258,7 +258,7 @@ spec:
           - name: coarse-reference-zarr
           - name: fine-reference-zarr
           - name: variable-id
-          - name: kind
+          - name: qdm-kind
           - name: lat-slice-min
           - name: lat-slice-max
           - name: out-zarr
@@ -277,7 +277,7 @@ spec:
                   value: "{{ steps.create-coarse-reference.outputs.parameters.out-zarr }}"
                 - name: fine-reference-zarr
                   value: "{{ steps.create-fine-reference.outputs.parameters.out-zarr }}"
-                - name: kind
+                - name: qdm-kind
                   value: "{{ inputs.parameters.qdm-kind }}"
                 - name: lat-slice-min
                   value: "{{ inputs.parameters.lat-slice-min}}"
@@ -293,7 +293,7 @@ spec:
                   value: "{{ inputs-parameters.simulation-zarr }}"
                 - name: aiqpd-model-zarr
                   value: "{{ steps.train-aiqpd.outputs.parameters.out-zarr }}"
-                - name: kind
+                - name: qdm-kind
                   value: "{{ inputs.parameters.qdm-kind }}"
                 - name: lat-slice-min
                   value: "{{ inputs.parameters.lat-slice-min }}"
@@ -560,7 +560,7 @@ spec:
           - name: coarse-reference-zarr
           - name: fine-reference-zarr
           - name: variable-id
-          - name: kind
+          - name: qdm-kind
           - name: lat-slice-min
           - name: lat-slice-max
           - name: time-sel-start
@@ -604,7 +604,7 @@ spec:
           max_slice = int({{ inputs.parameters.lat-slice-max }})
 
           variable = "{{ inputs.parameters.variable-id }}"
-          kind = kind_map["{{ inputs.parameters.kind }}"]
+          kind = kind_map["{{ inputs.parameters.qdm-kind }}"]
 
           latslice = slice(min_slice, max_slice)
           print(f"{latslice=}")  # DEBUG
@@ -663,7 +663,7 @@ spec:
           - name: simulation-zarr
           - name: aiqpd-model-zarr
           - name: variable
-          - name: kind
+          - name: qdm-kind
           - name: lat-slice-min
           - name: lat-slice-max
           - name: out-zarr
@@ -704,7 +704,7 @@ spec:
           min_slice = int({{ inputs.parameters.lat-slice-min }})
           max_slice = int({{ inputs.parameters.lat-slice-max }})
           variable = "{{ inputs.parameters.variable }}"
-          kind = kind_map["{{ inputs.parameters.kind }}"]
+          kind = kind_map["{{ inputs.parameters.qdm-kind }}"]
 
           latslice = slice(min_slice, max_slice)
           print(f"{latslice=}")  # DEBUG
