@@ -164,7 +164,6 @@ spec:
                   value: "{{ item.metadata }}"
             withParam: "{{ tasks.preprocess-ssps.outputs.parameters }}"
 
-
     - name: preprocess
       inputs:
         parameters:
@@ -903,7 +902,7 @@ spec:
         parameters:
           - name: in-zarr
           - name: out-zarr
-            value: "az://scratch/{{ workflow.name }}/{{ pod.name }}/out.zarr"
+            value: "az://scratch/{{ workflow.name }}/{{ pod.name }}/cyclic-added.zarr"
       outputs:
         parameters:
           - name: out-zarr
