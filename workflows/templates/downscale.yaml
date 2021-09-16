@@ -9,62 +9,142 @@ spec:
     labels:
       component: downscale
   parallelism: 300
-  entrypoint: main
+  entrypoint: downscale
   arguments:
     parameters:
-      - name: reference-zarr
-        value: "az://clean-era5/F320/tasmin.1995-2015.F320.zarr"
       - name: variable-id
         value: "tasmin"
-      - name: regrid-method
-        value: "bilinear"
-      - name: domainfile1x1
-        value: "az://support/domain.1x1.zarr"
-      - name: domainfile0p25x0p25
-        value: "az://support/domain.0p25x0p25.zarr"
+      - name: source-id
+        value: "GFDL-ESM4"
+      - name: historical
+        value: |
+          [
+            { "activity-id": "CMIP", "experiment-id": "historical", "table-id": "day", "variable-id": "tasmin", "source-id": "GFDL-ESM4", "institution-id": "NOAA-GFDL", "member-id": "r1i1p1f1", "grid-label": "gr1", "version": "20190726" }
+          ]
+      - name: ssps
+        value: |
+          [
+            { "activity-id": "ScenarioMIP", "experiment-id": "ssp370", "table-id": "day", "variable-id": "tasmin", "source-id": "GFDL-ESM4", "institution-id": "NOAA-GFDL", "member-id": "r1i1p1f1", "grid-label": "gr1", "version": "20180701" },
+            { "activity-id": "ScenarioMIP", "experiment-id": "ssp245", "table-id": "day", "variable-id": "tasmin", "source-id": "GFDL-ESM4", "institution-id": "NOAA-GFDL", "member-id": "r1i1p1f1", "grid-label": "gr1", "version": "20180701" },
+            { "activity-id": "ScenarioMIP", "experiment-id": "ssp126", "table-id": "day", "variable-id": "tasmin", "source-id": "GFDL-ESM4", "institution-id": "NOAA-GFDL", "member-id": "r1i1p1f1", "grid-label": "gr1", "version": "20180701" }
+          ]
+
       - name: qdm-kind #additive or multiplicative
         value: "additive"
-      - name: qdm-biascorrected-zarr
-        value: "az://scratch/dc6-aiqpd-test-qpbqd/dc6-aiqpd-test-qpbqd-3905401878/qdm_adjusted.zarr"
-      - name: qdm-quantiles-zarr
-        value: "az://scratch/dc6-aiqpd-test-qpbqd/dc6-aiqpd-test-qpbqd-3905401878/simq.zarr"
+      - name: regrid-method
+        value: "bilinear"
+      - name: correct-wetday-frequency
+        value: "false"
   templates:
 
-    - name: main
+
+    - name: downscale
+      inputs:
+        parameters:
+          - name: variable-id
+          - name: historical
+          - name: ssps
+          - name: regrid-method
+          - name: qdm-kind
+          - name: correct-wetday-frequency
+          - name: domainfile1x1
+            value: "az://support/domain.1x1.zarr"
+          - name: domainfile0p25x0p25
+            value: "az://support/domain.0p25x0p25.zarr"
+      steps:
+        - - name: train-downscaling-model
+            template: train-downscaling-from-reference
+            arguments:
+              parameters:
+                - name: reference-zarr
+                  value: "az://clean-era5/F320/{{ inputs.parameters.variable-id }}.1995-2015.F320.zarr"
+                - name: regrid-method
+                  value: "{{ inputs.parameters.regrid-method }}"
+                - name: domainfile0p25x0p25
+                  value: "{{ inputs.parameters.domainfile0p25x0p25 }}"
+                - name: domainfile1x1
+                  value: "{{ inputs.parameters.domainfile1x1 }}"
+                - name: variable-id
+                  value: "{{ inputs.parameters.variable-id }}"
+                - name: qdm-kind
+                  value: "{{ inputs.parameters.qdm-kind }}"
+        - - name: downscale-historical
+            template: downscale-simulation
+            arguments:
+              parameters:
+                - name: experiment-id
+                  value: "{{ item.experiment-id }}"
+                - name: activity-id
+                  value: "{{ item.activity-id }}"
+                - name: table-id
+                  value: "{{ item.table-id }}"
+                - name: variable-id
+                  value: "{{ item.variable-id }}"
+                - name: source-id
+                  value: "{{ item.source-id }}"
+                - name: institution-id
+                  value: "{{ item.institution-id }}"
+                - name: member-id
+                  value: "{{ item.member-id }}"
+                - name: grid-label
+                  value: "{{ item.grid-label }}"
+                - name: version
+                  value: "000000000000"
+                - name: domain-file
+                  value: "{{ inputs.parameters.domainfile0p25x0p25 }}"
+                - name: qdm-kind
+                  value: "{{ inputs.parameters.qdm-kind }}"
+                - name: aiqpd-model-outputs
+                  value: "{{ steps.train-downscaling-model.outputs.parameters.aiqpd-model-outputs }}"
+            withParam: "{{ inputs.parameters.historical }}"
+          - name: downscale-ssps
+            template: downscale-simulation
+            arguments:
+              parameters:
+                - name: experiment-id
+                  value: "{{ item.experiment-id }}"
+                - name: activity-id
+                  value: "{{ item.activity-id }}"
+                - name: table-id
+                  value: "{{ item.table-id }}"
+                - name: variable-id
+                  value: "{{ item.variable-id }}"
+                - name: source-id
+                  value: "{{ item.source-id }}"
+                - name: institution-id
+                  value: "{{ item.institution-id }}"
+                - name: member-id
+                  value: "{{ item.member-id }}"
+                - name: grid-label
+                  value: "{{ item.grid-label }}"
+                - name: version
+                  value: "000000000000"
+                - name: domain-file
+                  value: "{{ inputs.parameters.domainfile0p25x0p25 }}"
+                - name: qdm-kind
+                  value: "{{ inputs.parameters.qdm-kind }}"
+                - name: aiqpd-model-outputs
+                  value: "{{ steps.train-downscaling-model.outputs.parameters.aiqpd-model-outputs }}"
+            withParam: "{{ inputs.parameters.ssps }}"
+
+
+    - name: train-downscaling-from-reference
       inputs:
         parameters:
           - name: reference-zarr
-          - name: variable-id
           - name: regrid-method
-          - name: domainfile1x1
           - name: domainfile0p25x0p25
+          - name: domainfile1x1
+          - name: variable-id
           - name: qdm-kind
-          - name: qdm-biascorrected-zarr
-          - name: qdm-quantiles-zarr
-      dag:
-        tasks:
-          - name: preprocess-quantiles
-            template: preprocess-biascorrected
-            arguments:
-              parameters:
-                - name: in-zarr
-                  value: "{{ inputs.parameters.qdm-quantiles-zarr }}"
-                - name: regrid-method
-                  value: "nearest_s2d"
-                - name: domain-file
-                  value: "{{ inputs.parameters.domainfile0p25x0p25 }}"
-          - name: preprocess-biascorrected
-            template: preprocess-biascorrected
-            arguments:
-              parameters:
-                - name: in-zarr
-                  value: "{{ inputs.parameters.qdm-biascorrected-zarr }}"
-                - name: regrid-method
-                  value: "nearest_s2d"
-                - name: domain-file
-                  value: "{{ inputs.parameters.domainfile0p25x0p25 }}"
-          - name: regrid-fine-reference
-            template: preprocess
+      outputs:
+        parameters:
+          - name: aiqpd-model-outputs
+            valueFrom:
+              parameter: "{{ steps.train-downscaling-model.outputs.parameters }}"
+      steps:
+        - - name: create-fine-reference
+            template: create-fine-reference
             arguments:
               parameters:
                 - name: in-zarr
@@ -73,47 +153,28 @@ spec:
                   value: "{{ inputs.parameters.regrid-method }}"
                 - name: domain-file
                   value: "{{ inputs.parameters.domainfile0p25x0p25 }}"
-          - name: regrid-reference-to-coarse
-            template: regrid
+          - name: create-coarse-reference
+            template: create-coarse-reference
             arguments:
               parameters:
                 - name: in-zarr
                   value: "{{ inputs.parameters.reference-zarr }}"
                 - name: regrid-method
                   value: "{{ inputs.parameters.regrid-method }}"
-                - name: domain-file
+                - name: domainfile0p25x0p25
+                  value: "{{ inputs.parameters.domainfile0p25x0p25 }}"
+                - name: domainfile1x1
                   value: "{{ inputs.parameters.domainfile1x1 }}"
-          - name: regrid-coarse-reference
-            dependencies: [ regrid-reference-to-coarse ]
-            template: preprocess
-            arguments:
-              parameters:
-                - name: in-zarr
-                  value: "{{ tasks.regrid-reference-to-coarse.outputs.parameters.out-zarr }}"
-                - name: regrid-method
-                  value: "{{ inputs.parameters.regrid-method }}"
-                - name: domain-file
-                  value: "{{ inputs.parameters.domainfile0p25x0p25 }}"
-          - name: prime-aiqpd-biascorrected-output-zarr
-            template: prime-aiqpd-biascorrected-output-zarr
-            dependencies: [ preprocess-biascorrected ]
-            arguments:
-              parameters:
-                - name: simulation-zarr
-                  value: "{{ tasks.preprocess-biascorrected.outputs.parameters.out-zarr}}"
-                - name: variable
-                  value: "{{ inputs.parameters.variable-id }}"
-          - name: train-aiqpd
-            dependencies: [ regrid-coarse-reference, regrid-fine-reference ]
+        - - name: train-downscaling-model
             template: train-aiqpd
             arguments:
               parameters:
                 - name: variable
                   value: "{{ inputs.parameters.variable-id }}"
                 - name: coarse-reference-zarr
-                  value: "{{ tasks.regrid-coarse-reference.outputs.parameters.out-zarr }}"
+                  value: "{{ steps.create-coarse-reference.outputs.parameters.out-zarr }}"
                 - name: fine-reference-zarr
-                  value: "{{ tasks.regrid-fine-reference.outputs.parameters.out-zarr }}"
+                  value: "{{ steps.create-fine-reference.outputs.parameters.out-zarr }}"
                 - name: kind
                   value: "{{ inputs.parameters.qdm-kind }}"
                 - name: lat-slice-min
@@ -123,17 +184,101 @@ spec:
             withSequence:
               start: "0"
               end: "359"
-          - name: apply-aiqpd
-            dependencies: [ train-aiqpd, preprocess-biascorrected, preprocess-quantiles, prime-aiqpd-biascorrected-output-zarr ]
+
+
+    - name: downscale-simulation
+      inputs:
+        parameters:
+          - name: experiment-id
+          - name: activity-id
+          - name: table-id
+          - name: variable-id
+          - name: source-id
+          - name: institution-id
+          - name: member-id
+          - name: grid-label
+          - name: domain-file
+          - name: qdm-kind
+          - name: aiqpd-model-outputs
+          - name: version
+            value: "000000000000"
+      steps:
+        - - name: infer-biascorrected-output-url
+            templateRef:
+              name: catalog
+              template: get-fsspec-url-from-parameters
+            arguments:
+              parameters:
+                - name: experiment-id
+                  value: "{{ inputs.parameters.experiment-id }}"
+                - name: activity-id
+                  value: "{{ inputs.parameters.activity-id }}"
+                - name: table-id
+                  value: "{{ inputs.parameters.table-id }}"
+                - name: variable-id
+                  value: "{{ inputs.parameters.variable-id }}"
+                - name: source-id
+                  value: "{{ inputs.parameters.source-id }}"
+                - name: institution-id
+                  value: "{{ inputs.parameters.institution-id }}"
+                - name: member-id
+                  value: "{{ inputs.parameters.member-id }}"
+                - name: grid-label
+                  value: "{{ inputs.parameters.grid-label }}"
+                - name: version
+                  value: "{{ inputs.parameters.version }}"
+                - name: base-url
+                  value: "az://biascorrected-stage"
+          - name: infer-downscaled-output-url
+            templateRef:
+              name: catalog
+              template: get-fsspec-url-from-parameters
+            arguments:
+              parameters:
+                - name: experiment-id
+                  value: "{{ inputs.parameters.experiment-id }}"
+                - name: activity-id
+                  value: "{{ inputs.parameters.activity-id }}"
+                - name: table-id
+                  value: "{{ inputs.parameters.table-id }}"
+                - name: variable-id
+                  value: "{{ inputs.parameters.variable-id }}"
+                - name: source-id
+                  value: "{{ inputs.parameters.source-id }}"
+                - name: institution-id
+                  value: "{{ inputs.parameters.institution-id }}"
+                - name: member-id
+                  value: "{{ inputs.parameters.member-id }}"
+                - name: grid-label
+                  value: "{{ inputs.parameters.grid-label }}"
+                - name: version
+                  value: "{{ inputs.parameters.version }}"
+                - name: base-url
+                  value: "as://downscaled-stage"
+        - - name: preprocess-biascorrected
+            template: preprocess-biascorrected
+            arguments:
+              parameters:
+                - name: in-zarr
+                  value: "{{ steps.infer-biascorrected-output-url.outputs.parameters.out-url }}"
+                - name: domain-file
+                  value: "{{ inputs.parameters.domain-file }}"
+        - - name: prime-aiqpd-biascorrected-output-zarr
+            template: prime-aiqpd-biascorrected-output-zarr
+            arguments:
+              parameters:
+                - name: simulation-zarr
+                  value: "{{ steps.preprocess-biascorrected.outputs.parameters.out-zarr }}"
+                - name: variable
+                  value: "{{ inputs.parameters.variable-id }}"
+        - - name: apply-aiqpd
             template: apply-aiqpd
             arguments:
               parameters:
                 - name: variable
                   value: "{{ inputs.parameters.variable-id }}"
                 - name: simulation-zarr
-                  value: "{{ tasks.preprocess-biascorrected.outputs.parameters.out-zarr }}"
-                - name: quantiles-zarr
-                  value: "{{ tasks.preprocess-quantiles.outputs.parameters.out-zarr }}"
+                  value: "{{ steps.preprocess-biascorrected.outputs.parameters.out-zarr }}"
                 - name: aiqpd-model-zarr
                   value: "{{ item.out-zarr }}"
                 - name: kind
@@ -143,11 +288,11 @@ spec:
                 - name: lat-slice-max
                   value: "{{ item.lat-slice-max }}"
                 - name: out-zarr
-                  value: "{{ tasks.prime-aiqpd-biascorrected-output-zarr.outputs.parameters.out-zarr }}"
-            withParam: "{{ tasks.train-aiqpd.outputs.parameters }}"
+                  value: "{{ steps.prime-aiqpd-biascorrected-output-zarr.outputs.parameters.out-zarr }}"
+            withParam: "{{ inputs.parameters.aiqpd-model-outputs }}"
 
 
-    - name: preprocess
+    - name: create-fine-reference
       inputs:
         parameters:
           - name: in-zarr
@@ -157,10 +302,9 @@ spec:
         parameters:
           - name: out-zarr
             valueFrom:
-              parameter: "{{ tasks.move-chunks-to-space.outputs.parameters.out-zarr }}"
-      dag:
-        tasks:
-          - name: move-chunks-to-time
+              parameter: "{{ steps.move-chunks-to-space.outputs.parameters.out-zarr }}"
+      steps:
+        - - name: move-chunks-to-time
             template: rechunk
             arguments:
               parameters:
@@ -172,24 +316,81 @@ spec:
                   value: -1
                 - name: lon-chunk
                   value: -1
-          - name: regrid
-            dependencies: [ move-chunks-to-time ]
+        - - name: regrid
             template: regrid
             arguments:
               parameters:
                 - name: in-zarr
-                  value: "{{ tasks.move-chunks-to-time.outputs.parameters.out-zarr }}"
+                  value: "{{ steps.move-chunks-to-time.outputs.parameters.out-zarr }}"
                 - name: regrid-method
                   value: "{{ inputs.parameters.regrid-method }}"
                 - name: domain-file
                   value: "{{ inputs.parameters.domain-file }}"
-          - name: move-chunks-to-space
-            dependencies: [ regrid ]
+        - - name: move-chunks-to-space
             template: rechunk
             arguments:
               parameters:
                 - name: in-zarr
-                  value: "{{ tasks.regrid.outputs.parameters.out-zarr }}"
+                  value: "{{ steps.regrid.outputs.parameters.out-zarr }}"
+                - name: time-chunk
+                  value: 365
+                - name: lat-chunk
+                  value: 2
+                - name: lon-chunk
+                  value: -1
+
+
+    - name: create-coarse-reference
+      inputs:
+        parameters:
+          - name: in-zarr
+          - name: regrid-method
+          - name: domainfile0p25x0p25
+          - name: domainfile1x1
+      outputs:
+        parameters:
+          - name: out-zarr
+            valueFrom:
+              parameter: "{{ steps.move-chunks-to-space.outputs.parameters.out-zarr }}"
+      steps:
+        - - name: coarse-regrid
+            template: regrid
+            arguments:
+              parameters:
+                - name: in-zarr
+                  value: "{{ inputs.parameters.in-zarr }}"
+                - name: regrid-method
+                  value: "{{ inputs.parameters.regrid-method }}"
+                - name: domain-file
+                  value: "{{ inputs.parameters.domainfile1x1 }}"
+        - - name: move-chunks-to-time
+            template: rechunk
+            arguments:
+              parameters:
+                - name: in-zarr
+                  value: "{{ steps.coarse-regrid.outputs.parameters.out-zarr }}"
+                - name: time-chunk
+                  value: "73"
+                - name: lat-chunk
+                  value: -1
+                - name: lon-chunk
+                  value: -1
+        - - name: fine-regrid
+            template: regrid
+            arguments:
+              parameters:
+                - name: in-zarr
+                  value: "{{ steps.move-chunks-to-time.outputs.parameters.out-zarr }}"
+                - name: regrid-method
+                  value: "{{ inputs.parameters.regrid-method }}"
+                - name: domain-file
+                  value: "{{ inputs.parameters.domainfile0p25x0p25 }}"
+        - - name: move-chunks-to-space
+            template: rechunk
+            arguments:
+              parameters:
+                - name: in-zarr
+                  value: "{{ steps.fine-regrid.outputs.parameters.out-zarr }}"
                 - name: time-chunk
                   value: 365
                 - name: lat-chunk
@@ -203,15 +404,15 @@ spec:
         parameters:
           - name: in-zarr
           - name: regrid-method
+            value: "nearest_s2d"
           - name: domain-file
       outputs:
         parameters:
           - name: out-zarr
             valueFrom:
-              parameter: "{{ tasks.regrid.outputs.parameters.out-zarr }}"
-      dag:
-        tasks:
-          - name: move-chunks-to-time
+              parameter: "{{ steps.regrid.outputs.parameters.out-zarr }}"
+      steps:
+        - - name: move-chunks-to-time
             template: rechunk
             arguments:
               parameters:
@@ -223,13 +424,12 @@ spec:
                   value: -1
                 - name: lon-chunk
                   value: -1
-          - name: regrid
-            dependencies: [ move-chunks-to-time ]
+        - - name: regrid
             template: distributed-regrid
             arguments:
               parameters:
                 - name: in-zarr
-                  value: "{{ tasks.move-chunks-to-time.outputs.parameters.out-zarr }}"
+                  value: "{{ steps.move-chunks-to-time.outputs.parameters.out-zarr }}"
                 - name: regrid-method
                   value: "{{ inputs.parameters.regrid-method }}"
                 - name: domain-file
@@ -454,7 +654,6 @@ spec:
       inputs:
         parameters:
           - name: simulation-zarr
-          - name: quantiles-zarr
           - name: aiqpd-model-zarr
           - name: variable
           - name: kind
@@ -493,7 +692,6 @@ spec:
           kind_map = {"multiplicative": "*", "additive": "+"}
 
           sim_zarr = "{{ inputs.parameters.simulation-zarr }}"
-          quantiles_zarr = "{{ inputs.parameters.quantiles-zarr }}"
           aiqpd_model_zarr = "{{ inputs.parameters.aiqpd-model-zarr }}"
           out_zarr = "{{ inputs.parameters.out-zarr }}"
           min_slice = int({{ inputs.parameters.lat-slice-min }})
@@ -505,8 +703,6 @@ spec:
           print(f"{latslice=}")  # DEBUG
 
           sim_ds = dodola.repository.read(sim_zarr).isel(lat=latslice)
-
-          sim_ds["sim_q"] = dodola.repository.read(quantiles_zarr).isel(lat=latslice)["sim_q"]
           sim_ds = sim_ds.set_coords(["sim_q"])
           print(f"{sim_ds=}")  # DEBUG
           print("loading data...")
@@ -574,10 +770,9 @@ spec:
         parameters:
           - name: out-zarr
             valueFrom:
-              parameter: "{{ tasks.prime-regrid-zarr.outputs.parameters.out-zarr }}"
-      dag:
-        tasks:
-          - name: prime-regrid-zarr
+              parameter: "{{ steps.prime-regrid-zarr.outputs.parameters.out-zarr }}"
+      steps:
+        - - name: prime-regrid-zarr
             template: prime-regrid-zarr
             arguments:
               parameters:
@@ -589,15 +784,14 @@ spec:
                   value: "{{ inputs.parameters.domain-file }}"
                 - name: nontime-variables
                   value: "{{ inputs.parameters.nontime-variables }}"
-          - name: regrid-year-to-primedzarr
+        - - name: regrid-year-to-primedzarr
             template: regrid-select-year-to-primedzarr
-            dependencies: [ prime-regrid-zarr ]
             arguments:
               parameters:
                 - name: in-zarr
                   value: "{{ inputs.parameters.in-zarr }}"
                 - name: out-zarr
-                  value: "{{ tasks.prime-regrid-zarr.outputs.parameters.out-zarr }}"
+                  value: "{{ steps.prime-regrid-zarr.outputs.parameters.out-zarr }}"
                 - name: regrid-method
                   value: "{{ inputs.parameters.regrid-method }}"
                 - name: domain-file
@@ -609,8 +803,8 @@ spec:
                 - name: add-cyclic-lon
                   value: "{{ inputs.parameters.add-cyclic-lon }}"
             withSequence:
-              start: "{{ tasks.prime-regrid-zarr.outputs.parameters.firstyear }}"
-              end: "{{ tasks.prime-regrid-zarr.outputs.parameters.lastyear }}"
+              start: "{{ steps.prime-regrid-zarr.outputs.parameters.firstyear }}"
+              end: "{{ steps.prime-regrid-zarr.outputs.parameters.lastyear }}"
 
 
     # Sets up output zarr file and metadata without writing time-related data to the zarr store.
@@ -810,15 +1004,19 @@ spec:
           ds_out.to_zarr(out_zarr, region={"time": target_idx_slice}, mode="a")
         resources:
           requests:
-            memory: 8Gi
+            memory: 16Gi
             cpu: "1000m"
           limits:
-            memory: 8Gi
-            cpu: "1000m"
+            memory: 16Gi
+            cpu: "4000m"
       activeDeadlineSeconds: 900
       retryStrategy:
         limit: 2
         retryPolicy: "Always"
+        backoff:
+          duration: 30s
+          factor: 2
+
 
 
     # Sets up output zarr file and metadata without writing time-related data to the zarr store.
@@ -890,3 +1088,66 @@ spec:
       retryStrategy:
         limit: 2
         retryPolicy: "Always"
+
+
+      # Work around a bug in Argo Workflows where some output are duplicated:
+    - name: clense-duplicate-json-output
+      inputs:
+        artifacts:
+          - name: target
+            path: "/tmp/in.json"
+      outputs:
+        artifacts:
+          - name: deduplicated
+            path: "/tmp/out.json"
+      script:
+        image: python:alpine3.9
+        command: [ python ]
+        source: |
+          # Remove duplicate objects in a JSON file.
+          import json
+
+          #with open("/tmp/in.json", "r") as fl:
+              json_in = json.load(fl)
+
+          # Remove duplicates...
+          hashables = set(tuple(g.items()) for g in json_in)
+          # Reinflate to list of dicts...
+          unique_output = [dict(h) for h in hashables]
+
+          with open("/tmp/out.json", "w") as fl:
+            json.dump(unique_output, fl)
+        resources:
+          requests:
+            memory: 500Mi
+            cpu: "200m"
+          limits:
+            memory: 1Gi
+            cpu: "1000m"
+      activeDeadlineSeconds: 480
+      retryStrategy:
+        limit: 4
+        retryPolicy: "Always"
+
+
+      # Argo workflows bug workaround. Reading in things like very big json and output as an artifact.
+    - name: jsonstr-to-artifact
+      inputs:
+        parameters:
+          - name: in
+      outputs:
+        artifacts:
+          - name: repackaged
+            path: /tmp/out.json
+      script:
+        image: python:alpine3.9
+        command: [ python ]
+        args: [ "echo {{inputs.parameters.in}} > /tmp/out.json"]
+        source: |
+          import json
+
+          json_in = {{ inputs.parameters.in }}
+
+          with open("/tmp/out.json", "w") as fl:
+            json.dump(json_in, fl)
+
