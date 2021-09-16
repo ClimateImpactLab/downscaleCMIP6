@@ -268,7 +268,7 @@ spec:
         parameters:
           - name: out-zarr
             value: "{{ inputs.parameters.out-zarr }}"
-      container:
+      script:
         image: downscalecmip6.azurecr.io/dodola:0.5.0
         env:
           - name: AZURE_STORAGE_ACCOUNT_NAME
@@ -281,17 +281,34 @@ spec:
               secretKeyRef:
                 name: workerstoragecreds-secret
                 key: azurestoragekey
-        command: [ "dodola" ]
-        args:
-          - "regrid"
-          - "{{ inputs.parameters.in-zarr }}"
-          - "--astype=float32"
-          - "--out"
-          - "{{ inputs.parameters.out-zarr }}"
-          - "--method"
-          - "{{ inputs.parameters.regrid-method }}"
-          - "--domain-file"
-          - "{{ inputs.parameters.domain-file }}"
+        command: [ "python" ]
+        source: |
+          import xarray as xr
+          import xesmf as xe
+          import dodola.repository as storage
+          from dodola.core import xesmf_regrid
+
+
+          ds = storage.read("{{ inputs.parameters.in-zarr }}")
+          print(f"{ds =}")
+
+          domain_ds = storage.read("{{ inputs.parameters.domain-file }}")
+
+          out_ds = xesmf_regrid(
+              ds,
+              domain_ds,
+              method="{{ inputs.parameters.regrid-method }}",
+              astype="float32"
+          )
+
+          # Merge original attrs into output.
+          out_ds.attrs |= ds.attrs
+          for k, v in ds.variables.items():
+              if k in out_ds:
+                  out_ds[k].attrs |= v.attrs
+
+          print(f"{out_ds =}")
+          storage.write("{{ inputs.parameters.out-zarr }}", out_ds)
         resources:
           requests:
             memory: 48Gi
