@@ -327,7 +327,7 @@ spec:
         parameters:
           - name: in-zarr
           - name: out-zarr
-            value: "az://scratch/{{ workflow.name }}/{{ pod.name }}/out.zarr"
+            value: "az://scratch/{{ workflow.name }}/{{ pod.name }}/rechunked.zarr"
           - name: time-chunk
             value: 365
           - name: lat-chunk
