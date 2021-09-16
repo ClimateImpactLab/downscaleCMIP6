@@ -15,6 +15,11 @@ spec:
         value: "tasmin"
       - name: source-id
         value: "GFDL-ESM4"
+      - name: historical
+        value: |
+          [
+            { "activity-id": "CMIP", "experiment-id": "historical", "table-id": "day", "variable-id": "tasmin", "source-id": "GFDL-ESM4", "institution-id": "NOAA-GFDL", "member-id": "r1i1p1f1", "grid-label": "gr1", "version": "20190726" }
+          ]
       - name: ssps
         value: |
           [
@@ -26,8 +31,6 @@ spec:
         value: "bilinear"
       - name: correct-wetday-frequency  # "true" or "false" STRING!
         value: "false"
-      - name: domainfile1x1
-        value: "az://support/domain.1x1.zarr"
       - name: qdm-kind #additive or multiplicative
         value: "additive"
   templates:
@@ -37,11 +40,13 @@ spec:
         parameters:
           - name: variable-id
           - name: source-id
+          - name: historical
           - name: ssps
           - name: regrid-method
+          - name: qdm-kind
           - name: correct-wetday-frequency
           - name: domainfile1x1
-          - name: qdm-kind
+            value: "az://support/domain.1x1.zarr"
       dag:
         tasks:
           - name: preprocess-historical
@@ -56,6 +61,14 @@ spec:
                   value: "{{ inputs.parameters.domainfile1x1 }}"
                 - name: correct-wetday-frequency
                   value: "{{ inputs.parameters.correct-wetday-frequency }}"
+                - name: metadata
+                  value: >-
+                    {{=toJson(
+                        filter(
+                          jsonpath(inputs.parameters.historical, '$[*]'),
+                          {#['experiment-id'] == 'historical'}
+                        )[0]
+                    )}}
           - name: preprocess-reference
             template: preprocess-reference
             arguments:
@@ -78,12 +91,22 @@ spec:
                   value: "{{ inputs.parameters.domainfile1x1 }}"
                 - name: correct-wetday-frequency
                   value: "{{ inputs.parameters.correct-wetday-frequency }}"
+                - name: metadata
+                  value: >-
+                    {{=toJson(
+                        filter(
+                          jsonpath(inputs.parameters.historical, '$[*]'),
+                          {#['experiment-id'] == 'historical'}
+                        )[0]
+                    )}}
           - name: preprocess-ssps
             template: preprocess
             arguments:
               parameters:
                 - name: in-zarr
-                  value: "az://clean-cmip6/{{ inputs.parameters.source-id }}/{{ item.experiment-id }}/{{ inputs.parameters.variable-id }}.zarr"
+                  value: "az://clean-cmip6/{{ item.source-id }}/{{ item.experiment-id }}/{{ item.variable-id }}.zarr"
+                - name: metadata
+                  value: "{{ item }}"
                 - name: regrid-method
                   value: "{{ inputs.parameters.regrid-method }}"
                 - name: domain-file
@@ -110,6 +133,14 @@ spec:
                   value: 1950
                 - name: last-year
                   value: 2014
+                - name: metadata
+                  value: >-
+                    {{=toJson(
+                        filter(
+                          jsonpath(inputs.parameters.historical, '$[*]'),
+                          {#['experiment-id'] == 'historical'}
+                        )[0]
+                    )}}
           - name: biascorrect-ssps
             dependencies: [ preprocess-reference, preprocess-training, preprocess-ssps]
             template: biascorrect-qdm
@@ -129,24 +160,30 @@ spec:
                   value: 2015
                 - name: last-year
                   value: 2100
+                - name: metadata
+                  value: "{{ item.metadata }}"
             withParam: "{{ tasks.preprocess-ssps.outputs.parameters }}"
-
 
     - name: preprocess
       inputs:
         parameters:
+          - name: metadata
+            value: "{}"
           - name: in-zarr
           - name: regrid-method
           - name: domain-file
           - name: correct-wetday-frequency  # "true" or "false" STRING!
       outputs:
         parameters:
+            # Hack to output input parameter steps body.
+          - name: metadata
+            valueFrom:
+              expression: "inputs.parameters['metadata']"
           - name: out-zarr
             valueFrom:
-              parameter: "{{ tasks.move-chunks-to-space.outputs.parameters.out-zarr }}"
-      dag:
-        tasks:
-          - name: check-wetday-frequency
+              parameter: "{{ steps.move-chunks-to-space.outputs.parameters.out-zarr }}"
+      steps:
+        - - name: check-wetday-frequency
             template: wdf-check
             arguments:
               parameters:
@@ -158,44 +195,40 @@ spec:
                   value: "pre"
                 - name: correct-bool
                   value: "{{ inputs.parameters.correct-wetday-frequency }}"
-          - name: add-cyclic
-            dependencies: [ check-wetday-frequency ]
+        - - name: add-cyclic
             template: add-cyclic
             arguments:
               parameters:
                 - name: in-zarr
-                  value: "{{ tasks.check-wetday-frequency.outputs.parameters.out-zarr }}"
-          - name: move-chunks-to-time
-            dependencies: [ add-cyclic ]
+                  value: "{{ steps.check-wetday-frequency.outputs.parameters.out-zarr }}"
+        - - name: move-chunks-to-time
             template: rechunk
             arguments:
               parameters:
                 - name: in-zarr
-                  value: "{{ tasks.add-cyclic.outputs.parameters.out-zarr }}"
+                  value: "{{ steps.add-cyclic.outputs.parameters.out-zarr }}"
                 - name: time-chunk
                   value: "365"
                 - name: lat-chunk
                   value: -1
                 - name: lon-chunk
                   value: -1
-          - name: regrid
-            dependencies: [ move-chunks-to-time ]
+        - - name: regrid
             template: regrid
             arguments:
               parameters:
                 - name: in-zarr
-                  value: "{{ tasks.move-chunks-to-time.outputs.parameters.out-zarr }}"
+                  value: "{{ steps.move-chunks-to-time.outputs.parameters.out-zarr }}"
                 - name: regrid-method
                   value: "{{ inputs.parameters.regrid-method }}"
                 - name: domain-file
                   value: "{{ inputs.parameters.domain-file }}"
-          - name: move-chunks-to-space
-            dependencies: [ regrid ]
+        - - name: move-chunks-to-space
             template: rechunk
             arguments:
               parameters:
                 - name: in-zarr
-                  value: "{{ tasks.regrid.outputs.parameters.out-zarr }}"
+                  value: "{{ steps.regrid.outputs.parameters.out-zarr }}"
                 - name: time-chunk
                   value: "-1"
                 - name: lat-chunk
@@ -268,7 +301,7 @@ spec:
         parameters:
           - name: out-zarr
             value: "{{ inputs.parameters.out-zarr }}"
-      container:
+      script:
         image: downscalecmip6.azurecr.io/dodola:0.5.0
         env:
           - name: AZURE_STORAGE_ACCOUNT_NAME
@@ -281,17 +314,34 @@ spec:
               secretKeyRef:
                 name: workerstoragecreds-secret
                 key: azurestoragekey
-        command: [ "dodola" ]
-        args:
-          - "regrid"
-          - "{{ inputs.parameters.in-zarr }}"
-          - "--astype=float32"
-          - "--out"
-          - "{{ inputs.parameters.out-zarr }}"
-          - "--method"
-          - "{{ inputs.parameters.regrid-method }}"
-          - "--domain-file"
-          - "{{ inputs.parameters.domain-file }}"
+        command: [ "python" ]
+        source: |
+          import xarray as xr
+          import xesmf as xe
+          import dodola.repository as storage
+          from dodola.core import xesmf_regrid
+
+
+          ds = storage.read("{{ inputs.parameters.in-zarr }}")
+          print(f"{ds =}")
+
+          domain_ds = storage.read("{{ inputs.parameters.domain-file }}")
+
+          out_ds = xesmf_regrid(
+              ds,
+              domain_ds,
+              method="{{ inputs.parameters.regrid-method }}",
+              astype="float32"
+          )
+
+          # Merge original attrs into output.
+          out_ds.attrs |= ds.attrs
+          for k, v in ds.variables.items():
+              if k in out_ds:
+                  out_ds[k].attrs |= v.attrs
+
+          print(f"{out_ds =}")
+          storage.write("{{ inputs.parameters.out-zarr }}", out_ds)
         resources:
           requests:
             memory: 48Gi
@@ -310,7 +360,7 @@ spec:
         parameters:
           - name: in-zarr
           - name: out-zarr
-            value: "az://scratch/{{ workflow.name }}/{{ pod.name }}/out.zarr"
+            value: "az://scratch/{{ workflow.name }}/{{ pod.name }}/rechunked.zarr"
           - name: time-chunk
             value: 365
           - name: lat-chunk
@@ -371,18 +421,30 @@ spec:
           - name: kind
           - name: first-year
           - name: last-year
+          - name: metadata
+            value: "{}"
           - name: include-quantiles
             value: "true"
       outputs:
         parameters:
+          - name: metadata
+            valueFrom:
+              expression: "inputs.parameters['metadata']"
           - name: qdm-out-zarr
             valueFrom:
-              parameter: "{{ tasks.prime-output-zarrstore.outputs.parameters.qdm-out-zarr }}"
-          - name: simq-out-zarr
-            valueFrom:
-              parameter: "{{ tasks.prime-output-zarrstore.outputs.parameters.simq-out-zarr }}"
+              parameter: "{{ tasks.rechunk-biascorrected.outputs.parameters.out-zarr }}"
       dag:
         tasks:
+          - name: infer-biascorrected-output-url
+            templateRef:
+              name: catalog
+              template: get-fsspec-url-from-zarr
+            arguments:
+              parameters:
+                - name: in-zarr
+                  value: "{{ inputs.parameters.simulation-zarr }}"
+                - name: base-url
+                  value: "az://biascorrected-stage"
           - name: prime-output-zarrstore
             template: prime-output-zarrstore
             arguments:
@@ -422,14 +484,26 @@ spec:
                   value: "{{=asInt(item) * 10 + 10 }}"
                 - name: qdm-out-zarr
                   value: "{{ tasks.prime-output-zarrstore.outputs.parameters.qdm-out-zarr }}"
-                - name: simq-out-zarr
-                  value: "{{ tasks.prime-output-zarrstore.outputs.parameters.simq-out-zarr }}"
                 - name: include-quantiles
                   value: "{{ inputs.parameters.include-quantiles }}"
             withSequence:
               start: "0"
               end: "17"
-
+          - name: rechunk-biascorrected
+            depends: "with-lat-chunk && prime-output-zarrstore && infer-biascorrected-output-url"
+            template: rechunk
+            arguments:
+              parameters:
+                - name: in-zarr
+                  value: "{{ tasks.prime-output-zarrstore.outputs.parameters.qdm-out-zarr }}"
+                - name: out-zarr
+                  value: "{{ tasks.infer-biascorrected-output-url.outputs.parameters.out-url }}"
+                - name: time-chunk
+                  value: 73
+                - name: lat-chunk
+                  value: 10
+                - name: lon-chunk
+                  value: 180
 
     - name: prime-output-zarrstore
       inputs:
@@ -440,16 +514,12 @@ spec:
           - name: last-year
           - name: qdm-out-zarr
             value: "az://scratch/{{ workflow.name }}/{{ pod.name }}/qdm_adjusted.zarr"
-          - name: simq-out-zarr
-            value: "az://scratch/{{ workflow.name }}/{{ pod.name }}/simq.zarr"
           - name: include-quantiles
             value: "false"
       outputs:
         parameters:
           - name: qdm-out-zarr
             value: "{{ inputs.parameters.qdm-out-zarr }}"
-          - name: simq-out-zarr
-            value: "{{ inputs.parameters.simq-out-zarr }}"
       script:
         image: downscalecmip6.azurecr.io/dodola:0.5.0
         env:
@@ -473,7 +543,6 @@ spec:
 
           simulation_zarr = "{{ inputs.parameters.simulation-zarr }}"
           qdm_out_zarr = "{{ inputs.parameters.qdm-out-zarr }}"
-          simq_out_zarr = "{{ inputs.parameters.simq-out-zarr }}"
           first_year = int({{ inputs.parameters.first-year }})
           last_year = int({{ inputs.parameters.last-year }})
           variable = "{{ inputs.parameters.variable }}"
@@ -484,8 +553,7 @@ spec:
 
           primed_out = dodola.repository.read(simulation_zarr).sel(time=timeslice).chunk({"time": 73, "lat": 10, "lon":180})
           if include_quantiles:
-              simq_out = xr.zeros_like(primed_out[variable]).to_dataset(name=quantiles_variable)
-              print(f"{simq_out=}")  # DEBUG
+              primed_out[quantiles_variable] = xr.zeros_like(primed_out[variable])
           print(f"{primed_out=}")  # DEBUG
 
           primed_out.to_zarr(
@@ -507,28 +575,6 @@ spec:
                   safe_chunks=False
               )
               print(f"Non-latitude variables written to to {qdm_out_zarr}")  # DEBUG
-
-
-          if include_quantiles:
-              simq_out.to_zarr(
-                  simq_out_zarr,
-                  mode="w",
-                  compute=False,
-                  consolidated=True,
-                  safe_chunks=False
-              )
-              print(f"Output written to {simq_out_zarr}")  # DEBUG
-
-              # Append variables that do not depend on "lat"
-              if nonlat_variables:
-                  simq_out[nonlat_variables].to_zarr(
-                      simq_out_zarr,
-                      mode="a",
-                      compute=True,
-                      consolidated=True,
-                      safe_chunks=False
-                  )
-                  print(f"Non-latitude variables written to to {qdm_out_zarr}")  # DEBUG
         resources:
           requests:
             memory: 4Gi
@@ -550,7 +596,6 @@ spec:
           - name: train-zarr
           - name: simulation-zarr
           - name: qdm-out-zarr
-          - name: simq-out-zarr
           - name: kind
           - name: lat-slice-min
           - name: lat-slice-max
@@ -563,9 +608,6 @@ spec:
           - name: qdm-out-zarr
             valueFrom:
               parameter: "{{ tasks.apply-qdm.outputs.parameters.qdm-out-zarr }}"
-          - name: simq-out-zarr
-            valueFrom:
-              parameter: "{{ tasks.apply-qdm.outputs.parameters.simq-out-zarr }}"
       dag:
         tasks:
           - name: train-qdm
@@ -605,8 +647,6 @@ spec:
                   value: "{{ inputs.parameters.lat-slice-max }}"
                 - name: qdm-out-zarr
                   value: "{{ inputs.parameters.qdm-out-zarr }}"
-                - name: simq-out-zarr
-                  value: "{{ inputs.parameters.simq-out-zarr }}"
                 - name: include-quantiles
                   value: "{{ inputs.parameters.include-quantiles }}"
 
@@ -701,14 +741,10 @@ spec:
             value: "false"
           - name: qdm-out-zarr
             value: "az://scratch/{{ workflow.name }}/{{ pod.name }}/qdm_adjusted.zarr"
-          - name: simq-out-zarr
-            value: "az://scratch/{{ workflow.name }}/{{ pod.name }}/simq.zarr"
       outputs:
         parameters:
           - name: qdm-out-zarr
             value: "{{ inputs.parameters.qdm-out-zarr }}"
-          - name: simq-out-zarr
-            value: "{{ inputs.parameters.simq-out-zarr }}"
       script:
         image: downscalecmip6.azurecr.io/dodola:0.5.0
         env:
@@ -735,7 +771,6 @@ spec:
           qdm_zarr = "{{ inputs.parameters.qdm-zarr }}"
           simulation_zarr = "{{ inputs.parameters.simulation-zarr }}"
           qdm_out_zarr = "{{ inputs.parameters.qdm-out-zarr }}"
-          simq_out_zarr = "{{ inputs.parameters.simq-out-zarr }}"
           min_slice = int({{ inputs.parameters.lat-slice-min }})
           max_slice = int({{ inputs.parameters.lat-slice-max }})
           first_year = int({{ inputs.parameters.first-year }})
@@ -776,13 +811,8 @@ spec:
           print(f"{out_all_years=}")  # DEBUG
 
           # Output to region of existing zarr store.
-          out_all_years[[variable]].to_zarr(qdm_out_zarr, region={"lat": latslice}, mode="a")
+          out_all_years.to_zarr(qdm_out_zarr, region={"lat": latslice}, mode="a")
           print(f"Output written to {qdm_out_zarr}")  # DEBUG
-
-          if include_quantiles:
-              # Output to region of existing zarr store.
-              out_all_years[[quantile_variable]].to_zarr(simq_out_zarr, region={"lat": latslice}, mode="a")
-              print(f"Output written to {simq_out_zarr}")  # DEBUG
         resources:
           requests:
             memory: 32Gi
@@ -872,7 +902,7 @@ spec:
         parameters:
           - name: in-zarr
           - name: out-zarr
-            value: "az://scratch/{{ workflow.name }}/{{ pod.name }}/out.zarr"
+            value: "az://scratch/{{ workflow.name }}/{{ pod.name }}/cyclic-added.zarr"
       outputs:
         parameters:
           - name: out-zarr
