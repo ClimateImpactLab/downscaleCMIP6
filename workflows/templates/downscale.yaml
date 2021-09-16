@@ -670,10 +670,6 @@ spec:
             value: "az://scratch/{{ workflow.name }}/{{ pod.name }}/aiqpd_adjusted.zarr"
       outputs:
         parameters:
-          - name: lat-slice-min
-            value: "{{ inputs.parameters.lat-slice-min }}"
-          - name: lat-slice-max
-            value: "{{ inputs.parameters.lat-slice-max }}"
           - name: out-zarr
             value: "{{ inputs.parameters.out-zarr }}"
       script:
