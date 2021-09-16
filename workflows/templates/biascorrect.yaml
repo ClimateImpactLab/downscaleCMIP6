@@ -394,10 +394,7 @@ spec:
         parameters:
           - name: qdm-out-zarr
             valueFrom:
-              parameter: "{{ tasks.prime-output-zarrstore.outputs.parameters.qdm-out-zarr }}"
-          - name: simq-out-zarr
-            valueFrom:
-              parameter: "{{ tasks.prime-output-zarrstore.outputs.parameters.simq-out-zarr }}"
+              parameter: "{{ tasks.rechunk-biascorrected.outputs.parameters.out-zarr }}"
       dag:
         tasks:
           - name: prime-output-zarrstore
@@ -439,8 +436,6 @@ spec:
                   value: "{{=asInt(item) * 10 + 10 }}"
                 - name: qdm-out-zarr
                   value: "{{ tasks.prime-output-zarrstore.outputs.parameters.qdm-out-zarr }}"
-                - name: simq-out-zarr
-                  value: "{{ tasks.prime-output-zarrstore.outputs.parameters.simq-out-zarr }}"
                 - name: include-quantiles
                   value: "{{ inputs.parameters.include-quantiles }}"
             withSequence:
@@ -457,16 +452,12 @@ spec:
           - name: last-year
           - name: qdm-out-zarr
             value: "az://scratch/{{ workflow.name }}/{{ pod.name }}/qdm_adjusted.zarr"
-          - name: simq-out-zarr
-            value: "az://scratch/{{ workflow.name }}/{{ pod.name }}/simq.zarr"
           - name: include-quantiles
             value: "false"
       outputs:
         parameters:
           - name: qdm-out-zarr
             value: "{{ inputs.parameters.qdm-out-zarr }}"
-          - name: simq-out-zarr
-            value: "{{ inputs.parameters.simq-out-zarr }}"
       script:
         image: downscalecmip6.azurecr.io/dodola:0.5.0
         env:
@@ -490,7 +481,6 @@ spec:
 
           simulation_zarr = "{{ inputs.parameters.simulation-zarr }}"
           qdm_out_zarr = "{{ inputs.parameters.qdm-out-zarr }}"
-          simq_out_zarr = "{{ inputs.parameters.simq-out-zarr }}"
           first_year = int({{ inputs.parameters.first-year }})
           last_year = int({{ inputs.parameters.last-year }})
           variable = "{{ inputs.parameters.variable }}"
@@ -501,8 +491,7 @@ spec:
 
           primed_out = dodola.repository.read(simulation_zarr).sel(time=timeslice).chunk({"time": 73, "lat": 10, "lon":180})
           if include_quantiles:
-              simq_out = xr.zeros_like(primed_out[variable]).to_dataset(name=quantiles_variable)
-              print(f"{simq_out=}")  # DEBUG
+              primed_out[quantiles_variable] = xr.zeros_like(primed_out[variable])
           print(f"{primed_out=}")  # DEBUG
 
           primed_out.to_zarr(
@@ -524,28 +513,6 @@ spec:
                   safe_chunks=False
               )
               print(f"Non-latitude variables written to to {qdm_out_zarr}")  # DEBUG
-
-
-          if include_quantiles:
-              simq_out.to_zarr(
-                  simq_out_zarr,
-                  mode="w",
-                  compute=False,
-                  consolidated=True,
-                  safe_chunks=False
-              )
-              print(f"Output written to {simq_out_zarr}")  # DEBUG
-
-              # Append variables that do not depend on "lat"
-              if nonlat_variables:
-                  simq_out[nonlat_variables].to_zarr(
-                      simq_out_zarr,
-                      mode="a",
-                      compute=True,
-                      consolidated=True,
-                      safe_chunks=False
-                  )
-                  print(f"Non-latitude variables written to to {qdm_out_zarr}")  # DEBUG
         resources:
           requests:
             memory: 4Gi
@@ -567,7 +534,6 @@ spec:
           - name: train-zarr
           - name: simulation-zarr
           - name: qdm-out-zarr
-          - name: simq-out-zarr
           - name: kind
           - name: lat-slice-min
           - name: lat-slice-max
@@ -580,9 +546,6 @@ spec:
           - name: qdm-out-zarr
             valueFrom:
               parameter: "{{ tasks.apply-qdm.outputs.parameters.qdm-out-zarr }}"
-          - name: simq-out-zarr
-            valueFrom:
-              parameter: "{{ tasks.apply-qdm.outputs.parameters.simq-out-zarr }}"
       dag:
         tasks:
           - name: train-qdm
@@ -622,8 +585,6 @@ spec:
                   value: "{{ inputs.parameters.lat-slice-max }}"
                 - name: qdm-out-zarr
                   value: "{{ inputs.parameters.qdm-out-zarr }}"
-                - name: simq-out-zarr
-                  value: "{{ inputs.parameters.simq-out-zarr }}"
                 - name: include-quantiles
                   value: "{{ inputs.parameters.include-quantiles }}"
 
@@ -718,14 +679,10 @@ spec:
             value: "false"
           - name: qdm-out-zarr
             value: "az://scratch/{{ workflow.name }}/{{ pod.name }}/qdm_adjusted.zarr"
-          - name: simq-out-zarr
-            value: "az://scratch/{{ workflow.name }}/{{ pod.name }}/simq.zarr"
       outputs:
         parameters:
           - name: qdm-out-zarr
             value: "{{ inputs.parameters.qdm-out-zarr }}"
-          - name: simq-out-zarr
-            value: "{{ inputs.parameters.simq-out-zarr }}"
       script:
         image: downscalecmip6.azurecr.io/dodola:0.5.0
         env:
@@ -752,7 +709,6 @@ spec:
           qdm_zarr = "{{ inputs.parameters.qdm-zarr }}"
           simulation_zarr = "{{ inputs.parameters.simulation-zarr }}"
           qdm_out_zarr = "{{ inputs.parameters.qdm-out-zarr }}"
-          simq_out_zarr = "{{ inputs.parameters.simq-out-zarr }}"
           min_slice = int({{ inputs.parameters.lat-slice-min }})
           max_slice = int({{ inputs.parameters.lat-slice-max }})
           first_year = int({{ inputs.parameters.first-year }})
@@ -793,13 +749,8 @@ spec:
           print(f"{out_all_years=}")  # DEBUG
 
           # Output to region of existing zarr store.
-          out_all_years[[variable]].to_zarr(qdm_out_zarr, region={"lat": latslice}, mode="a")
+          out_all_years.to_zarr(qdm_out_zarr, region={"lat": latslice}, mode="a")
           print(f"Output written to {qdm_out_zarr}")  # DEBUG
-
-          if include_quantiles:
-              # Output to region of existing zarr store.
-              out_all_years[[quantile_variable]].to_zarr(simq_out_zarr, region={"lat": latslice}, mode="a")
-              print(f"Output written to {simq_out_zarr}")  # DEBUG
         resources:
           requests:
             memory: 32Gi
