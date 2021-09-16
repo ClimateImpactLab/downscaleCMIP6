@@ -51,97 +51,8 @@ spec:
             value: "az://support/domain.1x1.zarr"
           - name: domainfile0p25x0p25
             value: "az://support/domain.0p25x0p25.zarr"
-      steps:
-        - - name: train-downscaling-model
-            template: train-downscaling-from-reference
-            arguments:
-              parameters:
-                - name: reference-zarr
-                  value: "az://clean-era5/F320/{{ inputs.parameters.variable-id }}.1995-2015.F320.zarr"
-                - name: regrid-method
-                  value: "{{ inputs.parameters.regrid-method }}"
-                - name: domainfile0p25x0p25
-                  value: "{{ inputs.parameters.domainfile0p25x0p25 }}"
-                - name: domainfile1x1
-                  value: "{{ inputs.parameters.domainfile1x1 }}"
-                - name: variable-id
-                  value: "{{ inputs.parameters.variable-id }}"
-                - name: qdm-kind
-                  value: "{{ inputs.parameters.qdm-kind }}"
-        - - name: downscale-historical
-            template: downscale-simulation
-            arguments:
-              parameters:
-                - name: experiment-id
-                  value: "{{ item.experiment-id }}"
-                - name: activity-id
-                  value: "{{ item.activity-id }}"
-                - name: table-id
-                  value: "{{ item.table-id }}"
-                - name: variable-id
-                  value: "{{ item.variable-id }}"
-                - name: source-id
-                  value: "{{ item.source-id }}"
-                - name: institution-id
-                  value: "{{ item.institution-id }}"
-                - name: member-id
-                  value: "{{ item.member-id }}"
-                - name: grid-label
-                  value: "{{ item.grid-label }}"
-                - name: version
-                  value: "000000000000"
-                - name: domain-file
-                  value: "{{ inputs.parameters.domainfile0p25x0p25 }}"
-                - name: qdm-kind
-                  value: "{{ inputs.parameters.qdm-kind }}"
-                - name: aiqpd-model-outputs
-                  value: "{{ steps.train-downscaling-model.outputs.parameters.aiqpd-model-outputs }}"
-            withParam: "{{ inputs.parameters.historical }}"
-          - name: downscale-ssps
-            template: downscale-simulation
-            arguments:
-              parameters:
-                - name: experiment-id
-                  value: "{{ item.experiment-id }}"
-                - name: activity-id
-                  value: "{{ item.activity-id }}"
-                - name: table-id
-                  value: "{{ item.table-id }}"
-                - name: variable-id
-                  value: "{{ item.variable-id }}"
-                - name: source-id
-                  value: "{{ item.source-id }}"
-                - name: institution-id
-                  value: "{{ item.institution-id }}"
-                - name: member-id
-                  value: "{{ item.member-id }}"
-                - name: grid-label
-                  value: "{{ item.grid-label }}"
-                - name: version
-                  value: "000000000000"
-                - name: domain-file
-                  value: "{{ inputs.parameters.domainfile0p25x0p25 }}"
-                - name: qdm-kind
-                  value: "{{ inputs.parameters.qdm-kind }}"
-                - name: aiqpd-model-outputs
-                  value: "{{ steps.train-downscaling-model.outputs.parameters.aiqpd-model-outputs }}"
-            withParam: "{{ inputs.parameters.ssps }}"
-
-
-    - name: train-downscaling-from-reference
-      inputs:
-        parameters:
           - name: reference-zarr
-          - name: regrid-method
-          - name: domainfile0p25x0p25
-          - name: domainfile1x1
-          - name: variable-id
-          - name: qdm-kind
-      outputs:
-        parameters:
-          - name: aiqpd-model-outputs
-            valueFrom:
-              parameter: "{{ steps.train-downscaling-model.outputs.parameters }}"
+            value: "az://clean-era5/F320/{{ inputs.parameters.variable-id }}.1995-2015.F320.zarr"
       steps:
         - - name: create-fine-reference
             template: create-fine-reference
@@ -165,25 +76,68 @@ spec:
                   value: "{{ inputs.parameters.domainfile0p25x0p25 }}"
                 - name: domainfile1x1
                   value: "{{ inputs.parameters.domainfile1x1 }}"
-        - - name: train-downscaling-model
-            template: train-aiqpd
+        - - name: downscale-historical
+            template: downscale-simulation
             arguments:
               parameters:
-                - name: variable
-                  value: "{{ inputs.parameters.variable-id }}"
+                - name: experiment-id
+                  value: "{{ item.experiment-id }}"
+                - name: activity-id
+                  value: "{{ item.activity-id }}"
+                - name: table-id
+                  value: "{{ item.table-id }}"
+                - name: variable-id
+                  value: "{{ item.variable-id }}"
+                - name: source-id
+                  value: "{{ item.source-id }}"
+                - name: institution-id
+                  value: "{{ item.institution-id }}"
+                - name: member-id
+                  value: "{{ item.member-id }}"
+                - name: grid-label
+                  value: "{{ item.grid-label }}"
+                - name: version
+                  value: "000000000000"
                 - name: coarse-reference-zarr
                   value: "{{ steps.create-coarse-reference.outputs.parameters.out-zarr }}"
                 - name: fine-reference-zarr
                   value: "{{ steps.create-fine-reference.outputs.parameters.out-zarr }}"
-                - name: kind
+                - name: domain-file
+                  value: "{{ inputs.parameters.domainfile0p25x0p25 }}"
+                - name: qdm-kind
                   value: "{{ inputs.parameters.qdm-kind }}"
-                - name: lat-slice-min
-                  value: "{{=asInt(item) * 2 }}"
-                - name: lat-slice-max
-                  value: "{{=asInt(item) * 2 + 2 }}"
-            withSequence:
-              start: "0"
-              end: "359"
+            withParam: "{{ inputs.parameters.historical }}"
+          - name: downscale-ssps
+            template: downscale-simulation
+            arguments:
+              parameters:
+                - name: experiment-id
+                  value: "{{ item.experiment-id }}"
+                - name: activity-id
+                  value: "{{ item.activity-id }}"
+                - name: table-id
+                  value: "{{ item.table-id }}"
+                - name: variable-id
+                  value: "{{ item.variable-id }}"
+                - name: source-id
+                  value: "{{ item.source-id }}"
+                - name: institution-id
+                  value: "{{ item.institution-id }}"
+                - name: member-id
+                  value: "{{ item.member-id }}"
+                - name: grid-label
+                  value: "{{ item.grid-label }}"
+                - name: version
+                  value: "000000000000"
+                - name: coarse-reference-zarr
+                  value: "{{ steps.create-coarse-reference.outputs.parameters.out-zarr }}"
+                - name: fine-reference-zarr
+                  value: "{{ steps.create-fine-reference.outputs.parameters.out-zarr }}"
+                - name: domain-file
+                  value: "{{ inputs.parameters.domainfile0p25x0p25 }}"
+                - name: qdm-kind
+                  value: "{{ inputs.parameters.qdm-kind }}"
+            withParam: "{{ inputs.parameters.ssps }}"
 
 
     - name: downscale-simulation
@@ -197,11 +151,12 @@ spec:
           - name: institution-id
           - name: member-id
           - name: grid-label
-          - name: domain-file
-          - name: qdm-kind
-          - name: aiqpd-model-outputs
           - name: version
             value: "000000000000"
+          - name: domain-file
+          - name: qdm-kind
+          - name: coarse-reference-zarr
+          - name: fine-reference-zarr
       steps:
         - - name: infer-biascorrected-output-url
             templateRef:
@@ -271,6 +226,63 @@ spec:
                   value: "{{ steps.preprocess-biascorrected.outputs.parameters.out-zarr }}"
                 - name: variable
                   value: "{{ inputs.parameters.variable-id }}"
+        - - name: aiqpd
+            template: aiqpd
+            arguments:
+              parameters:
+                - name: variable-id
+                  value: "{{ inputs.parameters.variable-id }}"
+                - name: simulation-zarr
+                  value: "{{ steps.preprocess-biascorrected.outputs.parameters.out-zarr }}"
+                - name: coarse-reference-zarr
+                  value: "{{ inputs.parameters.coarse-reference-zarr }}"
+                - name: fine-reference-zarr
+                  value: "{{ inputs.parameters.fine-reference-zarr }}"
+                - name: kind
+                  value: "{{ inputs.parameters.qdm-kind }}"
+                - name: out-zarr
+                  value: "{{ steps.prime-aiqpd-biascorrected-output-zarr.outputs.parameters.out-zarr }}"
+                - name: lat-slice-min
+                  value: "{{=asInt(item) * 2 }}"
+                - name: lat-slice-max
+                  value: "{{=asInt(item) * 2 + 2 }}"
+            withSequence:
+              start: "0"
+              end: "359"
+
+
+    - name: aiqpd
+      inputs:
+        parameters:
+          - name: simulation-zarr
+          - name: coarse-reference-zarr
+          - name: fine-reference-zarr
+          - name: variable-id
+          - name: kind
+          - name: lat-slice-min
+          - name: lat-slice-max
+          - name: out-zarr
+      outputs:
+        parameters:
+          - name: out-zarr
+            value: "{{ inputs.parameters.out-zarr }}"
+      steps:
+        - - name: train-downscaling-model
+            template: train-aiqpd
+            arguments:
+              parameters:
+                - name: variable-id
+                  value: "{{ inputs.parameters.variable-id }}"
+                - name: coarse-reference-zarr
+                  value: "{{ steps.create-coarse-reference.outputs.parameters.out-zarr }}"
+                - name: fine-reference-zarr
+                  value: "{{ steps.create-fine-reference.outputs.parameters.out-zarr }}"
+                - name: kind
+                  value: "{{ inputs.parameters.qdm-kind }}"
+                - name: lat-slice-min
+                  value: "{{ inputs.parameters.lat-slice-min}}"
+                - name: lat-slice-max
+                  value: "{{ inputs.parameters.lat-slice-max}}"
         - - name: apply-aiqpd
             template: apply-aiqpd
             arguments:
@@ -278,18 +290,17 @@ spec:
                 - name: variable
                   value: "{{ inputs.parameters.variable-id }}"
                 - name: simulation-zarr
-                  value: "{{ steps.preprocess-biascorrected.outputs.parameters.out-zarr }}"
+                  value: "{{ inputs-parameters.simulation-zarr }}"
                 - name: aiqpd-model-zarr
-                  value: "{{ item.out-zarr }}"
+                  value: "{{ steps.train-aiqpd.outputs.parameters.out-zarr }}"
                 - name: kind
                   value: "{{ inputs.parameters.qdm-kind }}"
                 - name: lat-slice-min
-                  value: "{{ item.lat-slice-min }}"
+                  value: "{{ inputs.parameters.lat-slice-min }}"
                 - name: lat-slice-max
-                  value: "{{ item.lat-slice-max }}"
+                  value: "{{ inputs.parameters.lat-slice-max }}"
                 - name: out-zarr
-                  value: "{{ steps.prime-aiqpd-biascorrected-output-zarr.outputs.parameters.out-zarr }}"
-            withParam: "{{ inputs.parameters.aiqpd-model-outputs }}"
+                  value: "{{ inputs.parameters.out-zarr }}"
 
 
     - name: create-fine-reference
@@ -548,7 +559,7 @@ spec:
         parameters:
           - name: coarse-reference-zarr
           - name: fine-reference-zarr
-          - name: variable
+          - name: variable-id
           - name: kind
           - name: lat-slice-min
           - name: lat-slice-max
@@ -560,10 +571,6 @@ spec:
             value: "az://scratch/{{ workflow.name }}/{{ pod.name }}/aiqpd-model.zarr"
       outputs:
         parameters:
-          - name: lat-slice-min
-            value: "{{ inputs.parameters.lat-slice-min }}"
-          - name: lat-slice-max
-            value: "{{ inputs.parameters.lat-slice-max }}"
           - name: out-zarr
             value: "{{ inputs.parameters.out-zarr }}"
       script:
@@ -596,7 +603,7 @@ spec:
           min_slice = int({{ inputs.parameters.lat-slice-min }})
           max_slice = int({{ inputs.parameters.lat-slice-max }})
 
-          variable = "{{ inputs.parameters.variable }}"
+          variable = "{{ inputs.parameters.variable-id }}"
           kind = kind_map["{{ inputs.parameters.kind }}"]
 
           latslice = slice(min_slice, max_slice)
