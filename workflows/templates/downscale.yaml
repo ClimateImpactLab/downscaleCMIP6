@@ -262,10 +262,6 @@ spec:
           - name: lat-slice-min
           - name: lat-slice-max
           - name: out-zarr
-      outputs:
-        parameters:
-          - name: out-zarr
-            value: "{{ inputs.parameters.out-zarr }}"
       steps:
         - - name: train-downscaling-model
             template: train-aiqpd
@@ -274,9 +270,9 @@ spec:
                 - name: variable-id
                   value: "{{ inputs.parameters.variable-id }}"
                 - name: coarse-reference-zarr
-                  value: "{{ steps.create-coarse-reference.outputs.parameters.out-zarr }}"
+                  value: "{{ inputs.parameters.coarse-reference-zarr }}"
                 - name: fine-reference-zarr
-                  value: "{{ steps.create-fine-reference.outputs.parameters.out-zarr }}"
+                  value: "{{ inputs.parameters.fine-reference-zarr }}"
                 - name: qdm-kind
                   value: "{{ inputs.parameters.qdm-kind }}"
                 - name: lat-slice-min
@@ -290,9 +286,9 @@ spec:
                 - name: variable
                   value: "{{ inputs.parameters.variable-id }}"
                 - name: simulation-zarr
-                  value: "{{ inputs-parameters.simulation-zarr }}"
+                  value: "{{ inputs.parameters.simulation-zarr }}"
                 - name: aiqpd-model-zarr
-                  value: "{{ steps.train-aiqpd.outputs.parameters.out-zarr }}"
+                  value: "{{ steps.train-downscaling-model.outputs.parameters.out-zarr }}"
                 - name: qdm-kind
                   value: "{{ inputs.parameters.qdm-kind }}"
                 - name: lat-slice-min
