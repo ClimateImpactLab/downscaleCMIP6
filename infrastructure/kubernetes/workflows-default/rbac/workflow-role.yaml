@@ -21,3 +21,12 @@ rules:
     verbs:
       - get
       - watch
+  # Needed so can use configmaps for workflow step memoization:
+  - apiGroups:
+      - ""
+    resources:
+      - configmaps
+    verbs:
+      - create
+      - get
+      - update
