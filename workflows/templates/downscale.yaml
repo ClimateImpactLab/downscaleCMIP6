@@ -182,7 +182,7 @@ spec:
                 - name: version
                   value: "{{ inputs.parameters.version }}"
                 - name: base-url
-                  value: "az://downscaled-stage"
+                  value: "az://biascorrected-stage"
           - name: infer-downscaled-output-url
             templateRef:
               name: catalog
