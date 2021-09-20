@@ -1,13 +1,28 @@
-variable-id: "tasmax"
-source-id: "BCC-CSM2-MR"
-historical: |
+jobs: |
   [
-    { "activity-id": "CMIP", "experiment-id": "historical", "table-id": "day", "variable-id": "tasmax", "source-id": "BCC-CSM2-MR", "institution-id": "BCC", "member-id": "r1i1p1f1", "grid-label": "gn", "version": "20181126" }
-  ]
-ssps: |
-  [
-    { "activity-id": "ScenarioMIP", "experiment-id": "ssp370", "table-id": "day", "variable-id": "tasmax", "source-id": "BCC-CSM2-MR", "institution-id": "BCC", "member-id": "r1i1p1f1", "grid-label": "gn", "version": "20190318" },
-    { "activity-id": "ScenarioMIP", "experiment-id": "ssp245", "table-id": "day", "variable-id": "tasmax", "source-id": "BCC-CSM2-MR", "institution-id": "BCC", "member-id": "r1i1p1f1", "grid-label": "gn", "version": "20190318" },
-    { "activity-id": "ScenarioMIP", "experiment-id": "ssp126", "table-id": "day", "variable-id": "tasmax", "source-id": "BCC-CSM2-MR", "institution-id": "BCC", "member-id": "r1i1p1f1", "grid-label": "gn", "version": "20190315" }
+    {
+      "target": "historical",
+      "variable_id": "tasmax",
+      "historical": { "activity_id": "CMIP", "experiment_id": "historical", "table_id": "day", "variable_id": "tasmax", "source_id": "BCC-CSM2-MR", "institution_id": "BCC", "member_id": "r1i1p1f1", "grid_label": "gn", "version": "20181126" },
+      "ssp": { "activity_id": "ScenarioMIP", "experiment_id": "ssp370", "table_id": "day", "variable_id": "tasmax", "source_id": "BCC-CSM2-MR", "institution_id": "BCC", "member_id": "r1i1p1f1", "grid_label": "gn", "version": "20190318" }
+    },
+    {
+      "target": "ssp",
+      "variable_id": "tasmax",
+      "historical": { "activity_id": "CMIP", "experiment_id": "historical", "table_id": "day", "variable_id": "tasmax", "source_id": "BCC-CSM2-MR", "institution_id": "BCC", "member_id": "r1i1p1f1", "grid_label": "gn", "version": "20181126" },
+      "ssp": { "activity_id": "ScenarioMIP", "experiment_id": "ssp370", "table_id": "day", "variable_id": "tasmax", "source_id": "BCC-CSM2-MR", "institution_id": "BCC", "member_id": "r1i1p1f1", "grid_label": "gn", "version": "20190318" }
+    },
+    {
+      "target": "ssp",
+      "variable_id": "tasmax",
+      "historical": { "activity_id": "CMIP", "experiment_id": "historical", "table_id": "day", "variable_id": "tasmax", "source_id": "BCC-CSM2-MR", "institution_id": "BCC", "member_id": "r1i1p1f1", "grid_label": "gn", "version": "20181126" },
+      "ssp": { "activity_id": "ScenarioMIP", "experiment_id": "ssp245", "table_id": "day", "variable_id": "tasmax", "source_id": "BCC-CSM2-MR", "institution_id": "BCC", "member_id": "r1i1p1f1", "grid_label": "gn", "version": "20190318" }
+    },
+    {
+      "target": "ssp",
+      "variable_id": "tasmax",
+      "historical": { "activity_id": "CMIP", "experiment_id": "historical", "table_id": "day", "variable_id": "tasmax", "source_id": "BCC-CSM2-MR", "institution_id": "BCC", "member_id": "r1i1p1f1", "grid_label": "gn", "version": "20181126" },
+      "ssp": { "activity_id": "ScenarioMIP", "experiment_id": "ssp126", "table_id": "day", "variable_id": "tasmax", "source_id": "BCC-CSM2-MR", "institution_id": "BCC", "member_id": "r1i1p1f1", "grid_label": "gn", "version": "20190315" }
+    }
   ]
 
