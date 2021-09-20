@@ -351,13 +351,15 @@ spec:
                   value: "{{ inputs.parameters.domainfile0p25x0p25 }}"
           - name: prime-aiqpd-biascorrected-output-zarr
             template: prime-aiqpd-biascorrected-output-zarr
-            depends: preprocess-biascorrected
+            depends: "preprocess-biascorrected && get-output-downscaled-url"
             arguments:
               parameters:
                 - name: simulation-zarr
                   value: "{{ tasks.preprocess-biascorrected.outputs.parameters.out-zarr }}"
                 - name: variable
                   value: "{{=jsonpath(inputs.parameters.simulation, '$.variable_id')}}"
+                - name: out-zarr
+                  value: "{{ tasks.get-output-downscaled-url.outputs.parameters.out-url }}"
           - name: aiqpd
             template: aiqpd
             depends: >-
