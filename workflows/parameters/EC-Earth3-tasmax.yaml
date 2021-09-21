@@ -1,12 +1,28 @@
-variable-id: "tasmax"
-source-id: "EC-Earth3"
-historical: |
+jobs: |
   [
-    { "activity-id": "CMIP", "experiment-id": "historical", "table-id": "day", "variable-id": "tasmax", "source-id": "EC-Earth3", "institution-id": "EC-Earth-Consortium", "member-id": "r1i1p1f1", "grid-label": "gr", "version": "20200310" }
+    {
+      "target": "historical",
+      "variable_id": "tasmax",
+      "historical": { "activity_id": "CMIP", "experiment_id": "historical", "table_id": "day", "variable_id": "tasmax", "source_id": "EC-Earth3", "institution_id": "EC-Earth-Consortium", "member_id": "r1i1p1f1", "grid_label": "gr", "version": "20200310" },
+      "ssp": { "activity_id": "ScenarioMIP", "experiment_id": "ssp370", "table_id": "day", "variable_id": "tasmax", "source_id": "EC-Earth3", "institution_id": "EC-Earth-Consortium", "member_id": "r1i1p1f1", "grid_label": "gr", "version": "20200310" }
+    },
+    {
+      "target": "ssp",
+      "variable_id": "tasmax",
+      "historical": { "activity_id": "CMIP", "experiment_id": "historical", "table_id": "day", "variable_id": "tasmax", "source_id": "EC-Earth3", "institution_id": "EC-Earth-Consortium", "member_id": "r1i1p1f1", "grid_label": "gr", "version": "20200310" },
+      "ssp": { "activity_id": "ScenarioMIP", "experiment_id": "ssp370", "table_id": "day", "variable_id": "tasmax", "source_id": "EC-Earth3", "institution_id": "EC-Earth-Consortium", "member_id": "r1i1p1f1", "grid_label": "gr", "version": "20200310" }
+    },
+    {
+      "target": "ssp",
+      "variable_id": "tasmax",
+      "historical": { "activity_id": "CMIP", "experiment_id": "historical", "table_id": "day", "variable_id": "tasmax", "source_id": "EC-Earth3", "institution_id": "EC-Earth-Consortium", "member_id": "r1i1p1f1", "grid_label": "gr", "version": "20200310" },
+      "ssp": { "activity_id": "ScenarioMIP", "experiment_id": "ssp245", "table_id": "day", "variable_id": "tasmax", "source_id": "EC-Earth3", "institution_id": "EC-Earth-Consortium", "member_id": "r1i1p1f1", "grid_label": "gr", "version": "20200310" }
+    },
+    {
+      "target": "ssp",
+      "variable_id": "tasmax",
+      "historical": { "activity_id": "CMIP", "experiment_id": "historical", "table_id": "day", "variable_id": "tasmax", "source_id": "EC-Earth3", "institution_id": "EC-Earth-Consortium", "member_id": "r1i1p1f1", "grid_label": "gr", "version": "20200310" },
+      "ssp": { "activity_id": "ScenarioMIP", "experiment_id": "ssp126", "table_id": "day", "variable_id": "tasmax", "source_id": "EC-Earth3", "institution_id": "EC-Earth-Consortium", "member_id": "r1i1p1f1", "grid_label": "gr", "version": "20200310" }
+    }
   ]
-ssps: |
-  [
-    { "activity-id": "ScenarioMIP", "experiment-id": "ssp370", "table-id": "day", "variable-id": "tasmax", "source-id": "EC-Earth3", "institution-id": "EC-Earth-Consortium", "member-id": "r1i1p1f1", "grid-label": "gr", "version": "20200310" },
-    { "activity-id": "ScenarioMIP", "experiment-id": "ssp245", "table-id": "day", "variable-id": "tasmax", "source-id": "EC-Earth3", "institution-id": "EC-Earth-Consortium", "member-id": "r1i1p1f1", "grid-label": "gr", "version": "20200310" },
-    { "activity-id": "ScenarioMIP", "experiment-id": "ssp126", "table-id": "day", "variable-id": "tasmax", "source-id": "EC-Earth3", "institution-id": "EC-Earth-Consortium", "member-id": "r1i1p1f1", "grid-label": "gr", "version": "20200310" }
-  ]
+

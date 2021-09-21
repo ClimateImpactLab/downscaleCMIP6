@@ -1,4 +1,3 @@
-# Downloads select, raw CMIP6 from GCP to co-located Azure storage for test case.
 apiVersion: argoproj.io/v1alpha1
 kind: WorkflowTemplate
 metadata:
@@ -9,86 +8,158 @@ spec:
   workflowMetadata:
     labels:
       component: download-cmip6
-  entrypoint: main
+  entrypoint: with-jobs
   arguments:
     parameters:
-      - name: variable-id
-        value: "tasmin"
-      - name: source-id
-        value: "GFDL-ESM4"
-      - name: historical
+      - name: overwrite
+        value: "false"
+      - name: jobs
         value: |
           [
-            { "activity-id": "CMIP", "experiment-id": "historical", "table-id": "day", "variable-id": "tasmin", "source-id": "GFDL-ESM4", "institution-id": "NOAA-GFDL", "member-id": "r1i1p1f1", "grid-label": "gr1", "version": "20190726" }
-          ]
-      - name: ssps
-        value: |
-          [
-            { "activity-id": "ScenarioMIP", "experiment-id": "ssp370", "table-id": "day", "variable-id": "tasmin", "source-id": "GFDL-ESM4", "institution-id": "NOAA-GFDL", "member-id": "r1i1p1f1", "grid-label": "gr1", "version": "20180701" },
-            { "activity-id": "ScenarioMIP", "experiment-id": "ssp245", "table-id": "day", "variable-id": "tasmin", "source-id": "GFDL-ESM4", "institution-id": "NOAA-GFDL", "member-id": "r1i1p1f1", "grid-label": "gr1", "version": "20180701" },
-            { "activity-id": "ScenarioMIP", "experiment-id": "ssp126", "table-id": "day", "variable-id": "tasmin", "source-id": "GFDL-ESM4", "institution-id": "NOAA-GFDL", "member-id": "r1i1p1f1", "grid-label": "gr1", "version": "20180701" }
+            {
+              "target": "ssp",
+              "variable_id": "tasmax",
+              "historical": {
+                "activity_id": "CMIP",
+                "experiment_id": "historical",
+                "table_id": "day",
+                "variable_id": "tasmax",
+                "source_id": "GFDL-ESM4",
+                "institution_id": "NOAA-GFDL",
+                "member_id": "r1i1p1f1",
+                "grid_label": "gr1",
+                "version": "20190726"
+              },
+              "ssp": {
+                "activity_id": "ScenarioMIP",
+                "experiment_id": "ssp370",
+                "table_id": "day",
+                "variable_id": "tasmax",
+                "source_id": "GFDL-ESM4",
+                "institution_id": "NOAA-GFDL",
+                "member_id": "r1i1p1f1",
+                "grid_label": "gr1",
+                "version": "20180701"
+              }
+            }
           ]
   templates:
 
-    - name: main
+
+      # For each job, combine the ssp and historical specifications into a single JSON list.
+    - name: with-jobs
       inputs:
         parameters:
+          - name: jobs
+      steps:
+        - - name: divide
+            template: with-specification
+            arguments:
+              parameters:
+                - name: simulations
+                  value: "[{{ item.ssp }}, {{ item.historical }}]"
+            withParam: "{{ inputs.parameters.jobs }}"
+
+
+      # Break each specification into its components.
+    - name: with-specification
+      inputs:
+        parameters:
+          - name: simulations
+      steps:
+        - - name: process
+            template: download-cmip6
+            arguments:
+              parameters:
+                - name: experiment-id
+                  value: "{{item.experiment_id}}"
+                - name: activity-id
+                  value: "{{item.activity_id}}"
+                - name: table-id
+                  value: "{{item.table_id}}"
+                - name: variable-id
+                  value: "{{item.variable_id}}"
+                - name: source-id
+                  value: "{{item.source_id}}"
+                - name: institution-id
+                  value: "{{item.institution_id}}"
+                - name: member-id
+                  value: "{{item.member_id}}"
+                - name: grid-label
+                  value: "{{item.grid_label}}"
+                - name: version
+                  value: "{{item.version}}"
+            withParam: "{{ inputs.parameters.simulations }}"
+
+
+    - name: download-cmip6
+      inputs:
+        parameters:
+          - name: experiment-id
+          - name: activity-id
+          - name: table-id
           - name: variable-id
           - name: source-id
-          - name: historical
-          - name: ssps
-      dag:
-        tasks:
-          - name: download-historical
+          - name: institution-id
+          - name: member-id
+          - name: grid-label
+          - name: version
+      outputs:
+        parameters:
+          - name: out-zarr
+            valueFrom:
+              parameter: "{{ steps.download.outputs.parameters.out-zarr }}"
+      steps:
+        - - name: get-destination-url
+            templateRef:
+              name: catalog
+              template: get-fsspec-url-from-parameters
+            arguments:
+              parameters:
+                - name: experiment-id
+                  value: "{{inputs.parameters.experiment-id}}"
+                - name: activity-id
+                  value: "{{inputs.parameters.activity-id}}"
+                - name: table-id
+                  value: "{{inputs.parameters.table-id}}"
+                - name: variable-id
+                  value: "{{inputs.parameters.variable-id}}"
+                - name: source-id
+                  value: "{{inputs.parameters.source-id}}"
+                - name: institution-id
+                  value: "{{inputs.parameters.institution-id}}"
+                - name: member-id
+                  value: "{{inputs.parameters.member-id}}"
+                - name: grid-label
+                  value: "{{inputs.parameters.grid-label}}"
+                - name: version
+                  value: "{{inputs.parameters.version}}"
+                - name: base-url
+                  value: "az://raw-cmip6"
+        - - name: download
             template: download-gcm
             arguments:
               parameters:
                 - name: experiment-id
-                  value: "{{item.experiment-id}}"
+                  value: "{{inputs.parameters.experiment-id}}"
                 - name: activity-id
-                  value: "{{item.activity-id}}"
+                  value: "{{inputs.parameters.activity-id}}"
                 - name: table-id
-                  value: "{{item.table-id}}"
+                  value: "{{inputs.parameters.table-id}}"
                 - name: variable-id
-                  value: "{{item.variable-id}}"
+                  value: "{{inputs.parameters.variable-id}}"
                 - name: source-id
-                  value: "{{item.source-id}}"
+                  value: "{{inputs.parameters.source-id}}"
                 - name: institution-id
-                  value: "{{item.institution-id}}"
+                  value: "{{inputs.parameters.institution-id}}"
                 - name: member-id
-                  value: "{{item.member-id}}"
+                  value: "{{inputs.parameters.member-id}}"
                 - name: grid-label
-                  value: "{{item.grid-label}}"
+                  value: "{{inputs.parameters.grid-label}}"
                 - name: version
-                  value: "{{item.version}}"
+                  value: "{{inputs.parameters.version}}"
                 - name: out-url
-                  value: "az://raw-cmip6/{{inputs.parameters.source-id}}/historical/{{inputs.parameters.variable-id}}.zarr"
-            withParam: "{{ inputs.parameters.historical }}"
-          - name: download-ssps
-            template: download-gcm
-            arguments:
-              parameters:
-                - name: experiment-id
-                  value: "{{item.experiment-id}}"
-                - name: activity-id
-                  value: "{{item.activity-id}}"
-                - name: table-id
-                  value: "{{item.table-id}}"
-                - name: variable-id
-                  value: "{{item.variable-id}}"
-                - name: source-id
-                  value: "{{item.source-id}}"
-                - name: institution-id
-                  value: "{{item.institution-id}}"
-                - name: member-id
-                  value: "{{item.member-id}}"
-                - name: grid-label
-                  value: "{{item.grid-label}}"
-                - name: version
-                  value: "{{item.version}}"
-                - name: out-url
-                  value: "az://raw-cmip6/{{inputs.parameters.source-id}}/{{item.experiment-id}}/{{inputs.parameters.variable-id}}.zarr"
-            withParam: "{{ inputs.parameters.ssps }}"
+                  value: "{{ steps.get-destination-url.outputs.parameters.out-url }}"
 
 
     - name: download-gcm
@@ -104,12 +175,14 @@ spec:
           - name: grid-label
           - name: version
           - name: out-url
+          - name: overwrite
+            value: "{{workflow.parameters.overwrite}}"
       outputs:
         parameters:
           - name: out-zarr
             value: "{{ inputs.parameters.out-url }}"
       script:
-        image: downscalecmip6.azurecr.io/dodola:0.5.0
+        image: downscalecmip6.azurecr.io/dodola:0.6.0
         env:
           - name: ACTIVITY_ID
             value: "{{inputs.parameters.activity-id}}"
@@ -144,11 +217,12 @@ spec:
         command: [python]
         source: |
           import os
+          from pprint import pprint
           import intake
-          import dodola.repository
-
+          import zarr
 
           outpath = os.environ.get("OUTPATH")
+          overwrite = "{{ inputs.parameters.overwrite }}".lower() == "true"
 
           print("Searching catalog")
           col = intake.open_esm_datastore("https://storage.googleapis.com/cmip6/pangeo-cmip6.json")
@@ -169,8 +243,20 @@ spec:
           print(f"Found one catalog entry {k}")
           print(d)
 
-          dodola.repository.write(outpath, d[k[0]])
-          print(f"Written to {outpath}")
+          # Print out global and variable metadata (attrs).
+          pprint(d[k[0]].attrs)
+          for vname, v in d[k[0]].variables.items():
+              print("\n", vname)
+              pprint(v.attrs)
+
+          write_mode = "w-"
+          if overwrite:
+            write_mode = "w"
+          try:
+              d[k[0]].to_zarr(outpath, mode=write_mode, compute=True)
+              print(f"Written to {outpath}")
+          except (zarr.errors.ContainsGroupError):
+            print(f"Skipping overwrite to existing Zarr Store at {outpath}")
         resources:
           requests:
             memory: 12Gi
@@ -183,3 +269,6 @@ spec:
       retryStrategy:
         limit: 4
         retryPolicy: "Always"
+        backoff:
+          duration: 30s
+          factor: 2
