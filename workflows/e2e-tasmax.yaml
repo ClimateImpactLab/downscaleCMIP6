@@ -1,0 +1,76 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Workflow
+metadata:
+  generateName: e2e-tasmax-
+spec:
+  entrypoint: e2e-tasmax
+  arguments:
+    parameters:
+      - name: overwrite
+        value: "false"
+      - name: regrid-method
+        value: "bilinear"
+      - name: qdm-kind
+        value: "additive"
+      - name: correct-wetday-frequency
+        value: "false"
+      - name: jobs
+        value: |
+          [
+            {
+              "target": "ssp",
+              "variable_id": "tasmax",
+              "historical": {
+                "activity_id": "CMIP",
+                "experiment_id": "historical",
+                "table_id": "day",
+                "variable_id": "tasmax",
+                "source_id": "GFDL-ESM4",
+                "institution_id": "NOAA-GFDL",
+                "member_id": "r1i1p1f1",
+                "grid_label": "gr1",
+                "version": "20190726"
+              },
+              "ssp": {
+                "activity_id": "ScenarioMIP",
+                "experiment_id": "ssp370",
+                "table_id": "day",
+                "variable_id": "tasmax",
+                "source_id": "GFDL-ESM4",
+                "institution_id": "NOAA-GFDL",
+                "member_id": "r1i1p1f1",
+                "grid_label": "gr1",
+                "version": "20180701"
+              }
+            }
+          ]
+  templates:
+    - name: e2e-tasmax
+      inputs:
+        parameters:
+          - name: jobs
+      steps:
+        - - name: download
+            templateRef:
+              name: download-cmip6
+              template: with-jobs
+            arguments:
+              parameters:
+                - name: jobs
+                  value: "{{ inputs.parameters.jobs }}"
+        - - name: clean
+            templateRef:
+              name: clean-cmip6
+              template: with-jobs
+            arguments:
+              parameters:
+                - name: jobs
+                  value: "{{ inputs.parameters.jobs }}"
+        - - name: biascorrectdownscale
+            templateRef:
+              name: biascorrectdownscale
+              template: with-jobs
+            arguments:
+              parameters:
+                - name: jobs
+                  value: "{{ inputs.parameters.jobs }}"
