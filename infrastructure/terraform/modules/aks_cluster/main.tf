@@ -88,11 +88,11 @@ resource "azurerm_kubernetes_cluster_node_pool" "nodepoolworker" {
   name                  = "worker"
   kubernetes_cluster_id = azurerm_kubernetes_cluster.k8scluster.id
   orchestrator_version  = var.kubernetes_version
-  vm_size               = "Standard_E8as_v4"
+  vm_size               = "Standard_E16as_v4"
   node_count            = 0
   enable_auto_scaling   = true
   min_count             = 0
-  max_count             = 15
+  max_count             = 8
   priority              = "Spot"
   spot_max_price        = -1
   eviction_policy       = "Delete"
