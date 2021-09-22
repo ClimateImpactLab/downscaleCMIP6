@@ -364,8 +364,8 @@ spec:
             memory: 16Gi
             cpu: "2000m"
           limits:
-            memory: 16Gi
-            cpu: "2000m"
+            memory: 32Gi  # Bump for large EC-Earth3-Veg output.
+            cpu: "6000m"
       activeDeadlineSeconds: 3600
       retryStrategy:
         limit: 2
