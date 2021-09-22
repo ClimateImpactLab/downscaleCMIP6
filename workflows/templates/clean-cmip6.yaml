@@ -361,8 +361,8 @@ spec:
           - "{{ inputs.parameters.out-zarr }}"
         resources:
           requests:
-            memory: 16Gi
-            cpu: "2000m"
+            memory: 32Gi
+            cpu: "500m"
           limits:
             memory: 32Gi  # Bump for large EC-Earth3 data.
             cpu: "6000m"
