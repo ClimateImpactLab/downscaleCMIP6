@@ -364,7 +364,7 @@ spec:
             memory: 32Gi
             cpu: "500m"
           limits:
-            memory: 32Gi  # Bump for large EC-Earth3 data.
+            memory: 38Gi  # Bump for large EC-Earth3 data.
             cpu: "6000m"
       activeDeadlineSeconds: 3600
       retryStrategy:
