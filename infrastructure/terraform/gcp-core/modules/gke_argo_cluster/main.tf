@@ -86,6 +86,12 @@ resource "google_container_node_pool" "core" {
       "https://www.googleapis.com/auth/cloud-platform",
       "https://www.googleapis.com/auth/userinfo.email"
     ]
+    metadata = {
+      "disable-legacy-endpoints" = "true"
+    }
+    workload_metadata_config {
+      node_metadata = "GKE_METADATA_SERVER"
+    }
 
     labels = {
       "env"        = var.env
@@ -122,6 +128,12 @@ resource "google_container_node_pool" "worker" {
       "https://www.googleapis.com/auth/cloud-platform",
       "https://www.googleapis.com/auth/userinfo.email"
     ]
+    metadata = {
+      "disable-legacy-endpoints" = "true"
+    }
+    workload_metadata_config {
+      node_metadata = "GKE_METADATA_SERVER"
+    }
 
     labels = {
       "env"        = var.env
