@@ -1,7 +1,7 @@
 terraform {
   backend "remote" {
     hostname     = "app.terraform.io"
-    organization = "RhodiumGroup"
+    organization = "ClimateImpactLab"
     workspaces {
       name = "downscaleCMIP6-infra-gcp-core"
     }
