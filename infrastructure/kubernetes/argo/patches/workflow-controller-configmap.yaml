@@ -25,7 +25,7 @@ data:
         value: "worker"
         effect: "NoSchedule"
 
-  containerRuntimeExecutor: k8sapi
+  containerRuntimeExecutor: emissary
   executor: |
     imagePullPolicy: IfNotPresent
     resources:
