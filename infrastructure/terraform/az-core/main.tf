@@ -3,7 +3,7 @@ terraform {
     hostname     = "app.terraform.io"
     organization = "ClimateImpactLab"
     workspaces {
-      name = "downscaleCMIP6-infra"
+      name = "downscaleCMIP6-infra-az-core"
     }
   }
   required_providers {
