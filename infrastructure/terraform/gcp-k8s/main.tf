@@ -81,10 +81,11 @@ module "workflows_default_wli" {
   source  = "terraform-google-modules/kubernetes-engine/google//modules/workload-identity"
   version = "16.1.0"
 
-  use_existing_gcp_sa = true
-  name                = "workflows-default"
-  gcp_sa_name         = data.terraform_remote_state.gcp_core.outputs.workflows_default_account_id
-  namespace           = kubernetes_namespace.argo.metadata.0.name
+  use_existing_gcp_sa             = true
+  name                            = "workflows-default"
+  gcp_sa_name                     = data.terraform_remote_state.gcp_core.outputs.workflows_default_account_id
+  namespace                       = kubernetes_namespace.argo.metadata.0.name
+  automount_service_account_token = true
 
   project_id = var.project_id
 }
