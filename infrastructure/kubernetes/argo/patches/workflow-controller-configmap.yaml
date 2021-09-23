@@ -14,13 +14,15 @@ data:
       ttlStrategy:
         secondsAfterCompletion: 1296000   #; Workflows delete after 15 days.
       serviceAccountName: workflows-default
+      nodeSelector:
+        dedicated: worker
       tolerations:
       - key: dedicated
         operator: "Equal"
         value: "worker"
         effect: "NoSchedule"
 
-  containerRuntimeExecutor: k8sapi
+  containerRuntimeExecutor: emissary
   executor: |
     imagePullPolicy: IfNotPresent
     resources:
