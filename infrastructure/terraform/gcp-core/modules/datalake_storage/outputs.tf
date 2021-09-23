@@ -9,12 +9,12 @@ output "clean_cmip6_bucket_name" {
 }
 
 output "raw_reanalysis_bucket_name" {
-  value       = google_storage_bucket.raw_cmip6.name
+  value       = google_storage_bucket.raw_reanalysis.name
   description = "Name of raw-reanalysis data bucket."
 }
 
 output "clean_reanalysis_bucket_name" {
-  value       = google_storage_bucket.clean_cmip6.name
+  value       = google_storage_bucket.clean_reanalysis.name
   description = "Name of clean-reanalysis data bucket."
 }
 
