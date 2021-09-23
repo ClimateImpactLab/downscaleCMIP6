@@ -10,14 +10,9 @@ data:
         env: dev
         project: dc6
     spec:
-      securityContext:
-        runAsNonRoot: true
-        runAsUser: 8737  #; Work as non-root user.
       activeDeadlineSeconds: 28800  #; Workflows must finish in 8 hours.
       ttlStrategy:
         secondsAfterCompletion: 1296000   #; Workflows delete after 15 days.
-      podGC:
-        strategy: OnPodCompletion
       serviceAccountName: workflows-default
       tolerations:
       - key: dedicated
@@ -25,7 +20,7 @@ data:
         value: "worker"
         effect: "NoSchedule"
 
-  containerRuntimeExecutor: emissary
+  containerRuntimeExecutor: k8sapi
   executor: |
     imagePullPolicy: IfNotPresent
     resources:
