@@ -79,7 +79,7 @@ resource "kubernetes_namespace" "argocd" {
 
 module "workflows_default_wli" {
   source  = "terraform-google-modules/kubernetes-engine/google//modules/workload-identity"
-  version = "16.0.1"
+  version = "16.1.0"
 
   use_existing_gcp_sa = true
   name                = "workflows-default"
