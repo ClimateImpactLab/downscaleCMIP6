@@ -69,8 +69,8 @@ resource "google_container_node_pool" "core" {
 
   initial_node_count = 1
   autoscaling {
-    max_node_count = 20
-    min_node_count = 0
+    max_node_count = 10
+    min_node_count = 1
   }
   lifecycle {
     ignore_changes = [
@@ -114,6 +114,7 @@ resource "google_container_node_pool" "worker" {
 
   node_config {
     machine_type    = "n1-highmem-8"
+    preemptible     = true
     disk_type       = "pd-ssd"
     image_type      = "UBUNTU_CONTAINERD"
     service_account = var.node_service_account_email
