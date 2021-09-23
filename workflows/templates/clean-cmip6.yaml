@@ -97,7 +97,7 @@ spec:
                 - name: version
                   value: "{{=jsonpath(inputs.parameters.historical, '$.version')}}"
                 - name: base-url
-                  value: "az://raw-cmip6"
+                  value: "gs://raw-cmip6-20210922"
           - name: get-input-raw-ssp-url
             templateRef:
               name: catalog
@@ -123,7 +123,7 @@ spec:
                 - name: version
                   value: "{{=jsonpath(inputs.parameters.ssp, '$.version')}}"
                 - name: base-url
-                  value: "az://raw-cmip6"
+                  value: "gs://raw-cmip6-20210922"
           - name: get-output-clean-training-url
             templateRef:
               name: catalog
@@ -149,7 +149,7 @@ spec:
                 - name: version
                   value: "{{=jsonpath(inputs.parameters.historical, '$.version')}}"
                 - name: base-url
-                  value: "az://clean-cmip6"
+                  value: "gs://clean-cmip6-20210922"
         - - name: standardize-historical-run
             template: standardize-cmip6
             arguments:
@@ -236,7 +236,7 @@ spec:
                 - name: version
                   value: "{{=jsonpath(inputs.parameters['target-json'], '$.version')}}"
                 - name: base-url
-                  value: "az://clean-cmip6"
+                  value: "gs://clean-cmip6-20210922"
           - name: slice-historical
             template: timeslicezarr
             arguments:
@@ -307,7 +307,7 @@ spec:
                 - name: version
                   value: "{{=jsonpath(inputs.parameters['target-json'], '$.version')}}"
                 - name: base-url
-                  value: "az://clean-cmip6"
+                  value: "gs://clean-cmip6-20210922"
           - name: remove-early-historical
             template: timeslicezarr
             arguments:
@@ -336,24 +336,13 @@ spec:
         parameters:
           - name: in-zarr
           - name: out-zarr
-            value: "az://scratch/{{ workflow.name }}/{{ pod.name }}/standardized.zarr"
+            value: "gs://scratch-20210922/{{ workflow.name }}/{{ pod.name }}/standardized.zarr"
       outputs:
         parameters:
           - name: out-zarr
             value: "{{ inputs.parameters.out-zarr }}"
       container:
-        image: downscalecmip6.azurecr.io/dodola:0.5.0
-        env:
-          - name: AZURE_STORAGE_ACCOUNT_NAME
-            valueFrom:
-              secretKeyRef:
-                name: workerstoragecreds-secret
-                key: azurestorageaccount
-          - name: AZURE_STORAGE_ACCOUNT_KEY
-            valueFrom:
-              secretKeyRef:
-                name: workerstoragecreds-secret
-                key: azurestoragekey
+        image: us-docker.pkg.dev/compute-impactlab/public/dodola:0.5.0
         command: [ "dodola" ]
         args:
           - "cleancmip6"
@@ -379,13 +368,13 @@ spec:
           - name: from-time
           - name: to-time
           - name: out-zarr
-            value: "az://scratch/{{ workflow.name }}/{{ pod.name }}/timesliced.zarr"
+            value: "gs://scratch-20210922/{{ workflow.name }}/{{ pod.name }}/timesliced.zarr"
       outputs:
         parameters:
           - name: out-zarr
             value: "{{ inputs.parameters.out-zarr }}"
       script:
-        image: downscalecmip6.azurecr.io/dodola:0.5.0
+        image: us-docker.pkg.dev/compute-impactlab/public/dodola:0.5.0
         env:
           - name: IN_ZARR
             value: "{{ inputs.parameters.in-zarr }}"
@@ -395,16 +384,6 @@ spec:
             value: "{{ inputs.parameters.to-time }}"
           - name: OUT_ZARR
             value: "{{ inputs.parameters.out-zarr }}"
-          - name: AZURE_STORAGE_ACCOUNT_NAME
-            valueFrom:
-              secretKeyRef:
-                name: workerstoragecreds-secret
-                key: azurestorageaccount
-          - name: AZURE_STORAGE_ACCOUNT_KEY
-            valueFrom:
-              secretKeyRef:
-                name: workerstoragecreds-secret
-                key: azurestoragekey
         command: [ python ]
         source: |
           import os
@@ -456,13 +435,13 @@ spec:
           - name: in1-zarr
           - name: in2-zarr
           - name: out-zarr
-            value: "az://scratch/{{ workflow.name }}/{{ pod.name }}/concatenated.zarr"
+            value: "gs://scratch-20210922/{{ workflow.name }}/{{ pod.name }}/concatenated.zarr"
       outputs:
         parameters:
           - name: out-zarr
             value: "{{ inputs.parameters.out-zarr }}"
       script:
-        image: downscalecmip6.azurecr.io/dodola:0.5.0
+        image: us-docker.pkg.dev/compute-impactlab/public/dodola:0.5.0
         env:
           - name: IN1_ZARR
             value: "{{ inputs.parameters.in1-zarr }}"
@@ -470,16 +449,6 @@ spec:
             value: "{{ inputs.parameters.in2-zarr }}"
           - name: OUT_ZARR
             value: "{{ inputs.parameters.out-zarr }}"
-          - name: AZURE_STORAGE_ACCOUNT_NAME
-            valueFrom:
-              secretKeyRef:
-                name: workerstoragecreds-secret
-                key: azurestorageaccount
-          - name: AZURE_STORAGE_ACCOUNT_KEY
-            valueFrom:
-              secretKeyRef:
-                name: workerstoragecreds-secret
-                key: azurestoragekey
         command: [ python ]
         source: |
           import os
