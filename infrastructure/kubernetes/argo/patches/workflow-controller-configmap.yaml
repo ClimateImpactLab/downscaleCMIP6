@@ -37,3 +37,9 @@ data:
       limits:
         cpu: 500m
         memory: 1Gi
+
+  artifactRepository: |
+    archiveLogs: true
+    gcs:
+      bucket: scratch-20210922
+      keyFormat: "{{workflow.name}}/{{pod.name}}"
