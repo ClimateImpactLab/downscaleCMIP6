@@ -19,8 +19,6 @@ data:
       podGC:
         strategy: OnPodCompletion
       serviceAccountName: workflows-default
-      nodeSelector:
-        dedicated: worker
       tolerations:
       - key: dedicated
         operator: "Equal"
