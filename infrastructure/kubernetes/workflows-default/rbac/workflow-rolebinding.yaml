@@ -5,8 +5,6 @@ metadata:
 subjects:
   - kind: ServiceAccount
     name: workflows-default
-  - kind: ServiceAccount
-    name: workflows-dask
 roleRef:
   kind: Role
   name: workflow-role

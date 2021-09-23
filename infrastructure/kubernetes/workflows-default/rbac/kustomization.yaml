@@ -1,9 +1,6 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
-  - workflows-default-serviceaccount.yaml
-  - workflows-dask-serviceaccount.yaml
   - workflow-role.yaml
   - daskkubernetes-role.yaml
-  - daskkubernetes-rolebinding.yaml
   - workflow-rolebinding.yaml
