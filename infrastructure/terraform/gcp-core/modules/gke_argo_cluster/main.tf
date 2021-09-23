@@ -25,7 +25,7 @@ resource "google_container_cluster" "main" {
   }
 
   release_channel {
-    channel = "STABLE"
+    channel = "REGULAR"
   }
 
   maintenance_policy {
