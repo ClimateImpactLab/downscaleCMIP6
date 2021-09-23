@@ -56,6 +56,15 @@ resource "kubernetes_namespace" "argo" {
   }
 }
 
+resource "kubernetes_namespace" "argo_events" {
+  metadata {
+    name = "argo-events"
+    labels = {
+      "app.kubernetes.io/managed-by" = "terraform"
+      "env"                          = var.env
+    }
+  }
+}
 
 resource "kubernetes_namespace" "argocd" {
   metadata {
