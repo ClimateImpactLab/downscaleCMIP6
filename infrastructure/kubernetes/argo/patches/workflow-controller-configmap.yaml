@@ -22,7 +22,6 @@ data:
         value: "worker"
         effect: "NoSchedule"
 
-  containerRuntimeExecutor: emissary
   executor: |
     imagePullPolicy: IfNotPresent
     resources:
