@@ -1,0 +1,12 @@
+variable-id: "tasmax"
+source-id: "ACCESS-CM2"
+historical: |
+  [
+    { "activity-id": "CMIP", "experiment-id": "historical", "table-id": "day", "variable-id": "tasmax", "source-id": "ACCESS-CM2", "institution-id": "CSIRO-ARCCSS", "member-id": "r1i1p1f1", "grid-label": "gn", "version": "20191108" }
+  ]
+ssps: |
+  [
+    { "activity-id": "ScenarioMIP", "experiment-id": "ssp370", "table-id": "day", "variable-id": "tasmax", "source-id": "ACCESS-CM2", "institution-id": "CSIRO-ARCCSS", "member-id": "r1i1p1f1", "grid-label": "gn", "version": "20191108" },
+    { "activity-id": "ScenarioMIP", "experiment-id": "ssp245", "table-id": "day", "variable-id": "tasmax", "source-id": "ACCESS-CM2", "institution-id": "CSIRO-ARCCSS", "member-id": "r1i1p1f1", "grid-label": "gn", "version": "20191108" },
+    { "activity-id": "ScenarioMIP", "experiment-id": "ssp126", "table-id": "day", "variable-id": "tasmax", "source-id": "ACCESS-CM2", "institution-id": "CSIRO-ARCCSS", "member-id": "r1i1p1f1", "grid-label": "gn", "version": "20210317" }
+  ]

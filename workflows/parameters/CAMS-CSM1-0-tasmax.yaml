@@ -1,0 +1,12 @@
+variable-id: "tasmax"
+source-id: "CAMS-CSM1-0"
+historical: |
+  [
+    { "activity-id": "CMIP", "experiment-id": "historical", "table-id": "day", "variable-id": "tasmax", "source-id": "CAMS-CSM1-0", "institution-id": "CAMS", "member-id": "r2i1p1f1", "grid-label": "gn", "version": "20201022" }
+  ]
+ssps: |
+  [
+    { "activity-id": "ScenarioMIP", "experiment-id": "ssp370", "table-id": "day", "variable-id": "tasmax", "source-id": "CAMS-CSM1-0", "institution-id": "CAMS", "member-id": "r2i1p1f1", "grid-label": "gn", "version": "20200720" },
+    { "activity-id": "ScenarioMIP", "experiment-id": "ssp245", "table-id": "day", "variable-id": "tasmax", "source-id": "CAMS-CSM1-0", "institution-id": "CAMS", "member-id": "r2i1p1f1", "grid-label": "gn", "version": "20200720" },
+    { "activity-id": "ScenarioMIP", "experiment-id": "ssp126", "table-id": "day", "variable-id": "tasmax", "source-id": "CAMS-CSM1-0", "institution-id": "CAMS", "member-id": "r2i1p1f1", "grid-label": "gn", "version": "20191106" }
+  ]
