@@ -80,7 +80,7 @@ resource "google_container_node_pool" "core" {
 
   node_config {
     machine_type    = "n1-standard-2"
-    image_type      = "UBUNTU"
+    image_type      = "COS_CONTAINERD"
     service_account = var.node_service_account_email
     oauth_scopes = [
       "https://www.googleapis.com/auth/cloud-platform",
@@ -116,7 +116,7 @@ resource "google_container_node_pool" "worker" {
     machine_type    = "n1-highmem-8"
     preemptible     = true
     disk_type       = "pd-ssd"
-    image_type      = "UBUNTU"
+    image_type      = "COS_CONTAINERD"
     service_account = var.node_service_account_email
     oauth_scopes = [
       "https://www.googleapis.com/auth/cloud-platform",
