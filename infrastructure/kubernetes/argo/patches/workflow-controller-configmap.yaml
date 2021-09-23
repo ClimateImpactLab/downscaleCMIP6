@@ -17,7 +17,7 @@ data:
       ttlStrategy:
         secondsAfterCompletion: 1296000   #; Workflows delete after 15 days.
       podGC:
-        strategy: OnPodCompletion
+        strategy: OnPodSuccess
       serviceAccountName: workflows-default
       tolerations:
       - key: dedicated
