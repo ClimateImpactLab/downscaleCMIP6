@@ -88,8 +88,8 @@ resource "google_container_node_pool" "core" {
     ]
 
     labels = {
-      "env"                          = var.env
-      "managed-by"                   = "terraform"
+      "env"        = var.env
+      "managed-by" = "terraform"
     }
   }
 }
@@ -123,9 +123,9 @@ resource "google_container_node_pool" "worker" {
     ]
 
     labels = {
-      "env"                          = var.env
-      "managed-by"                   = "terraform"
-      "dedicated" = "worker"
+      "env"        = var.env
+      "managed-by" = "terraform"
+      "dedicated"  = "worker"
     }
 
     taint = [
