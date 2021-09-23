@@ -91,7 +91,7 @@ resource "google_service_account" "workflows_default" {
   description  = "Default Argo Workflow default worker service account"
   display_name = "workflows-default"
 }
-resource "google_storage_bucket_iam_member" "argoworker_buckets_iammember" {
+resource "google_storage_bucket_iam_member" "argoworker_bucketswriter_iammember" {
   for_each = toset(
     [
       module.datalake_storage.raw_cmip6_bucket_name,
@@ -109,5 +109,25 @@ resource "google_storage_bucket_iam_member" "argoworker_buckets_iammember" {
   )
   bucket = each.key
   member = "serviceAccount:${google_service_account.workflows_default.email}"
-  role   = "roles/storage.objectAdmin"
+  role   = "roles/storage.legacyBucketWriter"
+}
+resource "google_storage_bucket_iam_member" "argoworker_objviewer_iammember" {
+  for_each = toset(
+    [
+      module.datalake_storage.raw_cmip6_bucket_name,
+      module.datalake_storage.clean_cmip6_bucket_name,
+      module.datalake_storage.raw_reanalysis_bucket_name,
+      module.datalake_storage.clean_reanalysis_bucket_name,
+      module.datalake_storage.biascorrected_bucket_name,
+      module.datalake_storage.biascorrected_stage_bucket_name,
+      module.datalake_storage.downscaled_bucket_name,
+      module.datalake_storage.downscaled_stage_bucket_name,
+      module.datalake_storage.qualitycontrol_bucket_name,
+      module.datalake_storage.qualitycontrol_stage_bucket_name,
+      module.datalake_storage.scratch_bucket_name
+    ]
+  )
+  bucket = each.key
+  member = "serviceAccount:${google_service_account.workflows_default.email}"
+  role   = "roles/storage.objectViewer"
 }
