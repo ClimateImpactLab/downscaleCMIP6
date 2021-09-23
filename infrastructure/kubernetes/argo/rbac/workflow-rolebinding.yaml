@@ -4,7 +4,7 @@ metadata:
   name: workflow-rolebinding
 subjects:
   - kind: ServiceAccount
-    name: workflows-default
+    name: default
 roleRef:
   kind: Role
   name: workflow-role
