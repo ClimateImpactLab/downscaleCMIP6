@@ -12,7 +12,7 @@ If there is already a deployment -- file a pull request with changes to `main`. 
 ### Setup (`argocd`)
 To begin, you need to have `argocd` deployed on a cluster. If it is not already deployed, you can do so with
 
-```
+```bash
 kubectl apply -n argocd -f https://raw.githubusercontent.com/argoproj/argo-cd/stable/manifests/install.yaml
 kubectl patch deploy argocd-server -n argocd -p '[{"op": "add", "path": "/spec/template/spec/containers/0/command/-", "value": "--disable-auth"}]' --type json
 ```
@@ -21,7 +21,7 @@ kubectl patch deploy argocd-server -n argocd -p '[{"op": "add", "path": "/spec/t
 
 Deploy `argo` onto the cluster with
 
-```
+```bash
 argocd app create argo \
     --repo https://github.com/ClimateImpactLab/downscaleCMIP6.git \
     --path infrastructure/kubernetes/argo \
@@ -30,6 +30,7 @@ argocd app create argo \
     --sync-policy automated \
     --auto-prune \
     --port-forward-namespace argocd
+
 argocd app create workflows-default \
     --repo https://github.com/ClimateImpactLab/downscaleCMIP6.git \
     --path infrastructure/kubernetes/workflows-default \
@@ -42,13 +43,13 @@ argocd app create workflows-default \
 
 Test either deployment method with
 
-```
-argo submit -n argo --serviceaccount workflows-default --watch https://raw.githubusercontent.com/argoproj/argo/master/examples/hello-world.yaml 
+```bash
+argo submit -n argo --serviceaccount workflows-default --watch https://raw.githubusercontent.com/argoproj/argo-workflows/master/examples/hello-world.yaml 
 ```
 
 This assumes you have the `argo` CLI application installed locally. From the output, grab the workflow name and run
 
-```
+```bash
 argo logs -n argo <workflow-name>
 ```
 
