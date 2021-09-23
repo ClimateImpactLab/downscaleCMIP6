@@ -6,3 +6,4 @@ resources:
 
 patchesStrategicMerge:
   - patches/workflow-controller-configmap.yaml
+  - patches/argo-server-deployment.yaml
