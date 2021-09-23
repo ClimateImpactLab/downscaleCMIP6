@@ -30,15 +30,6 @@ argocd app create argo \
     --sync-policy automated \
     --auto-prune \
     --port-forward-namespace argocd
-
-argocd app create workflows-default \
-    --repo https://github.com/ClimateImpactLab/downscaleCMIP6.git \
-    --path infrastructure/kubernetes/workflows-default \
-    --dest-server https://kubernetes.default.svc \
-    --dest-namespace argo \
-    --sync-policy automated \
-    --auto-prune \
-    --port-forward-namespace argocd
 ```
 
 Test either deployment method with
