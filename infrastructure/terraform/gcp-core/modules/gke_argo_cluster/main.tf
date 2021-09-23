@@ -107,9 +107,9 @@ resource "google_container_node_pool" "worker" {
   cluster  = google_container_cluster.main.name
   location = google_container_cluster.main.location
 
-  initial_node_count = 1
+  initial_node_count = 0
   autoscaling {
-    max_node_count = 100
+    max_node_count = 50
     min_node_count = 0
   }
   lifecycle {
@@ -119,9 +119,8 @@ resource "google_container_node_pool" "worker" {
   }
 
   node_config {
-    machine_type    = "n1-highmem-8"
+    machine_type    = "n1-highmem-16"
     preemptible     = true
-    disk_type       = "pd-ssd"
     image_type      = "COS_CONTAINERD"
     service_account = var.node_service_account_email
     oauth_scopes = [
