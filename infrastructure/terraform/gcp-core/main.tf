@@ -86,10 +86,10 @@ module "gke_argo_cluster" {
 }
 
 
-resource "google_service_account" "argoworker" {
-  account_id   = "argoworker-sa"
-  description  = "Default Argo Workflow worker service account"
-  display_name = "argoworker-sa"
+resource "google_service_account" "workflows_default" {
+  account_id   = "workflows-default"
+  description  = "Default Argo Workflow default worker service account"
+  display_name = "workflows-default"
 }
 resource "google_storage_bucket_iam_member" "argoworker_buckets_iammember" {
   for_each = toset(
@@ -108,6 +108,6 @@ resource "google_storage_bucket_iam_member" "argoworker_buckets_iammember" {
   ]
   )
   bucket = each.key
-  member = "serviceAccount:${google_service_account.argoworker.email}"
+  member = "serviceAccount:${google_service_account.workflows_default.email}"
   role   = "roles/storage.objectAdmin"
 }
