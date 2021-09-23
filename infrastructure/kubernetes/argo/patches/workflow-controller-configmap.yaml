@@ -16,8 +16,6 @@ data:
       activeDeadlineSeconds: 28800  #; Workflows must finish in 8 hours.
       ttlStrategy:
         secondsAfterCompletion: 1296000   #; Workflows delete after 15 days.
-      podGC:
-        strategy: OnPodCompletion
       serviceAccountName: workflows-default
       nodeSelector:
         dedicated: worker
