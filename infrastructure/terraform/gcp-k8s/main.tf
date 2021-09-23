@@ -23,7 +23,7 @@ data "terraform_remote_state" "gcp_core" {
   backend = "remote"
 
   config = {
-    organization = "RhodiumGroup"
+    organization = "ClimateImpactLab"
     workspaces = {
       name = "downscaleCMIP6-infra-gcp-core"
     }
