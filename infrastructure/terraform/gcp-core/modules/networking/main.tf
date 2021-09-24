@@ -23,6 +23,7 @@ resource "google_compute_global_address" "argo_cloudsql_private_ip" {
   address_type  = "INTERNAL"
   prefix_length = 16
   network       = google_compute_network.vpc1.id
+  project       = var.project_id
 }
 # The connection is not automatically made, so we need to do this manually.
 resource "google_service_networking_connection" "argo_cloudsql_vpc_connection" {
