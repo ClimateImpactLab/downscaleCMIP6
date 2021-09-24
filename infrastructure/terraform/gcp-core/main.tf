@@ -38,8 +38,9 @@ module "datalake_storage" {
   sql_vpc_id = module.networking.vpc_id
   sql_region = var.region
 
-  location = var.region
-  env      = var.env
+  project_id = var.project_id
+  location   = var.region
+  env        = var.env
 
   # The cloudsql instance depends on the VPC network connection being set up.
   depends_on = [module.networking]

@@ -21,6 +21,7 @@ resource "google_sql_database_instance" "argo" {
   name             = "argo-${random_id.argo_cloudsql_name_suffix.hex}"
   database_version = "POSTGRES_13"
   region           = var.sql_region
+  project          = var.project_id
   settings {
     tier              = "db-f1-micro"
     availability_type = "ZONAL"

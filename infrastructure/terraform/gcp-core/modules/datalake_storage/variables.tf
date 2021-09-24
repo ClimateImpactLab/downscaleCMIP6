@@ -3,6 +3,11 @@ variable "env" {
   description = "Brief environment label for tags and resource naming."
 }
 
+variable "project_id" {
+  type        = string
+  description = "GCP project name to deploy provision to."
+}
+
 variable "location" {
   type        = string
   description = "GCP location hosting storage components."
