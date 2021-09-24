@@ -52,153 +52,102 @@ resource "google_sql_user" "argo" {
 }
 
 
-resource "google_storage_bucket" "raw_cmip6" {
-  name                        = "raw-cmip6-20210922"
+resource "random_id" "raw_suffix" {
+  byte_length = 4
+}
+resource "google_storage_bucket" "raw" {
+  name                        = "raw-${random_id.raw_suffix.hex}"
   location                    = var.location
   storage_class               = "STANDARD"
   uniform_bucket_level_access = true
 
   labels = {
-    "env"        = "prod"
+    "env"        = var.env
     "managed-by" = "terraform"
   }
 }
 
 
-resource "google_storage_bucket" "raw_reanalysis" {
-  name                        = "raw-reanalysis-20210922"
+resource "random_id" "clean_suffix" {
+  byte_length = 4
+}
+resource "google_storage_bucket" "clean" {
+  name                        = "clean-${random_id.clean_suffix.hex}"
   location                    = var.location
   storage_class               = "STANDARD"
   uniform_bucket_level_access = true
 
   labels = {
-    "env"        = "prod"
+    "env"        = var.env
     "managed-by" = "terraform"
   }
 }
 
-
-resource "google_storage_bucket" "clean_cmip6" {
-  name                        = "clean-cmip6-20210922"
-  location                    = var.location
-  storage_class               = "STANDARD"
-  uniform_bucket_level_access = true
-
-  labels = {
-    "env"        = "prod"
-    "managed-by" = "terraform"
-  }
+resource "random_id" "biascorrected_suffix" {
+  byte_length = 4
 }
-
-
-resource "google_storage_bucket" "clean_reanalysis" {
-  name                        = "clean-reanalysis-20210922"
-  location                    = var.location
-  storage_class               = "STANDARD"
-  uniform_bucket_level_access = true
-
-  labels = {
-    "env"        = "prod"
-    "managed-by" = "terraform"
-  }
-}
-
-
 resource "google_storage_bucket" "biascorrected" {
-  name                        = "biascorrected-20210922"
+  name                        = "biascorrected-${random_id.biascorrected_suffix.hex}"
   location                    = var.location
   storage_class               = "STANDARD"
   uniform_bucket_level_access = true
 
   labels = {
-    "env"        = "prod"
+    "env"        = var.env
     "managed-by" = "terraform"
   }
 }
 
-
-
-resource "google_storage_bucket" "biascorrectedstage" {
-  name                        = "biascorrected-stage-20210922"
-  location                    = var.location
-  storage_class               = "STANDARD"
-  uniform_bucket_level_access = true
-
-  labels = {
-    "env"        = "stage"
-    "managed-by" = "terraform"
-  }
+resource "random_id" "downscaled_suffix" {
+  byte_length = 4
 }
-
-
 resource "google_storage_bucket" "downscaled" {
-  name                        = "downscaled-20210922"
+  name                        = "downscaled-${random_id.downscaled_suffix.hex}"
   location                    = var.location
   storage_class               = "STANDARD"
   uniform_bucket_level_access = true
 
   labels = {
-    "env"        = "prod"
+    "env"        = var.env
     "managed-by" = "terraform"
   }
 }
 
-
-resource "google_storage_bucket" "downscaledstage" {
-  name                        = "downscaled-stage-20210922"
-  location                    = var.location
-  storage_class               = "STANDARD"
-  uniform_bucket_level_access = true
-
-  labels = {
-    "env"        = "stage"
-    "managed-by" = "terraform"
-  }
+resource "random_id" "support_suffix" {
+  byte_length = 4
 }
-
-
-
 resource "google_storage_bucket" "support" {
-  name                        = "support-20210922"
+  name                        = "support-${random_id.support_suffix.hex}"
   location                    = var.location
   storage_class               = "STANDARD"
   uniform_bucket_level_access = true
 
   labels = {
-    "env"        = "prod"
+    "env"        = var.env
     "managed-by" = "terraform"
   }
 }
 
-
+resource "random_id" "qualitycontrol_suffix" {
+  byte_length = 4
+}
 resource "google_storage_bucket" "qualitycontrol" {
-  name                        = "qualitycontrol-20210922"
+  name                        = "qualitycontrol-${random_id.qualitycontrol_suffix.hex}"
   location                    = var.location
   storage_class               = "STANDARD"
   uniform_bucket_level_access = true
 
   labels = {
-    "env"        = "prod"
+    "env"        = var.env
     "managed-by" = "terraform"
   }
 }
 
-
-resource "google_storage_bucket" "qualitycontrolstage" {
-  name                        = "qualitycontrol-stage-20210922"
-  location                    = var.location
-  storage_class               = "STANDARD"
-  uniform_bucket_level_access = true
-
-  labels = {
-    "env"        = "stage"
-    "managed-by" = "terraform"
-  }
+resource "random_id" "scratch_suffix" {
+  byte_length = 4
 }
-
-
 resource "google_storage_bucket" "scratch" {
-  name                        = "scratch-20210922"
+  name                        = "scratch-${random_id.scratch_suffix.hex}"
   location                    = var.location
   storage_class               = "STANDARD"
   uniform_bucket_level_access = true
@@ -213,7 +162,7 @@ resource "google_storage_bucket" "scratch" {
   }
 
   labels = {
-    "env"        = "prod"
+    "env"        = var.env
     "managed-by" = "terraform"
   }
 }

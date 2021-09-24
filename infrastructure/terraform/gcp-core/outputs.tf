@@ -37,47 +37,47 @@ output "artifact_registry_location" {
 output "gke_node_sa_email" {
   value = module.least_privileged_gke_sa.email
 }
-#
-#output "workflows_default_account_id" {
-#  value       = google_service_account.workflows_default.account_id
-#  description = "Argo Workflows worker service account ID."
-#}
-#
-#output "workflows_default_email" {
-#  value       = google_service_account.workflows_default.email
-#  description = "Email to created Argo Workflows worker service account."
-#}
-#
-#output "argo_cluster_name" {
-#  value       = module.gke_argo_cluster.cluster_name
-#  description = "Name of GKE Argo cluster."
-#}
-#
-#output "argo_cluster_ca_certificate" {
-#  value       = module.gke_argo_cluster.cluster_ca_certificate
-#  description = "GKE Argo cluster CA certificate."
-#  sensitive   = true
-#}
-#
-#output "argo_cluster_endpoint" {
-#  value       = module.gke_argo_cluster.endpoint
-#  description = "GKE Argo cluster endpoint address."
-#  sensitive   = true
-#}
-#
-#output "argo_cloudsql_private_ip_address" {
-#  value       = module.datalake_storage.argo_cloudsql_private_ip_address
-#  description = "Private IP address of the CloudSQL instance for Argo."
-#}
-#
-#output "argo_cloudsql_username" {
-#  description = "Argo CloudSQL instance user name."
-#  value       = module.datalake_storage.argo_cloudsql_username
-#  sensitive   = true
-#}
-#
-#output "argo_cloudsql_password" {
-#  description = "Argo CloudSQL instance user password."
-#  value       = module.datalake_storage.argo_cloudsql_password
-#  sensitive   = true
-#}
+
+output "workflows_default_account_id" {
+  value       = google_service_account.workflows_default.account_id
+  description = "Argo Workflows worker service account ID."
+}
+
+output "workflows_default_email" {
+  value       = google_service_account.workflows_default.email
+  description = "Email to created Argo Workflows worker service account."
+}
+
+output "argo_cluster_name" {
+  value       = module.gke_argo_cluster.cluster_name
+  description = "Name of GKE Argo cluster."
+}
+
+output "argo_cluster_ca_certificate" {
+  value       = module.gke_argo_cluster.cluster_ca_certificate
+  description = "GKE Argo cluster CA certificate."
+  sensitive   = true
+}
+
+output "argo_cluster_endpoint" {
+  value       = module.gke_argo_cluster.endpoint
+  description = "GKE Argo cluster endpoint address."
+  sensitive   = true
+}
+
+output "argo_cloudsql_private_ip_address" {
+  value       = module.datalake_storage.argo_cloudsql_private_ip_address
+  description = "Private IP address of the CloudSQL instance for Argo."
+}
+
+output "argo_cloudsql_username" {
+  description = "Argo CloudSQL instance user name."
+  value       = module.datalake_storage.argo_cloudsql_username
+  sensitive   = true
+}
+
+output "argo_cloudsql_password" {
+  description = "Argo CloudSQL instance user password."
+  value       = module.datalake_storage.argo_cloudsql_password
+  sensitive   = true
+}

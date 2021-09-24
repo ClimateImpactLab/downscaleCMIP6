@@ -8,8 +8,11 @@ terraform {
 }
 
 
+resource "random_id" "main_cluster_suffix" {
+  byte_length = 4
+}
 resource "google_container_cluster" "main" {
-  name = "${var.cluster_name_prefix}-${var.env}"
+  name = "${var.cluster_name_prefix}-${random_id.main_cluster_suffix.hex}"
 
   resource_labels = {
     "env"        = var.env
@@ -62,10 +65,10 @@ resource "google_container_cluster" "main" {
 
 
 resource "google_container_node_pool" "core" {
-  name     = "core"
-  project  = google_container_cluster.main.project
-  cluster  = google_container_cluster.main.name
-  location = google_container_cluster.main.location
+  name_prefix = "core"
+  project     = google_container_cluster.main.project
+  cluster     = google_container_cluster.main.name
+  location    = google_container_cluster.main.location
 
   initial_node_count = 1
   autoscaling {
@@ -102,10 +105,10 @@ resource "google_container_node_pool" "core" {
 
 
 resource "google_container_node_pool" "worker" {
-  name     = "worker"
-  project  = google_container_cluster.main.project
-  cluster  = google_container_cluster.main.name
-  location = google_container_cluster.main.location
+  name_prefix = "worker"
+  project     = google_container_cluster.main.project
+  cluster     = google_container_cluster.main.name
+  location    = google_container_cluster.main.location
 
   initial_node_count = 0
   autoscaling {
