@@ -98,19 +98,19 @@ resource "google_service_account" "workflows_default" {
   description  = "Default Argo Workflow default worker service account"
   display_name = "workflows-default"
 }
-#resource "google_storage_bucket_iam_member" "argoworker_buckets_iammember" {
-#  for_each = toset(
-#    [
-#      module.datalake_storage.raw_bucket_name,
-#      module.datalake_storage.clean_bucket_name,
-#      module.datalake_storage.biascorrected_bucket_name,
-#      module.datalake_storage.downscaled_bucket_name,
-#      module.datalake_storage.qualitycontrol_bucket_name,
-#      module.datalake_storage.scratch_bucket_name,
-#      module.datalake_storage.support_bucket_name
-#    ]
-#  )
-#  bucket = each.key
-#  member = "serviceAccount:${google_service_account.workflows_default.email}"
-#  role   = "roles/storage.admin"
-#}
+resource "google_storage_bucket_iam_member" "argoworker_buckets_iammember" {
+  for_each = toset(
+    [
+      module.datalake_storage.raw_bucket_name,
+      module.datalake_storage.clean_bucket_name,
+      module.datalake_storage.biascorrected_bucket_name,
+      module.datalake_storage.downscaled_bucket_name,
+      module.datalake_storage.qualitycontrol_bucket_name,
+      module.datalake_storage.scratch_bucket_name,
+      module.datalake_storage.support_bucket_name
+    ]
+  )
+  bucket = each.key
+  member = "serviceAccount:${google_service_account.workflows_default.email}"
+  role   = "roles/storage.admin"
+}
