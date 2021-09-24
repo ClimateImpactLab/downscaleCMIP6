@@ -89,3 +89,19 @@ module "workflows_default_wli" {
 
   project_id = var.project_id
 }
+
+
+resource "kubernetes_secret" "argo-postgres-config" {
+  metadata {
+    name      = "argo-postgres-config"
+    namespace = kubernetes_namespace.argo.metadata.0.name
+    labels = {
+      "app.kubernetes.io/managed-by" = "terraform"
+      "env"                          = var.env
+    }
+  }
+  data = {
+    username = data.terraform_remote_state.gcp_core.outputs.argo_cloudsql_username
+    password = data.terraform_remote_state.gcp_core.outputs.argo_cloudsql_password
+  }
+}
