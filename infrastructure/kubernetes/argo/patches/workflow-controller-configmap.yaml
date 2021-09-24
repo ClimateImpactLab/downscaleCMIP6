@@ -50,3 +50,42 @@ data:
     gcs:
       bucket: scratch-20210922
       keyFormat: "{{workflow.name}}/{{pod.name}}"
+
+  persistence: |
+    connectionPool:
+      maxIdleConns: 100
+      maxOpenConns: 0
+      connMaxLifetime: 5s # 0 means connections don't have a max lifetime
+    #  if true node status is only saved to the persistence DB to avoid the 1MB limit in etcd
+    nodeStatusOffLoad: true
+    # save completed workloads to the workflow archive
+    archive: false
+    # the number of days to keep archived workflows (the default is forever)
+    archiveTTL: 180d
+    # skip database migration if needed.
+    # skipMigration: true
+
+    # LabelSelector determines the workflow that matches with the matchlabels or matchrequirements, will be archived.
+    # https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/
+    archiveLabelSelector:
+      matchLabels:
+        workflows.argoproj.io/archive-strategy: "always"
+
+    # Optional name of the cluster I'm running in. This must be unique for your cluster.
+    clusterName: tsukuyomi
+    postgresql:
+      host: 10.132.0.3
+      port: 5432
+      database: postgres
+      tableName: argo_workflows
+      # the database secrets must be in the same namespace of the controller
+      userNameSecret:
+        name: argo-postgres-config
+        key: username
+      passwordSecret:
+        name: argo-postgres-config
+        key: password
+      ssl: true
+      # sslMode must be one of: disable, require, verify-ca, verify-full
+      # you can find more information about those ssl options here: https://godoc.org/github.com/lib/pq
+      sslMode: require
