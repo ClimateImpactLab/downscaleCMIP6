@@ -57,3 +57,25 @@ output "scratch_bucket_name" {
   value       = google_storage_bucket.scratch.name
   description = "Name of scratch bucket."
 }
+
+output "argo_cloudsql_instance_name" {
+  value       = google_sql_database_instance.argo.name
+  description = "Name of CloudSQL instance for Argo."
+}
+
+output "argo_cloudsql_private_ip_address" {
+  value       = google_sql_database_instance.argo.private_ip_address
+  description = "Private IP address of the CloudSQL instance for Argo."
+}
+
+output "argo_cloudsql_username" {
+  description = "Argo CloudSQL instance user name."
+  value       = google_sql_user.argo.name
+  sensitive   = true
+}
+
+output "argo_cloudsql_password" {
+  description = "Argo CloudSQL instance user password."
+  value       = google_sql_user.argo.password
+  sensitive   = true
+}

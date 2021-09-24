@@ -16,6 +16,23 @@ resource "google_compute_network" "vpc1" {
   routing_mode            = "GLOBAL"
 }
 
+resource "google_compute_global_address" "argo_cloudsql_private_ip" {
+  provider      = google-beta
+  name          = "argo-cloudsql-private-ip"
+  purpose       = "VPC_PEERING"
+  address_type  = "INTERNAL"
+  prefix_length = 16
+  network       = google_compute_network.vpc1.id
+}
+# The connection is not automatically made, so we need to do this manually.
+resource "google_service_networking_connection" "argo_cloudsql_vpc_connection" {
+  provider = google-beta
+
+  network                 = google_compute_network.vpc1.id
+  service                 = "servicenetworking.googleapis.com"
+  reserved_peering_ranges = [google_compute_global_address.argo_cloudsql_private_ip.name]
+}
+
 resource "google_compute_subnetwork" "public1" {
   name          = "${var.company}-${var.application}-${var.env}-public-${var.region}"
   ip_cidr_range = var.subnet_range

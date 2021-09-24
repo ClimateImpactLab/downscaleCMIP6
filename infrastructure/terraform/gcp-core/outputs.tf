@@ -64,3 +64,20 @@ output "argo_cluster_endpoint" {
   description = "GKE Argo cluster endpoint address."
   sensitive   = true
 }
+
+output "argo_cloudsql_private_ip_address" {
+  value       = module.datalake_storage.argo_cloudsql_private_ip_address
+  description = "Private IP address of the CloudSQL instance for Argo."
+}
+
+output "argo_cloudsql_username" {
+  description = "Argo CloudSQL instance user name."
+  value       = module.datalake_storage.argo_cloudsql_username
+  sensitive   = true
+}
+
+output "argo_cloudsql_password" {
+  description = "Argo CloudSQL instance user password."
+  value       = module.datalake_storage.argo_cloudsql_password
+  sensitive   = true
+}
