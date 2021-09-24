@@ -109,5 +109,5 @@ resource "google_storage_bucket_iam_member" "argoworker_buckets_iammember" {
   )
   bucket = each.key
   member = "serviceAccount:${google_service_account.workflows_default.email}"
-  role   = "roles/storage.objectAdmin"
+  role   = "roles/storage.admin"
 }
