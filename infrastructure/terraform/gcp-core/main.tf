@@ -93,8 +93,12 @@ module "gke_argo_cluster" {
 }
 
 
+# Service account to be used by Argo Workflows workers on Kubernetes
+resource "random_id" "workflows_default_suffix" {
+  byte_length = 4
+}
 resource "google_service_account" "workflows_default" {
-  account_id   = "workflows-default"
+  account_id   = "workflows-default-${random_id.workflows_default_suffix.hex}"
   description  = "Default Argo Workflow default worker service account"
   display_name = "workflows-default"
 }
@@ -113,4 +117,31 @@ resource "google_storage_bucket_iam_member" "argoworker_buckets_iammember" {
   bucket = each.key
   member = "serviceAccount:${google_service_account.workflows_default.email}"
   role   = "roles/storage.admin"
+}
+
+
+# So kubernetes-external-secrets-manager can access Secrets on Google Secret Manager
+# and put into k8s Secrets.
+resource "random_id" "kubernetes_external_secrets_suffix" {
+  byte_length = 4
+}
+resource "google_service_account" "kubernetes_external_secrets" {
+  account_id   = "kubernetes-external-secrets-${random_id.kubernetes_external_secrets_suffix.hex}"
+  description  = "Workload Identity service account for kubernetes-external-secrets"
+  display_name = "kubernetes-external-secrets"
+}
+
+
+# Given to cert-manager on k8s to resolve DNS-01 challenges with CloudDNS.
+resource "random_id" "cert_manager_suffix" {
+  byte_length = 4
+}
+resource "google_service_account" "cert_manager" {
+  account_id   = "cert-manager-${random_id.cert_manager_suffix.hex}"
+  description  = "Workload Identity service account for Kubernetes cert-manager to solve DNS01 challenges"
+  display_name = "cert-manager"
+}
+resource "google_project_iam_member" "cert_manager-dnsadmin-iammember" {
+  member = "serviceAccount:${google_service_account.cert_manager.email}"
+  role   = "roles/dns.admin"
 }
