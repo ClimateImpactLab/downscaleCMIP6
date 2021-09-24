@@ -126,7 +126,7 @@ resource "random_id" "kubernetes_external_secrets_suffix" {
   byte_length = 4
 }
 resource "google_service_account" "kubernetes_external_secrets" {
-  account_id   = "kubernetes-external-secrets-${random_id.kubernetes_external_secrets_suffix.hex}"
+  account_id   = "k8s-external-secrets-${random_id.kubernetes_external_secrets_suffix.hex}"
   description  = "Workload Identity service account for kubernetes-external-secrets"
   display_name = "kubernetes-external-secrets"
 }
