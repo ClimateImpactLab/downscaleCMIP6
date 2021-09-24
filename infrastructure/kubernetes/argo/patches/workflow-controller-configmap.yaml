@@ -59,7 +59,7 @@ data:
     #  if true node status is only saved to the persistence DB to avoid the 1MB limit in etcd
     nodeStatusOffLoad: true
     # save completed workloads to the workflow archive
-    archive: false
+    archive: true
     # the number of days to keep archived workflows (the default is forever)
     archiveTTL: 180d
     # skip database migration if needed.
