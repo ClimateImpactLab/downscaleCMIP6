@@ -48,7 +48,7 @@ data:
   artifactRepository: |
     archiveLogs: true
     gcs:
-      bucket: scratch-20210922
+      bucket: scratch-170cd6ec
       keyFormat: "{{workflow.name}}/{{pod.name}}"
 
   persistence: |
@@ -74,7 +74,7 @@ data:
     # Optional name of the cluster I'm running in. This must be unique for your cluster.
     clusterName: tsukuyomi
     postgresql:
-      host: 10.132.0.3
+      host: 10.132.1.3
       port: 5432
       database: postgres
       tableName: argo_workflows
