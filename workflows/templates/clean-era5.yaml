@@ -12,9 +12,9 @@ spec:
   arguments:
     parameters:
     - name: in-zarr
-      value: "gs://raw-reanalysis-20210922/ERA-5/F320/tasmax.1995-2015.F320.v2.zarr"
+      value: "gs://raw-305d04da/reanalysis/ERA-5/F320/tasmax.1995-2015.F320.v2.zarr"
     - name: out-zarr
-      value: "gs://clean-reanalysis-20210922/ERA-5/F320/tasmax.1995-2015.F320.zarr"
+      value: "gs://clean-b1dbca25/reanalysis/ERA-5/F320/tasmax.1995-2015.F320.zarr"
   templates:
 
   - name: main

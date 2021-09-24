@@ -135,7 +135,7 @@ spec:
                 - name: version
                   value: "{{inputs.parameters.version}}"
                 - name: base-url
-                  value: "gs://raw-cmip6-20210922"
+                  value: "gs://raw-305d04da/cmip6"
         - - name: download
             template: download-gcm
             arguments:

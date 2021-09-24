@@ -13,7 +13,7 @@ spec:
       - name: regrid-method
         value: "bilinear"
       - name: domain-file
-        value: "gs://support-20210922/domain.0p25x0p25.zarr"
+        value: "gs://support-c23ff1a3/domain.0p25x0p25.zarr"
       - name: firstyear
         value: 2015
       - name: lastyear
