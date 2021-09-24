@@ -48,6 +48,11 @@ output "qualitycontrol_bucket_name" {
   description = "Name of qualitycontrol production data bucket."
 }
 
+output "support_bucket_name" {
+  value       = google_storage_bucket.support.name
+  description = "Name of support data bucket."
+}
+
 output "scratch_bucket_name" {
   value       = google_storage_bucket.scratch.name
   description = "Name of scratch bucket."

@@ -104,7 +104,8 @@ resource "google_storage_bucket_iam_member" "argoworker_buckets_iammember" {
       module.datalake_storage.downscaled_stage_bucket_name,
       module.datalake_storage.qualitycontrol_bucket_name,
       module.datalake_storage.qualitycontrol_stage_bucket_name,
-      module.datalake_storage.scratch_bucket_name
+      module.datalake_storage.scratch_bucket_name,
+      module.datalake_storage.support_bucket_name
     ]
   )
   bucket = each.key
