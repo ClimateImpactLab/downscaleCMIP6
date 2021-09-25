@@ -1,0 +1,4 @@
+kubernetes-external-secrets:
+  serviceAccount:
+    create: false
+    name: kubernetes-external-secrets-grabber
