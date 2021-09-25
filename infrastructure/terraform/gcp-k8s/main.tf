@@ -103,8 +103,8 @@ module "workflows_default_wli" {
   version = "16.1.0"
 
   use_existing_gcp_sa             = true
-  name                            = "workflows-default"
-  gcp_sa_name                     = data.terraform_remote_state.gcp_core.outputs.workflows_default_account_id
+  name                            = data.terraform_remote_state.gcp_core.outputs.workflows_default_account_id
+  k8s_sa_name                     = "workflows-default"
   namespace                       = kubernetes_namespace.argo.metadata.0.name
   automount_service_account_token = true
 
@@ -133,8 +133,8 @@ module "kubernetes_external_secrets_wli" {
   version = "16.1.0"
 
   use_existing_gcp_sa             = true
-  name                            = "kubernetes-external-secrets-grabber"
-  gcp_sa_name                     = data.terraform_remote_state.gcp_core.outputs.kubernetes_external_secrets_account_id
+  k8s_sa_name                     = "kubernetes-external-secrets-grabber"
+  name                            = data.terraform_remote_state.gcp_core.outputs.kubernetes_external_secrets_account_id
   namespace                       = kubernetes_namespace.kubernetes_external_secrets.metadata.0.name
   automount_service_account_token = true
 
@@ -147,8 +147,8 @@ module "cert_manager_wli" {
   version = "16.1.0"
 
   use_existing_gcp_sa             = true
-  name                            = "cert-manager-clouddns"
-  gcp_sa_name                     = data.terraform_remote_state.gcp_core.outputs.cert_manager_account_id
+  k8s_sa_name                     = "cert-manager-clouddns"
+  name                            = data.terraform_remote_state.gcp_core.outputs.cert_manager_account_id
   namespace                       = kubernetes_namespace.cert_manager.metadata.0.name
   automount_service_account_token = true
 
