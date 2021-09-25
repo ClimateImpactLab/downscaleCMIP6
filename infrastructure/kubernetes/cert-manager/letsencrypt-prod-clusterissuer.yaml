@@ -10,5 +10,5 @@ spec:
       name: "letsencrypt-prod"
     solvers:
       - dns01:
-        cloudDNS:
-          project: "downscalecmip6"
+          cloudDNS:
+            project: "downscalecmip6"
