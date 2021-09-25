@@ -10,18 +10,9 @@ terraform {
 # TODO: Should add `description` attrib to each one of these resources.
 
 
+# Static IP, and DNS record for argo server.
 data "google_dns_managed_zone" "main" {
   name = var.dns_zone_name
-}
-
-
-resource "google_dns_record_set" "argoserver_domain" {
-  provider     = google-beta
-  managed_zone = data.google_dns_managed_zone.main.name
-  name         = "${var.argoserver_subdomain}.${data.google_dns_managed_zone.main.dns_name}"
-  type         = "A"
-  rrdatas      = [google_compute_address.argoserver_staticip.address]
-  ttl          = 86400
 }
 resource "random_id" "argoserver_suffix" {
   byte_length = 4
@@ -30,6 +21,15 @@ resource "google_compute_address" "argoserver_staticip" {
   name         = "argoserver-staticip-${random_id.argoserver_suffix.hex}"
   address_type = "EXTERNAL"
   region       = var.region
+}
+resource "google_dns_record_set" "argoserver_domain" {
+  provider     = google-beta
+  managed_zone = data.google_dns_managed_zone.main.name
+  name         = "${var.argoserver_subdomain}.${data.google_dns_managed_zone.main.dns_name}"
+  type         = "A"
+  rrdatas      = [google_compute_address.argoserver_staticip.address]
+  ttl          = 86400
+  project      = var.project_id
 }
 
 
