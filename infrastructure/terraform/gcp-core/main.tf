@@ -133,6 +133,7 @@ resource "google_service_account" "kubernetes_external_secrets" {
 
 
 # Given to cert-manager on k8s to resolve DNS-01 challenges with CloudDNS.
+# TODO: Should create custom minimal IAM role for this with: dns.resourceRecordSets.*, dns.changes.*, dns.managedZones.list
 resource "random_id" "cert_manager_suffix" {
   byte_length = 4
 }
