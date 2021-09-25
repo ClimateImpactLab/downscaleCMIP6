@@ -105,5 +105,4 @@ output "argo_cloudsql_password" {
 output "argoserver_static_ip" {
   description = "Static external IP reserved for argoserver loadbalancer."
   value       = module.networking.argoserver_static_ip
-  sensitive   = true
 }
