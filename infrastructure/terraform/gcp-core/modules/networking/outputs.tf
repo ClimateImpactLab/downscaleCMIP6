@@ -1,4 +1,8 @@
 output "vpc_id" {
+  value = google_compute_address.argoserver_staticip.address
+}
+
+output "argoserver_static_ip" {
   value = google_compute_network.vpc1.id
 }
 

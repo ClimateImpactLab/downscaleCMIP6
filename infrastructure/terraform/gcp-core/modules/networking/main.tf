@@ -9,6 +9,15 @@ terraform {
 
 # TODO: Should add `description` attrib to each one of these resources.
 
+resource "random_id" "argoserver_suffix" {
+  byte_length = 4
+}
+resource "google_compute_address" "argoserver_staticip" {
+  name         = "argoserver-staticip-${random_id.argoserver_suffix.hex}"
+  address_type = "EXTERNAL"
+  region       = var.region
+}
+
 resource "google_compute_network" "vpc1" {
   name                    = "${var.company}-${var.application}-${var.env}-1"
   project                 = var.project_id
