@@ -8,9 +8,9 @@ ingress-nginx:
       podAntiAffinity:
         requiredDuringSchedulingIgnoredDuringExecution:
           - labelSelector:
-            matchExpressions:
-              - key: app
-                operator: In
-                values:
-                  - nginx-ingress
-        topologyKey: "kubernetes.io/hostname"
+              matchLabels:
+                app.kubernetes.io/name: ingress-nginx
+                app.kubernetes.io/component: controller
+  #              # This should be the same as the release name
+  #              app.kubernetes.io/instance: main-web
+            topologyKey: "kubernetes.io/hostname"
