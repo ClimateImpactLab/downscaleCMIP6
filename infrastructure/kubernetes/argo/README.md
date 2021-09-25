@@ -23,10 +23,10 @@ Deploy `argo` onto the cluster with
 
 ```bash
 argocd app create argo \
-    --repo https://github.com/ClimateImpactLab/downscaleCMIP6.git \
+    --repo https://github.com/ClimateImpactLab/downscaleCMIP6 \
     --path infrastructure/kubernetes/argo \
     --dest-server https://kubernetes.default.svc \
-    --dest-namespace argo \
+    --dest-namespace "argo" \
     --sync-policy automated \
     --auto-prune \
     --port-forward-namespace argocd
