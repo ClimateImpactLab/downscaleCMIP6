@@ -156,7 +156,7 @@ module "cert_manager_wli" {
   version = "16.1.0"
 
   use_existing_gcp_sa             = true
-  k8s_sa_name                     = "cert-manager-clouddns"
+  k8s_sa_name                     = "cert-manager"
   name                            = data.terraform_remote_state.gcp_core.outputs.cert_manager_account_id
   namespace                       = kubernetes_namespace.cert_manager.metadata.0.name
   automount_service_account_token = true
