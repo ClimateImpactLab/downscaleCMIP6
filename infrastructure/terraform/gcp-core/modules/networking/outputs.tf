@@ -1,9 +1,9 @@
 output "vpc_id" {
-  value = google_compute_address.argoserver_staticip.address
+  value = google_compute_network.vpc1.id
 }
 
 output "argoserver_static_ip" {
-  value = google_compute_network.vpc1.id
+  value = google_compute_address.argoserver_staticip.address
 }
 
 output "publicsubnet_name" {

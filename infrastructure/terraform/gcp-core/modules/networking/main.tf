@@ -18,6 +18,7 @@ resource "google_compute_address" "argoserver_staticip" {
   region       = var.region
 }
 
+
 resource "google_compute_network" "vpc1" {
   name                    = "${var.company}-${var.application}-${var.env}-1"
   project                 = var.project_id
@@ -42,6 +43,7 @@ resource "google_service_networking_connection" "argo_cloudsql_vpc_connection" {
   service                 = "servicenetworking.googleapis.com"
   reserved_peering_ranges = [google_compute_global_address.argo_cloudsql_private_ip.name]
 }
+
 
 resource "google_compute_subnetwork" "public1" {
   name          = "${var.company}-${var.application}-${var.env}-public-${var.region}"
