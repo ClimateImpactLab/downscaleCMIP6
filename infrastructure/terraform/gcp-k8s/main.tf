@@ -76,6 +76,15 @@ resource "kubernetes_namespace" "argocd" {
   }
 }
 
+resource "kubernetes_namespace" "ingress_nginx" {
+  metadata {
+    name = "ingress-nginx"
+    labels = {
+      "app.kubernetes.io/managed-by" = "terraform"
+      "env"                          = var.env
+    }
+  }
+}
 
 resource "kubernetes_namespace" "cert_manager" {
   metadata {
