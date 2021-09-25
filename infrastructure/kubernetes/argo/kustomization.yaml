@@ -4,6 +4,7 @@ kind: Kustomization
 resources:
   - https://github.com/argoproj/argo-workflows/releases/download/v3.1.12/install.yaml
   - rbac
+  - argo-server-ingress.yaml
   - ../../../workflows/templates
 
 patchesStrategicMerge:
