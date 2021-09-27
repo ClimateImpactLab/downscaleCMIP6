@@ -150,12 +150,23 @@ spec:
                   value: "{{=jsonpath(inputs.parameters.historical, '$.version')}}"
                 - name: base-url
                   value: "az://clean-cmip6"
+            # We're slicing historical to time period of interest to reduce memory in later steps.
+        - - name: crop-historical-time
+            template: timeslicezarr
+            arguments:
+              parameters:
+                - name: in-zarr
+                  value: "{{ steps.get-input-raw-historical-url.outputs.parameters.out-url }}"
+                - name: from-time
+                  value: "1950"
+                - name: to-time
+                  value: "2014"
         - - name: standardize-historical-run
             template: standardize-cmip6
             arguments:
               parameters:
                 - name: in-zarr
-                  value: "{{ steps.get-input-raw-historical-url.outputs.parameters.out-url }}"
+                  value: "{{ steps.crop-historical-time.outputs.parameters.out-zarr }}"
           - name: standardize-ssp-run
             template: standardize-cmip6
             arguments:
@@ -237,16 +248,6 @@ spec:
                   value: "{{=jsonpath(inputs.parameters['target-json'], '$.version')}}"
                 - name: base-url
                   value: "az://clean-cmip6"
-          - name: slice-historical
-            template: timeslicezarr
-            arguments:
-              parameters:
-                - name: in-zarr
-                  value: "{{ inputs.parameters.historical-zarr }}"
-                - name: from-time
-                  value: "1950"
-                - name: to-time
-                  value: "2014"
           - name: remove-late-ssp
             template: timeslicezarr
             arguments:
@@ -263,7 +264,7 @@ spec:
               parameters:
                   # Make first arg hist zarr, so outputs with historical attrs.
                 - name: in1-zarr
-                  value: "{{ steps.slice-historical.outputs.parameters.out-zarr }}"
+                  value: "{{ inputs.parameters.historical-zarr }}"
                 - name: in2-zarr
                   value: "{{ steps.remove-late-ssp.outputs.parameters.out-zarr }}"
                 - name: out-zarr
@@ -370,6 +371,9 @@ spec:
       retryStrategy:
         limit: 4
         retryPolicy: "Always"
+        backoff:
+          duration: 30s
+          factor: 2
 
 
     - name: timeslicezarr
