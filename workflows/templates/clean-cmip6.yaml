@@ -166,7 +166,7 @@ spec:
             arguments:
               parameters:
                 - name: in-zarr
-                  value: "{{ steps.slice-historical.outputs.parameters.out-zarr }}"
+                  value: "{{ steps.crop-historical-time.outputs.parameters.out-zarr }}"
           - name: standardize-ssp-run
             template: standardize-cmip6
             arguments:
@@ -264,7 +264,7 @@ spec:
               parameters:
                   # Make first arg hist zarr, so outputs with historical attrs.
                 - name: in1-zarr
-                  value: "{{ steps.slice-historical.outputs.parameters.out-zarr }}"
+                  value: "{{ inputs.parameters.historical-zarr }}"
                 - name: in2-zarr
                   value: "{{ steps.remove-late-ssp.outputs.parameters.out-zarr }}"
                 - name: out-zarr
