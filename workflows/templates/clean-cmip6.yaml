@@ -371,6 +371,9 @@ spec:
       retryStrategy:
         limit: 4
         retryPolicy: "Always"
+        backoff:
+          duration: 30s
+          factor: 2
 
 
     - name: timeslicezarr
