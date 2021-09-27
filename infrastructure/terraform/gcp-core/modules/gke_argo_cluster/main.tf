@@ -82,7 +82,7 @@ resource "google_container_node_pool" "core" {
   }
 
   node_config {
-    machine_type    = "e2-small"
+    machine_type    = "e2-medium"
     image_type      = "COS_CONTAINERD"
     service_account = var.node_service_account_email
     oauth_scopes = [
