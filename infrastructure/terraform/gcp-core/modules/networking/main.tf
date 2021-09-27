@@ -9,12 +9,55 @@ terraform {
 
 # TODO: Should add `description` attrib to each one of these resources.
 
+
+# Static IP, and DNS record for argo server.
+data "google_dns_managed_zone" "main" {
+  name = var.dns_zone_name
+}
+resource "random_id" "argoserver_suffix" {
+  byte_length = 4
+}
+resource "google_compute_address" "argoserver_staticip" {
+  name         = "argoserver-staticip-${random_id.argoserver_suffix.hex}"
+  address_type = "EXTERNAL"
+  region       = var.region
+}
+resource "google_dns_record_set" "argoserver_domain" {
+  provider     = google-beta
+  managed_zone = data.google_dns_managed_zone.main.name
+  name         = "${var.argoserver_subdomain}.${data.google_dns_managed_zone.main.dns_name}"
+  type         = "A"
+  rrdatas      = [google_compute_address.argoserver_staticip.address]
+  ttl          = 86400
+  project      = var.project_id
+}
+
+
 resource "google_compute_network" "vpc1" {
   name                    = "${var.company}-${var.application}-${var.env}-1"
   project                 = var.project_id
   auto_create_subnetworks = "false"
   routing_mode            = "GLOBAL"
 }
+
+resource "google_compute_global_address" "argo_cloudsql_private_ip" {
+  provider      = google-beta
+  name          = "argo-cloudsql-private-ip"
+  purpose       = "VPC_PEERING"
+  address_type  = "INTERNAL"
+  prefix_length = 16
+  network       = google_compute_network.vpc1.id
+  project       = var.project_id
+}
+# The connection is not automatically made, so we need to do this manually.
+resource "google_service_networking_connection" "argo_cloudsql_vpc_connection" {
+  provider = google-beta
+
+  network                 = google_compute_network.vpc1.id
+  service                 = "servicenetworking.googleapis.com"
+  reserved_peering_ranges = [google_compute_global_address.argo_cloudsql_private_ip.name]
+}
+
 
 resource "google_compute_subnetwork" "public1" {
   name          = "${var.company}-${var.application}-${var.env}-public-${var.region}"

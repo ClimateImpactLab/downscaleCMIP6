@@ -76,15 +76,90 @@ resource "kubernetes_namespace" "argocd" {
   }
 }
 
+resource "kubernetes_namespace" "ingress_nginx" {
+  metadata {
+    name = "ingress-nginx"
+    labels = {
+      "app.kubernetes.io/managed-by" = "terraform"
+      "env"                          = var.env
+    }
+  }
+}
+
+resource "kubernetes_namespace" "cert_manager" {
+  metadata {
+    name = "cert-manager"
+    labels = {
+      "app.kubernetes.io/managed-by" = "terraform"
+      "env"                          = var.env
+    }
+  }
+}
+
+
+resource "kubernetes_namespace" "kubernetes_external_secrets" {
+  metadata {
+    name = "kubernetes-external-secrets"
+    labels = {
+      "app.kubernetes.io/managed-by" = "terraform"
+      "env"                          = var.env
+    }
+  }
+}
 
 module "workflows_default_wli" {
   source  = "terraform-google-modules/kubernetes-engine/google//modules/workload-identity"
-  version = "16.0.1"
+  version = "16.1.0"
 
-  use_existing_gcp_sa = true
-  name                = "workflows-default"
-  gcp_sa_name         = data.terraform_remote_state.gcp_core.outputs.workflows_default_account_id
-  namespace           = kubernetes_namespace.argo.metadata.0.name
+  use_existing_gcp_sa             = true
+  name                            = data.terraform_remote_state.gcp_core.outputs.workflows_default_account_id
+  k8s_sa_name                     = "workflows-default"
+  namespace                       = kubernetes_namespace.argo.metadata.0.name
+  automount_service_account_token = true
+
+  project_id = var.project_id
+}
+
+
+resource "kubernetes_secret" "argo-postgres-config" {
+  metadata {
+    name      = "argo-postgres-config"
+    namespace = kubernetes_namespace.argo.metadata.0.name
+    labels = {
+      "app.kubernetes.io/managed-by" = "terraform"
+      "env"                          = var.env
+    }
+  }
+  data = {
+    username = data.terraform_remote_state.gcp_core.outputs.argo_cloudsql_username
+    password = data.terraform_remote_state.gcp_core.outputs.argo_cloudsql_password
+  }
+}
+
+
+module "kubernetes_external_secrets_wli" {
+  source  = "terraform-google-modules/kubernetes-engine/google//modules/workload-identity"
+  version = "16.1.0"
+
+  use_existing_gcp_sa             = true
+  k8s_sa_name                     = "kubernetes-external-secrets-grabber"
+  name                            = data.terraform_remote_state.gcp_core.outputs.kubernetes_external_secrets_account_id
+  namespace                       = kubernetes_namespace.kubernetes_external_secrets.metadata.0.name
+  automount_service_account_token = true
+
+  project_id = var.project_id
+}
+
+
+module "cert_manager_wli" {
+  source  = "terraform-google-modules/kubernetes-engine/google//modules/workload-identity"
+  version = "16.1.0"
+
+  use_existing_gcp_sa             = true
+  k8s_sa_name                     = "cert-manager"
+  name                            = data.terraform_remote_state.gcp_core.outputs.cert_manager_account_id
+  namespace                       = kubernetes_namespace.cert_manager.metadata.0.name
+  automount_service_account_token = true
 
   project_id = var.project_id
 }

@@ -8,8 +8,11 @@ terraform {
 }
 
 
+resource "random_id" "main_cluster_suffix" {
+  byte_length = 4
+}
 resource "google_container_cluster" "main" {
-  name = "${var.cluster_name_prefix}-${var.env}"
+  name = "${var.cluster_name_prefix}-${random_id.main_cluster_suffix.hex}"
 
   resource_labels = {
     "env"        = var.env
@@ -62,10 +65,10 @@ resource "google_container_cluster" "main" {
 
 
 resource "google_container_node_pool" "core" {
-  name     = "core"
-  project  = google_container_cluster.main.project
-  cluster  = google_container_cluster.main.name
-  location = google_container_cluster.main.location
+  name_prefix = "core"
+  project     = google_container_cluster.main.project
+  cluster     = google_container_cluster.main.name
+  location    = google_container_cluster.main.location
 
   initial_node_count = 1
   autoscaling {
@@ -79,13 +82,19 @@ resource "google_container_node_pool" "core" {
   }
 
   node_config {
-    machine_type    = "n1-standard-2"
+    machine_type    = "e2-medium"
     image_type      = "COS_CONTAINERD"
     service_account = var.node_service_account_email
     oauth_scopes = [
       "https://www.googleapis.com/auth/cloud-platform",
       "https://www.googleapis.com/auth/userinfo.email"
     ]
+    metadata = {
+      "disable-legacy-endpoints" = "true"
+    }
+    workload_metadata_config {
+      node_metadata = "GKE_METADATA_SERVER"
+    }
 
     labels = {
       "env"        = var.env
@@ -96,14 +105,14 @@ resource "google_container_node_pool" "core" {
 
 
 resource "google_container_node_pool" "worker" {
-  name     = "worker"
-  project  = google_container_cluster.main.project
-  cluster  = google_container_cluster.main.name
-  location = google_container_cluster.main.location
+  name_prefix = "worker"
+  project     = google_container_cluster.main.project
+  cluster     = google_container_cluster.main.name
+  location    = google_container_cluster.main.location
 
-  initial_node_count = 1
+  initial_node_count = 0
   autoscaling {
-    max_node_count = 100
+    max_node_count = 50
     min_node_count = 0
   }
   lifecycle {
@@ -113,15 +122,20 @@ resource "google_container_node_pool" "worker" {
   }
 
   node_config {
-    machine_type    = "n1-highmem-8"
+    machine_type    = "n1-highmem-16"
     preemptible     = true
-    disk_type       = "pd-ssd"
     image_type      = "COS_CONTAINERD"
     service_account = var.node_service_account_email
     oauth_scopes = [
       "https://www.googleapis.com/auth/cloud-platform",
       "https://www.googleapis.com/auth/userinfo.email"
     ]
+    metadata = {
+      "disable-legacy-endpoints" = "true"
+    }
+    workload_metadata_config {
+      node_metadata = "GKE_METADATA_SERVER"
+    }
 
     labels = {
       "env"        = var.env
