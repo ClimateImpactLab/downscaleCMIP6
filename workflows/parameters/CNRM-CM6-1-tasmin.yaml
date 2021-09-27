@@ -21,13 +21,13 @@ jobs: |
     {
       "target": "ssp",
       "variable_id": "tasmin",
-      "historical": "historical": { "activity_id": "CMIP", "experiment_id": "historical", "table_id": "day", "variable_id": "tasmin", "source_id": "CNRM-CM6-1", "institution_id": "CNRM-CERFACS", "member_id": "r1i1p1f2", "grid_label": "gr", "version": "20180917" },
+      "historical": { "activity_id": "CMIP", "experiment_id": "historical", "table_id": "day", "variable_id": "tasmin", "source_id": "CNRM-CM6-1", "institution_id": "CNRM-CERFACS", "member_id": "r1i1p1f2", "grid_label": "gr", "version": "20180917" },
       "ssp": { "activity_id": "ScenarioMIP", "experiment_id": "ssp126", "table_id": "day", "variable_id": "tasmin", "source_id": "CNRM-CM6-1", "institution_id": "CNRM-CERFACS", "member_id": "r1i1p1f2", "grid_label": "gr", "version": "20190219" }
     },
     {
       "target": "ssp",
       "variable_id": "tasmin",
-      "historical": "historical": { "activity_id": "CMIP", "experiment_id": "historical", "table_id": "day", "variable_id": "tasmin", "source_id": "CNRM-CM6-1", "institution_id": "CNRM-CERFACS", "member_id": "r1i1p1f2", "grid_label": "gr", "version": "20180917" },
+      "historical": { "activity_id": "CMIP", "experiment_id": "historical", "table_id": "day", "variable_id": "tasmin", "source_id": "CNRM-CM6-1", "institution_id": "CNRM-CERFACS", "member_id": "r1i1p1f2", "grid_label": "gr", "version": "20180917" },
       "ssp": { "activity_id": "ScenarioMIP", "experiment_id": "ssp585", "table_id": "day", "variable_id": "tasmin", "source_id": "CNRM-CM6-1", "institution_id": "CNRM-CERFACS", "member_id": "r1i1p1f2", "grid_label": "gr", "version": "20190219" }
     }
   ]
