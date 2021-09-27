@@ -500,14 +500,20 @@ spec:
           print(ds2)  # DEBUG
 
           ds = xr.concat([ds1, ds2], dim="time").sortby("time")
+
+          # some models have axis_nbounds dim instead of bnds
+          if "axis_nbounds" in ds.dims:
+              ds = ds.rename({"axis_nbounds": "bnds"})
           ds = ds.chunk({"time": 365, "lat": -1, "lon": -1, "bnds": 2})
 
           # Hack to get around issue with writing chunks to zarr in xarray v0.17.0
           for v in ds.data_vars.keys():
               del ds[v].encoding["chunks"]
           # TODO: For whatever reason these where not removed in the above loop, even if iter over ds.keys()...
-          del ds["lat_bnds"].encoding["chunks"]
-          del ds["lon_bnds"].encoding["chunks"]
+          if "lat_bnds" in ds.coords:
+              del ds["lat_bnds"].encoding["chunks"]
+          if "lon_bnds" in ds.coords:
+              del ds["lon_bnds"].encoding["chunks"]
 
           print(os.environ.get("OUT_ZARR"))  # DEBUG
           ds.to_zarr(
