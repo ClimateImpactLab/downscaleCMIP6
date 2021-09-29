@@ -637,7 +637,7 @@ spec:
                 - name: lon-chunk
                   value: -1
         - - name: regrid
-            template: regrid
+            template: distributed-regrid
             arguments:
               parameters:
                 - name: in-zarr
@@ -646,6 +646,8 @@ spec:
                   value: "{{ inputs.parameters.regrid-method }}"
                 - name: domain-file
                   value: "{{ inputs.parameters.domain-file }}"
+                - name: add-cyclic-lon
+                  value: "true"
         - - name: move-chunks-to-space
             template: rechunk
             arguments:
@@ -696,7 +698,7 @@ spec:
                 - name: lon-chunk
                   value: -1
         - - name: fine-regrid
-            template: regrid
+            template: distributed-regrid
             arguments:
               parameters:
                 - name: in-zarr
@@ -705,6 +707,8 @@ spec:
                   value: "{{ inputs.parameters.regrid-method }}"
                 - name: domain-file
                   value: "{{ inputs.parameters.domainfile0p25x0p25 }}"
+                - name: add-cyclic-lon
+                  value: "true"
         - - name: move-chunks-to-space
             template: rechunk
             arguments:

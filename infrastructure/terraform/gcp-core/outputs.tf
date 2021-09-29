@@ -45,7 +45,27 @@ output "workflows_default_account_id" {
 
 output "workflows_default_email" {
   value       = google_service_account.workflows_default.email
+  description = "Email to created kubernetes-external-secrets service account."
+}
+
+output "kubernetes_external_secrets_account_id" {
+  value       = google_service_account.kubernetes_external_secrets.account_id
+  description = "kubernetes-external-secrets service account ID."
+}
+
+output "kubernetes_external_secrets_email" {
+  value       = google_service_account.kubernetes_external_secrets.email
   description = "Email to created Argo Workflows worker service account."
+}
+
+output "cert_manager_account_id" {
+  value       = google_service_account.cert_manager.account_id
+  description = "cert-manager service account ID."
+}
+
+output "cert_manager_email" {
+  value       = google_service_account.cert_manager.email
+  description = "Email to created cert-manager service account."
 }
 
 output "argo_cluster_name" {
@@ -63,4 +83,31 @@ output "argo_cluster_endpoint" {
   value       = module.gke_argo_cluster.endpoint
   description = "GKE Argo cluster endpoint address."
   sensitive   = true
+}
+
+output "argo_cloudsql_private_ip_address" {
+  value       = module.datalake_storage.argo_cloudsql_private_ip_address
+  description = "Private IP address of the CloudSQL instance for Argo."
+}
+
+output "argo_cloudsql_username" {
+  description = "Argo CloudSQL instance user name."
+  value       = module.datalake_storage.argo_cloudsql_username
+  sensitive   = true
+}
+
+output "argo_cloudsql_password" {
+  description = "Argo CloudSQL instance user password."
+  value       = module.datalake_storage.argo_cloudsql_password
+  sensitive   = true
+}
+
+output "argoserver_static_ip" {
+  description = "Static external IP reserved for argoserver loadbalancer."
+  value       = module.networking.argoserver_static_ip
+}
+
+output "argoserver_domain_name" {
+  description = "Domain name pointing to argoserver loadbalancer IP."
+  value       = module.networking.argoserver_domain_name
 }

@@ -42,3 +42,8 @@ variable "pod_ranges" {
   type        = string
   description = "CIDR IP range for subnet secondary IP range to use for VPC-enabled GKE cluster pods."
 }
+
+variable "dns_zone_name" {
+  type        = string
+  description = "Name of existing CloudDNS DNS zone to add subdomain record for argo server."
+}

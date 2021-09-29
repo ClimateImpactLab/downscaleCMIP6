@@ -150,12 +150,23 @@ spec:
                   value: "{{=jsonpath(inputs.parameters.historical, '$.version')}}"
                 - name: base-url
                   value: "gs://clean-b1dbca25/cmip6"
+            # We're slicing historical to time period of interest to reduce memory in later steps.
+        - - name: crop-historical-time
+            template: timeslicezarr
+            arguments:
+              parameters:
+                - name: in-zarr
+                  value: "{{ steps.get-input-raw-historical-url.outputs.parameters.out-url }}"
+                - name: from-time
+                  value: "1950"
+                - name: to-time
+                  value: "2014"
         - - name: standardize-historical-run
             template: standardize-cmip6
             arguments:
               parameters:
                 - name: in-zarr
-                  value: "{{ steps.get-input-raw-historical-url.outputs.parameters.out-url }}"
+                  value: "{{ steps.crop-historical-time.outputs.parameters.out-zarr }}"
           - name: standardize-ssp-run
             template: standardize-cmip6
             arguments:
@@ -237,16 +248,6 @@ spec:
                   value: "{{=jsonpath(inputs.parameters['target-json'], '$.version')}}"
                 - name: base-url
                   value: "gs://clean-b1dbca25/cmip6"
-          - name: slice-historical
-            template: timeslicezarr
-            arguments:
-              parameters:
-                - name: in-zarr
-                  value: "{{ inputs.parameters.historical-zarr }}"
-                - name: from-time
-                  value: "1950"
-                - name: to-time
-                  value: "2014"
           - name: remove-late-ssp
             template: timeslicezarr
             arguments:
@@ -263,7 +264,7 @@ spec:
               parameters:
                   # Make first arg hist zarr, so outputs with historical attrs.
                 - name: in1-zarr
-                  value: "{{ steps.slice-historical.outputs.parameters.out-zarr }}"
+                  value: "{{ inputs.parameters.historical-zarr }}"
                 - name: in2-zarr
                   value: "{{ steps.remove-late-ssp.outputs.parameters.out-zarr }}"
                 - name: out-zarr
@@ -359,6 +360,9 @@ spec:
       retryStrategy:
         limit: 4
         retryPolicy: "Always"
+        backoff:
+          duration: 30s
+          factor: 2
 
 
     - name: timeslicezarr
@@ -469,14 +473,20 @@ spec:
           print(ds2)  # DEBUG
 
           ds = xr.concat([ds1, ds2], dim="time").sortby("time")
+
+          # some models have axis_nbounds dim instead of bnds
+          if "axis_nbounds" in ds.dims:
+              ds = ds.rename({"axis_nbounds": "bnds"})
           ds = ds.chunk({"time": 365, "lat": -1, "lon": -1, "bnds": 2})
 
           # Hack to get around issue with writing chunks to zarr in xarray v0.17.0
           for v in ds.data_vars.keys():
               del ds[v].encoding["chunks"]
           # TODO: For whatever reason these where not removed in the above loop, even if iter over ds.keys()...
-          del ds["lat_bnds"].encoding["chunks"]
-          del ds["lon_bnds"].encoding["chunks"]
+          if "lat_bnds" in ds.coords:
+              del ds["lat_bnds"].encoding["chunks"]
+          if "lon_bnds" in ds.coords:
+              del ds["lon_bnds"].encoding["chunks"]
 
           print(os.environ.get("OUT_ZARR"))  # DEBUG
           ds.to_zarr(
