@@ -9,6 +9,6 @@ spec:
     privateKeySecretRef:
       name: "letsencrypt-staging"
     solvers:
-      - http01:
-          ingress:
-            class:  nginx
+      - dns01:
+          cloudDNS:
+            project: "downscalecmip6"
