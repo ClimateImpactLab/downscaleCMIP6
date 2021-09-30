@@ -59,12 +59,12 @@ output "kubernetes_external_secrets_email" {
 }
 
 output "cert_manager_account_id" {
-  value       = google_service_account.cert_manager.account_id
+  value       = google_service_account.dns01_solver.account_id
   description = "cert-manager service account ID."
 }
 
 output "cert_manager_email" {
-  value       = google_service_account.cert_manager.email
+  value       = google_service_account.dns01_solver.email
   description = "Email to created cert-manager service account."
 }
 

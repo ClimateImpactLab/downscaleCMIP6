@@ -137,15 +137,12 @@ resource "google_service_account" "kubernetes_external_secrets" {
 
 # Given to cert-manager on k8s to resolve DNS-01 challenges with CloudDNS.
 # TODO: Should create custom minimal IAM role for this with: dns.resourceRecordSets.*, dns.changes.*, dns.managedZones.list
-resource "random_id" "cert_manager_suffix" {
-  byte_length = 4
-}
-resource "google_service_account" "cert_manager" {
-  account_id   = "cert-manager-${random_id.cert_manager_suffix.hex}"
+resource "google_service_account" "dns01_solver" {
+  account_id   = "dns01-solver"
   description  = "Workload Identity service account for Kubernetes cert-manager to solve DNS01 challenges"
-  display_name = "cert-manager"
+  display_name = "dns01-solver"
 }
 resource "google_project_iam_member" "cert_manager-dnsadmin-iammember" {
-  member = "serviceAccount:${google_service_account.cert_manager.email}"
+  member = "serviceAccount:${google_service_account.dns01_solver.email}"
   role   = "roles/dns.admin"
 }
