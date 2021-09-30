@@ -9,6 +9,6 @@ spec:
     privateKeySecretRef:
       name: "letsencrypt-prod"
     solvers:
-      - dns01:
-          cloudDNS:
-            project: "downscalecmip6"
+      - http01:
+          ingress:
+            class:  nginx
