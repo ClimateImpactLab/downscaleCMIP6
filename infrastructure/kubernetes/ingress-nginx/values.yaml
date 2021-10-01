@@ -1,5 +1,7 @@
 ingress-nginx:
   controller:
+    service:
+      loadBalancerIP: 34.122.124.84
     replicaCount: 2
     # So two replicas don't sit on the same node:
     affinity:
