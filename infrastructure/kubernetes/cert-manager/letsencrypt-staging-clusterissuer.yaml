@@ -11,4 +11,4 @@ spec:
     solvers:
       - dns01:
           cloudDNS:
-            project: "compute-impactlab"
+            project: "downscalecmip6"
