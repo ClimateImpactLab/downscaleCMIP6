@@ -89,3 +89,14 @@ data:
       # sslMode must be one of: disable, require, verify-ca, verify-full
       # you can find more information about those ssl options here: https://godoc.org/github.com/lib/pq
       sslMode: require
+
+  sso: |
+    issuer: https://accounts.google.com
+    sessionExpiry: 10h
+    clientId:
+      name: sso-client
+      key: client-id
+    clientSecret:
+      name: sso-client
+      key: client-secret
+    redirectUrl: https://argo.cildc6.org/oauth2/callback

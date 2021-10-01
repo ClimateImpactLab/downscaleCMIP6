@@ -10,3 +10,11 @@ resources:
 
 patchesStrategicMerge:
   - patches/workflow-controller-configmap.yaml
+
+patchesJson6902:
+  - target:
+      version: v1
+      group: apps
+      kind: Deployment
+      name: argo-server
+    path: patches/argo-server-deployment.yaml
