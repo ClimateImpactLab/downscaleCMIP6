@@ -54,9 +54,6 @@ module "networking" {
   services_range = var.services_range
   pod_ranges     = var.pod_ranges
 
-  argoserver_subdomain = "argo"
-  dns_zone_name        = var.dns_zone_name
-
   company     = var.company
   application = var.application
 

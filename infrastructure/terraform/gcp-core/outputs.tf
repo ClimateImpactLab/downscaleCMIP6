@@ -101,13 +101,3 @@ output "argo_cloudsql_password" {
   value       = module.datalake_storage.argo_cloudsql_password
   sensitive   = true
 }
-
-output "argoserver_static_ip" {
-  description = "Static external IP reserved for argoserver loadbalancer."
-  value       = module.networking.argoserver_static_ip
-}
-
-output "argoserver_domain_name" {
-  description = "Domain name pointing to argoserver loadbalancer IP."
-  value       = module.networking.argoserver_domain_name
-}
