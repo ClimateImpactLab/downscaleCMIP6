@@ -10,7 +10,7 @@ metadata:
     cert-manager.io/cluster-issuer: letsencrypt-staging
 spec:
   rules:
-    - host: argo.dc6.cildev.org
+    - host: argo.cildc6.org
       http:
         paths:
           - path: /
@@ -22,5 +22,5 @@ spec:
                   number: 2746
   tls:
     - hosts:
-        - argo.dc6.cildev.org
+        - argo.cildc6.org
       secretName: argo-secret
