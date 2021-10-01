@@ -100,3 +100,9 @@ data:
       name: sso-client
       key: client-secret
     redirectUrl: https://argo.cildc6.org/oauth2/callback
+    scopes:
+     - groups
+     - email
+    # RBAC Config. >= v2.12
+    rbac:
+      enabled: false
