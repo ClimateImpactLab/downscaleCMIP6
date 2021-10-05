@@ -1,0 +1,34 @@
+jobs: |
+  [
+    {
+      "target": "historical",
+      "variable_id": "tasmin",
+      "historical": { "activity_id": "CMIP", "experiment_id": "historical", "table_id": "day", "variable_id": "tasmin", "source_id": "INM-CM5-0", "institution_id": "INM", "member_id": "r1i1p1f1", "grid_label": "gr1", "version": "20190610" },
+      "ssp": { "activity_id": "ScenarioMIP", "experiment_id": "ssp370", "table_id": "day", "variable_id": "tasmin", "source_id": "INM-CM5-0", "institution_id": "INM", "member_id": "r1i1p1f1", "grid_label": "gr1", "version": "20190618" }
+    },
+    {
+      "target": "ssp",
+      "variable_id": "tasmin",
+      "historical": { "activity_id": "CMIP", "experiment_id": "historical", "table_id": "day", "variable_id": "tasmin", "source_id": "INM-CM5-0", "institution_id": "INM", "member_id": "r1i1p1f1", "grid_label": "gr1", "version": "20190610" },
+      "ssp": { "activity_id": "ScenarioMIP", "experiment_id": "ssp370", "table_id": "day", "variable_id": "tasmin", "source_id": "INM-CM5-0", "institution_id": "INM", "member_id": "r1i1p1f1", "grid_label": "gr1", "version": "20190618" }
+    },
+    {
+      "target": "ssp",
+      "variable_id": "tasmin",
+      "historical": { "activity_id": "CMIP", "experiment_id": "historical", "table_id": "day", "variable_id": "tasmin", "source_id": "INM-CM5-0", "institution_id": "INM", "member_id": "r1i1p1f1", "grid_label": "gr1", "version": "20190610" },
+      "ssp": { "activity_id": "ScenarioMIP", "experiment_id": "ssp245", "table_id": "day", "variable_id": "tasmin", "source_id": "INM-CM5-0", "institution_id": "INM", "member_id": "r1i1p1f1", "grid_label": "gr1", "version": "20190619" }
+    },
+    {
+      "target": "ssp",
+      "variable_id": "tasmin",
+      "historical": { "activity_id": "CMIP", "experiment_id": "historical", "table_id": "day", "variable_id": "tasmin", "source_id": "INM-CM5-0", "institution_id": "INM", "member_id": "r1i1p1f1", "grid_label": "gr1", "version": "20190610" },
+      "ssp": { "activity_id": "ScenarioMIP", "experiment_id": "ssp126", "table_id": "day", "variable_id": "tasmin", "source_id": "INM-CM5-0", "institution_id": "INM", "member_id": "r1i1p1f1", "grid_label": "gr1", "version": "20190619" }
+    },
+    {
+      "target": "ssp",
+      "variable_id": "tasmin",
+      "historical": { "activity_id": "CMIP", "experiment_id": "historical", "table_id": "day", "variable_id": "tasmin", "source_id": "INM-CM5-0", "institution_id": "INM", "member_id": "r1i1p1f1", "grid_label": "gr1", "version": "20190610" },
+      "ssp": { "activity_id": "ScenarioMIP", "experiment_id": "ssp585", "table_id": "day", "variable_id": "tasmin", "source_id": "INM-CM5-0", "institution_id": "INM", "member_id": "r1i1p1f1", "grid_label": "gr1", "version": "20190724" }
+    }
+  ]
+
