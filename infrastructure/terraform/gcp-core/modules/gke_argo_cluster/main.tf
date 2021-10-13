@@ -104,6 +104,56 @@ resource "google_container_node_pool" "core" {
 }
 
 
+resource "google_container_node_pool" "worker8" {
+  name_prefix = "worker8-"
+  project     = google_container_cluster.main.project
+  cluster     = google_container_cluster.main.name
+  location    = google_container_cluster.main.location
+
+  initial_node_count = 0
+  autoscaling {
+    max_node_count = 50
+    min_node_count = 0
+  }
+  lifecycle {
+    ignore_changes = [
+      initial_node_count
+    ]
+  }
+
+  node_config {
+    machine_type    = "n1-highmem-8"
+    preemptible     = true
+    image_type      = "COS_CONTAINERD"
+    service_account = var.node_service_account_email
+    oauth_scopes = [
+      "https://www.googleapis.com/auth/cloud-platform",
+      "https://www.googleapis.com/auth/userinfo.email"
+    ]
+    metadata = {
+      "disable-legacy-endpoints" = "true"
+    }
+    workload_metadata_config {
+      node_metadata = "GKE_METADATA_SERVER"
+    }
+
+    labels = {
+      "env"        = var.env
+      "managed-by" = "terraform"
+      "dedicated"  = "worker"
+    }
+
+    taint = [
+      {
+        effect = "NO_SCHEDULE"
+        key    = "dedicated"
+        value  = "worker"
+      },
+    ]
+  }
+}
+
+
 resource "google_container_node_pool" "worker" {
   name_prefix = "worker"
   project     = google_container_cluster.main.project
@@ -123,6 +173,55 @@ resource "google_container_node_pool" "worker" {
 
   node_config {
     machine_type    = "n1-highmem-16"
+    preemptible     = true
+    image_type      = "COS_CONTAINERD"
+    service_account = var.node_service_account_email
+    oauth_scopes = [
+      "https://www.googleapis.com/auth/cloud-platform",
+      "https://www.googleapis.com/auth/userinfo.email"
+    ]
+    metadata = {
+      "disable-legacy-endpoints" = "true"
+    }
+    workload_metadata_config {
+      node_metadata = "GKE_METADATA_SERVER"
+    }
+
+    labels = {
+      "env"        = var.env
+      "managed-by" = "terraform"
+      "dedicated"  = "worker"
+    }
+
+    taint = [
+      {
+        effect = "NO_SCHEDULE"
+        key    = "dedicated"
+        value  = "worker"
+      },
+    ]
+  }
+}
+
+resource "google_container_node_pool" "worker32" {
+  name_prefix = "worker32-"
+  project     = google_container_cluster.main.project
+  cluster     = google_container_cluster.main.name
+  location    = google_container_cluster.main.location
+
+  initial_node_count = 0
+  autoscaling {
+    max_node_count = 50
+    min_node_count = 0
+  }
+  lifecycle {
+    ignore_changes = [
+      initial_node_count
+    ]
+  }
+
+  node_config {
+    machine_type    = "n1-highmem-32"
     preemptible     = true
     image_type      = "COS_CONTAINERD"
     service_account = var.node_service_account_email
