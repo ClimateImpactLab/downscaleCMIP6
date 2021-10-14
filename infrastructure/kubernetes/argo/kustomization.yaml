@@ -3,6 +3,7 @@ kind: Kustomization
 
 resources:
   - https://github.com/argoproj/argo-workflows/releases/download/v3.1.13/install.yaml
+  - argo-server-ingress.yaml
   - sso-client-externalsecret.yaml
 
 patchesStrategicMerge:
