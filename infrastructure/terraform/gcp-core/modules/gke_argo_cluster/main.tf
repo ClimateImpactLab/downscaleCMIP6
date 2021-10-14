@@ -65,7 +65,7 @@ resource "google_container_cluster" "main" {
 
 
 resource "google_container_node_pool" "core" {
-  name_prefix = "core"
+  name_prefix = "core-"
   project     = google_container_cluster.main.project
   cluster     = google_container_cluster.main.name
   location    = google_container_cluster.main.location
@@ -155,7 +155,7 @@ resource "google_container_node_pool" "worker8" {
 
 
 resource "google_container_node_pool" "worker" {
-  name_prefix = "worker"
+  name_prefix = "worker16-"
   project     = google_container_cluster.main.project
   cluster     = google_container_cluster.main.name
   location    = google_container_cluster.main.location
