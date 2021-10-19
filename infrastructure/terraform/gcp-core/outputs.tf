@@ -111,3 +111,13 @@ output "argo_cloudsql_password" {
   value       = module.datalake_storage.argo_cloudsql_password
   sensitive   = true
 }
+
+output "github_actions_account_id" {
+  value       = google_service_account.github_actions.account_id
+  description = "cert-manager service account ID."
+}
+
+output "github_actions_email" {
+  value       = google_service_account.github_actions.email
+  description = "Email to created Github Actions service account."
+}
