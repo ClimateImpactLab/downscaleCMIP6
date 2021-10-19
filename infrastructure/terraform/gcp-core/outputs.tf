@@ -58,6 +58,16 @@ output "kubernetes_external_secrets_email" {
   description = "Email to created Argo Workflows worker service account."
 }
 
+output "argo_server_account_id" {
+  value       = google_service_account.argo_server.account_id
+  description = "argo-server service account ID."
+}
+
+output "argo_server_email" {
+  value       = google_service_account.argo_server.email
+  description = "Email to created Argo server service account."
+}
+
 output "cert_manager_account_id" {
   value       = google_service_account.dns01_solver.account_id
   description = "cert-manager service account ID."
