@@ -132,12 +132,34 @@ resource "google_service_account" "kubernetes_external_secrets" {
 }
 
 
+# Create custom role and GCP service account to solve letsencrypt DNS01 challenges
+# This service account is later expanded to a full Workload Identity service account
+# bridging k8s and GCP.
+resource "google_project_iam_custom_role" "dns01solver" {
+  role_id     = "dns01solver"
+  title       = "DNS01 Solver"
+  description = "Role used to resolve dns01 challenges for cert-manager and TLS certificates"
+  permissions = [
+    "dns.resourceRecordSets.create",
+    "dns.resourceRecordSets.delete",
+    "dns.resourceRecordSets.get",
+    "dns.resourceRecordSets.list",
+    "dns.resourceRecordSets.update",
+    "dns.changes.create",
+    "dns.changes.get",
+    "dns.changes.list",
+    "dns.managedZones.list"
+  ]
+}
 # Given to cert-manager on k8s to resolve DNS-01 challenges with CloudDNS.
-# TODO: Should create custom minimal IAM role for this with: dns.resourceRecordSets.*, dns.changes.*, dns.managedZones.list
 resource "google_service_account" "dns01_solver" {
   account_id   = "dns01-solver"
   description  = "Workload Identity service account for Kubernetes cert-manager to solve DNS01 challenges"
   display_name = "dns01-solver"
+}
+resource "google_project_iam_member" "dns01_solver_rolebinding" {
+  member = "serviceAccount:${google_service_account.dns01_solver.email}"
+  role   = google_project_iam_custom_role.dns01solver.id
 }
 resource "google_project_iam_member" "cert_manager-dnsadmin-iammember" {
   member = "serviceAccount:${google_service_account.dns01_solver.email}"
