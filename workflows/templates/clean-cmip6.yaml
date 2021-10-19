@@ -343,7 +343,7 @@ spec:
           - name: out-zarr
             value: "{{ inputs.parameters.out-zarr }}"
       container:
-        image: us-docker.pkg.dev/compute-impactlab/public/dodola:0.5.0
+        image: us-central1-docker.pkg.dev/downscalecmip6/private/dodola:0.5.0
         command: [ "dodola" ]
         args:
           - "cleancmip6"
@@ -378,7 +378,7 @@ spec:
           - name: out-zarr
             value: "{{ inputs.parameters.out-zarr }}"
       script:
-        image: us-docker.pkg.dev/compute-impactlab/public/dodola:0.5.0
+        image: us-central1-docker.pkg.dev/downscalecmip6/private/dodola:0.5.0
         env:
           - name: IN_ZARR
             value: "{{ inputs.parameters.in-zarr }}"
@@ -445,7 +445,7 @@ spec:
           - name: out-zarr
             value: "{{ inputs.parameters.out-zarr }}"
       script:
-        image: us-docker.pkg.dev/compute-impactlab/public/dodola:0.5.0
+        image: us-central1-docker.pkg.dev/downscalecmip6/private/dodola:0.5.0
         env:
           - name: IN1_ZARR
             value: "{{ inputs.parameters.in1-zarr }}"
