@@ -120,6 +120,23 @@ resource "google_storage_bucket_iam_member" "argoworker_buckets_iammember" {
 }
 
 
+# Service account for Argo Workflows server on Kubernetes.
+# We need this so argo-server can read log from bucket storage.
+resource "random_id" "argo_server_suffix" {
+  byte_length = 4
+}
+resource "google_service_account" "argo_server" {
+  account_id   = "argo-server-${random_id.argo_server_suffix.hex}"
+  description  = "Argo Server service account"
+  display_name = "argo-server"
+}
+resource "google_storage_bucket_iam_member" "argoserver_logread_iammember" {
+  bucket = module.datalake_storage.scratch_bucket_name
+  member = "serviceAccount:${google_service_account.argo_server.email}"
+  role   = "roles/storage.objectViewer"
+}
+
+
 # So kubernetes-external-secrets-manager can access Secrets on Google Secret Manager
 # and put into k8s Secrets.
 resource "random_id" "kubernetes_external_secrets_suffix" {
