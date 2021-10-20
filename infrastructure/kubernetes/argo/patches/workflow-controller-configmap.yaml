@@ -118,3 +118,14 @@ data:
     # RBAC Config. >= v2.12
     rbac:
       enabled: false
+
+  links: |
+    - name: Workflow Logs
+      scope: workflow
+      url: https://console.cloud.google.com/logs/query;query=resource.type%3D%22k8s_container%22%0Aresource.labels.project_id%3D%22downscalecmip6%22%0Aresource.labels.namespace_name%3D%22${metadata.namespace}%22labels.%22k8s-pod%2Fworkflows_argoproj_io%2Fworkflow%22%3D%22${metadata.name}%22;timeRange=${status.startedAt}%2F${status.finishedAt}?project=downscalecmip6
+    - name: Pod Logs
+      scope: pod
+      url: https://console.cloud.google.com/logs/query;query=resource.type%3D%22k8s_container%22%0Aresource.labels.project_id%3D%22downscalecmip6%22%0Aresource.labels.namespace_name%3D%22${metadata.namespace}%22%0Aresource.labels.pod_name%3D%22${metadata.name}%22;timeRange=${status.startedAt}%2F${status.finishedAt}?project=downscalecmip6
+    - name: Pod Logs
+      scope: pod-logs
+      url: https://console.cloud.google.com/logs/query;query=resource.type%3D%22k8s_container%22%0Aresource.labels.project_id%3D%22downscalecmip6%22%0Aresource.labels.namespace_name%3D%22${metadata.namespace}%22%0Aresource.labels.pod_name%3D%22${metadata.name}%22;timeRange=${status.startedAt}%2F${status.finishedAt}?project=downscalecmip6
