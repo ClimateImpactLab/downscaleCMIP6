@@ -135,6 +135,11 @@ resource "google_storage_bucket_iam_member" "argoserver_logread_iammember" {
   member = "serviceAccount:${google_service_account.argo_server.email}"
   role   = "roles/storage.objectViewer"
 }
+resource "google_service_account_iam_member" "argoserver_ksa_iammember" {
+  service_account_id = google_service_account.argo_server.name
+  role               = "roles/iam.workloadIdentityUser"
+  member             = "serviceAccount:${var.project_id}.svc.id.goog[argo/argo-server]"
+}
 
 
 # So kubernetes-external-secrets-manager can access Secrets on Google Secret Manager
