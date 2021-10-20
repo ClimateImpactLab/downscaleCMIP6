@@ -9,6 +9,7 @@ resources:
 
 patchesStrategicMerge:
   - patches/workflow-controller-configmap.yaml
+  - patches/argo-server-serviceaccount.yaml
 
 patchesJson6902:
   - target:
