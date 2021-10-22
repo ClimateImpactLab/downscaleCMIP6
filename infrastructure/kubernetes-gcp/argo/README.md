@@ -24,7 +24,7 @@ Deploy `argo` onto the cluster with
 ```bash
 argocd app create argo \
     --repo https://github.com/ClimateImpactLab/downscaleCMIP6 \
-    --path infrastructure/kubernetes/argo \
+    --path "infrastructure/kubernetes-gcp/argo" \
     --dest-server https://kubernetes.default.svc \
     --dest-namespace "argo" \
     --sync-policy automated \

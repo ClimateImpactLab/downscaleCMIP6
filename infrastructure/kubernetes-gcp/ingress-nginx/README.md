@@ -10,7 +10,7 @@ You can deploy this in a dev environment with `argocd` from the CLI with
 ```bash
 argocd app create ingress-nginx \
     --repo https://github.com/ClimateImpactLab/downscaleCMIP6 \
-    --path infrastructure/kubernetes/ingress-nginx \
+    --path "infrastructure/kubernetes-gcp/ingress-nginx" \
     --values values.yaml \
     --dest-server https://kubernetes.default.svc \
     --dest-namespace ingress-nginx \

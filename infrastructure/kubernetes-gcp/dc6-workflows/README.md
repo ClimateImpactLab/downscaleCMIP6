@@ -8,7 +8,7 @@ Deploy into the `default` cluster namespace with
 ```bash
 argocd app create dc6-workflows \
     --repo https://github.com/ClimateImpactLab/downscaleCMIP6 \
-    --path "infrastructure/kubernetes/dc6-workflows" \
+    --path "infrastructure/kubernetes-gcp/dc6-workflows" \
     --dest-server https://kubernetes.default.svc \
     --dest-namespace "default" \
     --sync-policy automated \
