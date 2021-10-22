@@ -1,0 +1,6 @@
+# Serviceaccount sitting in argo-events trigger, needs to launch
+# an argo workflow.
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: argoworkflow-trigger-sa
