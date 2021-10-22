@@ -862,8 +862,16 @@ spec:
             value: "{{ inputs.parameters.out-zarr }}"
       script:
         image: us-central1-docker.pkg.dev/downscalecmip6/private/dodola:0.5.0
+        env:
+          - name: ARGO_WORKFLOW_NAME
+            value: "{{ workflow.name }}"
+          - name: ARGO_WORKFLOW_UID
+            value: "{{ workflow.uid }}"
+          - name: DC6_VERSION_ID
+            value: "v{{workflow.creationTimestamp.Y}}{{workflow.creationTimestamp.m}}{{workflow.creationTimestamp.d}}{{workflow.creationTimestamp.H}}{{workflow.creationTimestamp.M}}{{workflow.creationTimestamp.S}}"
         command: [ python ]
         source: |
+          import os
           import dodola.repository
           import xarray as xr
 
@@ -883,6 +891,12 @@ spec:
           primed_out = dodola.repository.read(simulation_zarr).sel(time=timeslice).chunk({"time": 73, "lat": 10, "lon":180})
           if include_quantiles:
               primed_out[quantiles_variable] = xr.zeros_like(primed_out[variable])
+
+          # Add downscaling metadata to attrs
+          primed_out.attrs["dc6_workflow_name"] = os.environ["ARGO_WORKFLOW_NAME"]
+          primed_out.attrs["dc6_workflow_uid"] = os.environ["ARGO_WORKFLOW_UID"]
+          primed_out.attrs["dc6_version_id"] = os.environ["DC6_VERSION_ID"]
+
           print(f"{primed_out=}")  # DEBUG
 
           primed_out.to_zarr(
@@ -1712,8 +1726,16 @@ spec:
             value: "{{ inputs.parameters.out-zarr }}"
       script:
         image: us-central1-docker.pkg.dev/downscalecmip6/private/dodola:0.5.0
+        env:
+          - name: ARGO_WORKFLOW_NAME
+            value: "{{ workflow.name }}"
+          - name: ARGO_WORKFLOW_UID
+            value: "{{ workflow.uid }}"
+          - name: DC6_VERSION_ID
+            value: "v{{workflow.creationTimestamp.Y}}{{workflow.creationTimestamp.m}}{{workflow.creationTimestamp.d}}{{workflow.creationTimestamp.H}}{{workflow.creationTimestamp.M}}{{workflow.creationTimestamp.S}}"
         command: [ python ]
         source: |
+          import os
           import dodola.repository
           import xarray as xr
 
@@ -1723,7 +1745,17 @@ spec:
           variable = "{{ inputs.parameters.variable }}"
           out_zarr = "{{ inputs.parameters.out-zarr }}"
 
-          ds_out = dodola.repository.read(simulation_zarr)[[variable]]
+          # Select target variable but ensure we include attrs metadata for
+          # the original Dataset. Not 100 % sure this is needed.
+          ds_out_all = dodola.repository.read(simulation_zarr)
+          ds_out = ds_out_all[[variable]]
+          ds_out.attr = ds_out_all.attrs
+
+          # Add downscaling metadata to attrs
+          ds_out.attrs["dc6_workflow_name"] = os.environ["ARGO_WORKFLOW_NAME"]
+          ds_out.attrs["dc6_workflow_uid"] = os.environ["ARGO_WORKFLOW_UID"]
+          ds_out.attrs["dc6_version_id"] = os.environ["DC6_VERSION_ID"]
+
           print(f"{ds_out=}")  # DEBUG
 
           # Output metadata to Zarr store.
