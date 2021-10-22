@@ -83,9 +83,9 @@ spec:
           - name: correct-wetday-frequency
             value: "{{ workflow.parameters.correct-wetday-frequency }}"
           - name: domainfile1x1
-            value: "az://support/domain.1x1.zarr"
+            value: "gs://support-c23ff1a3/domain.1x1.zarr"
           - name: domainfile0p25x0p25
-            value: "az://support/domain.0p25x0p25.zarr"
+            value: "gs://support-c23ff1a3/domain.0p25x0p25.zarr"
       steps:
         - - name: historical
             template: biascorrectdownscale
@@ -108,7 +108,7 @@ spec:
                 - name: domainfile1x1
                   value: "{{ inputs.parameters.domainfile1x1 }}"
                 - name: domainfile0p25x0p25
-                  value: "az://support/domain.0p25x0p25.zarr"
+                  value: "gs://support-c23ff1a3/domain.0p25x0p25.zarr"
             when: "{{inputs.parameters.target}} == historical"
           - name: ssp
             template: biascorrectdownscale
@@ -131,7 +131,7 @@ spec:
                 - name: domainfile1x1
                   value: "{{ inputs.parameters.domainfile1x1 }}"
                 - name: domainfile0p25x0p25
-                  value: "az://support/domain.0p25x0p25.zarr"
+                  value: "gs://support-c23ff1a3/domain.0p25x0p25.zarr"
             when: "{{inputs.parameters.target}} == ssp"
 
 
@@ -150,7 +150,7 @@ spec:
           - name: reference-zarr
             # Use simulation variable_id to get reference URL.
             value: >-
-              az://clean-era5/F320/{{=jsonpath(inputs.parameters.simulation, '$.variable_id')}}.1995-2015.F320.zarr
+              gs://clean-b1dbca25/reanalysis/ERA-5/F320/{{=jsonpath(inputs.parameters.simulation, '$.variable_id')}}.1995-2015.F320.zarr
       dag:
         tasks:
           - name: get-input-clean-training-url
@@ -178,7 +178,7 @@ spec:
                 - name: version
                   value: "{{=jsonpath(inputs.parameters.historical, '$.version')}}"
                 - name: base-url
-                  value: "az://clean-cmip6"
+                  value: "gs://clean-b1dbca25/cmip6"
           - name: get-input-clean-simulation-url
             templateRef:
               name: catalog
@@ -204,7 +204,7 @@ spec:
                 - name: version
                   value: "{{=jsonpath(inputs.parameters.simulation, '$.version')}}"
                 - name: base-url
-                  value: "az://clean-cmip6"
+                  value: "gs://clean-b1dbca25/cmip6"
           - name: get-output-biascorrected-url
             templateRef:
               name: catalog
@@ -230,7 +230,7 @@ spec:
                 - name: version
                   value: "{{workflow.creationTimestamp.Y}}{{workflow.creationTimestamp.m}}{{workflow.creationTimestamp.d}}{{workflow.creationTimestamp.H}}{{workflow.creationTimestamp.M}}{{workflow.creationTimestamp.S}}"
                 - name: base-url
-                  value: "az://biascorrected-stage"
+                  value: "gs://biascorrected-492e989a/stage"
           - name: get-output-downscaled-url
             templateRef:
               name: catalog
@@ -256,7 +256,7 @@ spec:
                 - name: version
                   value: "{{workflow.creationTimestamp.Y}}{{workflow.creationTimestamp.m}}{{workflow.creationTimestamp.d}}{{workflow.creationTimestamp.H}}{{workflow.creationTimestamp.M}}{{workflow.creationTimestamp.S}}"
                 - name: base-url
-                  value: "az://downscaled-stage"
+                  value: "gs://downscaled-288ec5ac/stage"
           - name: preprocess-reference
             template: preprocess-reference
             arguments:
@@ -517,7 +517,7 @@ spec:
         parameters:
           - name: in-zarr
           - name: out-zarr
-            value: "az://scratch/{{ workflow.name }}/{{ pod.name }}/out.zarr"
+            value: "gs://scratch-170cd6ec/{{ workflow.name }}/{{ pod.name }}/out.zarr"
           - name: regrid-method
           - name: domain-file
       outputs:
@@ -525,18 +525,7 @@ spec:
           - name: out-zarr
             value: "{{ inputs.parameters.out-zarr }}"
       script:
-        image: downscalecmip6.azurecr.io/dodola:0.5.0
-        env:
-          - name: AZURE_STORAGE_ACCOUNT_NAME
-            valueFrom:
-              secretKeyRef:
-                name: workerstoragecreds-secret
-                key: azurestorageaccount
-          - name: AZURE_STORAGE_ACCOUNT_KEY
-            valueFrom:
-              secretKeyRef:
-                name: workerstoragecreds-secret
-                key: azurestoragekey
+        image: us-central1-docker.pkg.dev/downscalecmip6/private/dodola:0.5.0
         command: [ "python" ]
         source: |
           import xarray as xr
@@ -583,7 +572,7 @@ spec:
         parameters:
           - name: in-zarr
           - name: out-zarr
-            value: "az://scratch/{{ workflow.name }}/{{ pod.name }}/rechunked.zarr"
+            value: "gs://scratch-170cd6ec/{{ workflow.name }}/{{ pod.name }}/rechunked.zarr"
           - name: time-chunk
             value: 365
           - name: lat-chunk
@@ -597,18 +586,7 @@ spec:
           - name: out-zarr
             value: "{{ inputs.parameters.out-zarr }}"
       container:
-        image: downscalecmip6.azurecr.io/dodola:0.5.0
-        env:
-          - name: AZURE_STORAGE_ACCOUNT_NAME
-            valueFrom:
-              secretKeyRef:
-                name: workerstoragecreds-secret
-                key: azurestorageaccount
-          - name: AZURE_STORAGE_ACCOUNT_KEY
-            valueFrom:
-              secretKeyRef:
-                name: workerstoragecreds-secret
-                key: azurestoragekey
+        image: us-central1-docker.pkg.dev/downscalecmip6/private/dodola:0.5.0
         command: [ dodola ]
         args:
           - "rechunk"
@@ -875,7 +853,7 @@ spec:
           - name: first-year
           - name: last-year
           - name: out-zarr
-            value: "az://scratch/{{ workflow.name }}/{{ pod.name }}/qdm_adjusted.zarr"
+            value: "gs://scratch-170cd6ec/{{ workflow.name }}/{{ pod.name }}/qdm_adjusted.zarr"
           - name: include-quantiles
             value: "false"
       outputs:
@@ -883,18 +861,7 @@ spec:
           - name: out-zarr
             value: "{{ inputs.parameters.out-zarr }}"
       script:
-        image: downscalecmip6.azurecr.io/dodola:0.5.0
-        env:
-          - name: AZURE_STORAGE_ACCOUNT_NAME
-            valueFrom:
-              secretKeyRef:
-                name: workerstoragecreds-secret
-                key: azurestorageaccount
-          - name: AZURE_STORAGE_ACCOUNT_KEY
-            valueFrom:
-              secretKeyRef:
-                name: workerstoragecreds-secret
-                key: azurestoragekey
+        image: us-central1-docker.pkg.dev/downscalecmip6/private/dodola:0.5.0
         command: [ python ]
         source: |
           import dodola.repository
@@ -1018,24 +985,13 @@ spec:
           - name: lat-slice-min
           - name: lat-slice-max
           - name: out-zarr
-            value: "az://scratch/{{ workflow.name }}/{{ pod.name }}/qdm_model.zarr"
+            value: "gs://scratch-170cd6ec/{{ workflow.name }}/{{ pod.name }}/qdm_model.zarr"
       outputs:
         parameters:
           - name: out-zarr
             value: "{{ inputs.parameters.out-zarr }}"
       script:
-        image: downscalecmip6.azurecr.io/dodola:0.5.0
-        env:
-          - name: AZURE_STORAGE_ACCOUNT_NAME
-            valueFrom:
-              secretKeyRef:
-                name: workerstoragecreds-secret
-                key: azurestorageaccount
-          - name: AZURE_STORAGE_ACCOUNT_KEY
-            valueFrom:
-              secretKeyRef:
-                name: workerstoragecreds-secret
-                key: azurestoragekey
+        image: us-central1-docker.pkg.dev/downscalecmip6/private/dodola:0.5.0
         command: [ python ]
         source: |
           import os
@@ -1097,24 +1053,13 @@ spec:
           - name: include-quantiles
             value: "false"
           - name: out-zarr
-            value: "az://scratch/{{ workflow.name }}/{{ pod.name }}/qdm_adjusted.zarr"
+            value: "gs://scratch-170cd6ec/{{ workflow.name }}/{{ pod.name }}/qdm_adjusted.zarr"
       outputs:
         parameters:
           - name: out-zarr
             value: "{{ inputs.parameters.out-zarr }}"
       script:
-        image: downscalecmip6.azurecr.io/dodola:0.5.0
-        env:
-          - name: AZURE_STORAGE_ACCOUNT_NAME
-            valueFrom:
-              secretKeyRef:
-                name: workerstoragecreds-secret
-                key: azurestorageaccount
-          - name: AZURE_STORAGE_ACCOUNT_KEY
-            valueFrom:
-              secretKeyRef:
-                name: workerstoragecreds-secret
-                key: azurestoragekey
+        image: us-central1-docker.pkg.dev/downscalecmip6/private/dodola:0.5.0
         command: [ python ]
         source: |
           import dask.delayed
@@ -1214,25 +1159,14 @@ spec:
         parameters:
           - name: in-zarr
           - name: out-zarr
-            value: "az://scratch/{{ workflow.name }}/{{ pod.name }}/out.zarr"
+            value: "gs://scratch-170cd6ec/{{ workflow.name }}/{{ pod.name }}/out.zarr"
           - name: process  # pre or post
       outputs:
         parameters:
           - name: out-zarr
             value: "{{ inputs.parameters.out-zarr }}"
       container:
-        image: downscalecmip6.azurecr.io/dodola:0.5.0
-        env:
-          - name: AZURE_STORAGE_ACCOUNT_NAME
-            valueFrom:
-              secretKeyRef:
-                name: workerstoragecreds-secret
-                key: azurestorageaccount
-          - name: AZURE_STORAGE_ACCOUNT_KEY
-            valueFrom:
-              secretKeyRef:
-                name: workerstoragecreds-secret
-                key: azurestoragekey
+        image: us-central1-docker.pkg.dev/downscalecmip6/private/dodola:0.5.0
         command: [ dodola ]
         args:
           - "correct-wetday-frequency"
@@ -1259,28 +1193,18 @@ spec:
         parameters:
           - name: in-zarr
           - name: out-zarr
-            value: "az://scratch/{{ workflow.name }}/{{ pod.name }}/cyclic-added.zarr"
+            value: "gs://scratch-170cd6ec/{{ workflow.name }}/{{ pod.name }}/cyclic-added.zarr"
       outputs:
         parameters:
           - name: out-zarr
             value: "{{ inputs.parameters.out-zarr }}"
       script:
-        image: downscalecmip6.azurecr.io/dodola:0.5.0
+        image: us-central1-docker.pkg.dev/downscalecmip6/private/dodola:0.5.0
         env:
           - name: IN
             value: "{{ inputs.parameters.in-zarr }}"
           - name: OUT
             value: "{{ inputs.parameters.out-zarr }}"
-          - name: AZURE_STORAGE_ACCOUNT_NAME
-            valueFrom:
-              secretKeyRef:
-                name: workerstoragecreds-secret
-                key: azurestorageaccount
-          - name: AZURE_STORAGE_ACCOUNT_KEY
-            valueFrom:
-              secretKeyRef:
-                name: workerstoragecreds-secret
-                key: azurestoragekey
         command: [ python ]
         source: |
           import os
@@ -1365,24 +1289,13 @@ spec:
           - name: time-sel-stop
             value: "2015-01-15"
           - name: out-zarr
-            value: "az://scratch/{{ workflow.name }}/{{ pod.name }}/aiqpd-model.zarr"
+            value: "gs://scratch-170cd6ec/{{ workflow.name }}/{{ pod.name }}/aiqpd-model.zarr"
       outputs:
         parameters:
           - name: out-zarr
             value: "{{ inputs.parameters.out-zarr }}"
       script:
-        image: downscalecmip6.azurecr.io/dodola:0.6.0
-        env:
-          - name: AZURE_STORAGE_ACCOUNT_NAME
-            valueFrom:
-              secretKeyRef:
-                name: workerstoragecreds-secret
-                key: azurestorageaccount
-          - name: AZURE_STORAGE_ACCOUNT_KEY
-            valueFrom:
-              secretKeyRef:
-                name: workerstoragecreds-secret
-                key: azurestoragekey
+        image: us-central1-docker.pkg.dev/downscalecmip6/private/dodola:0.6.0
         command: [ python ]
         source: |
           import os
@@ -1464,20 +1377,9 @@ spec:
           - name: lat-slice-min
           - name: lat-slice-max
           - name: out-zarr
-            value: "az://scratch/{{ workflow.name }}/{{ pod.name }}/aiqpd_adjusted.zarr"
+            value: "gs://scratch-170cd6ec/{{ workflow.name }}/{{ pod.name }}/aiqpd_adjusted.zarr"
       script:
-        image: downscalecmip6.azurecr.io/dodola:0.6.0
-        env:
-          - name: AZURE_STORAGE_ACCOUNT_NAME
-            valueFrom:
-              secretKeyRef:
-                name: workerstoragecreds-secret
-                key: azurestorageaccount
-          - name: AZURE_STORAGE_ACCOUNT_KEY
-            valueFrom:
-              secretKeyRef:
-                name: workerstoragecreds-secret
-                key: azurestoragekey
+        image: us-central1-docker.pkg.dev/downscalecmip6/private/dodola:0.6.0
         command: [ python ]
         source: |
           import dodola.repository
@@ -1613,7 +1515,7 @@ spec:
           - name: nontime-variables
             value: "lat lon"
           - name: out-zarr
-            value: "az://scratch/{{ workflow.name }}/{{ pod.name }}/regridded.zarr"
+            value: "gs://scratch-170cd6ec/{{ workflow.name }}/{{ pod.name }}/regridded.zarr"
       outputs:
         parameters:
           - name: out-zarr
@@ -1625,7 +1527,7 @@ spec:
             valueFrom:
               path: "/tmp/lastyear.txt"
       script:
-        image: downscalecmip6.azurecr.io/dodola:0.5.0
+        image: us-central1-docker.pkg.dev/downscalecmip6/private/dodola:0.5.0
         env:
           - name: IN_ZARR
             value: "{{ inputs.parameters.in-zarr }}"
@@ -1637,16 +1539,6 @@ spec:
             value: "{{ inputs.parameters.domain-file }}"
           - name: NONTIME_VARIABLES
             value: "{{ inputs.parameters.nontime-variables }}"
-          - name: AZURE_STORAGE_ACCOUNT_NAME
-            valueFrom:
-              secretKeyRef:
-                name: workerstoragecreds-secret
-                key: azurestorageaccount
-          - name: AZURE_STORAGE_ACCOUNT_KEY
-            valueFrom:
-              secretKeyRef:
-                name: workerstoragecreds-secret
-                key: azurestoragekey
         command: [ python ]
         source: |
           import os
@@ -1727,7 +1619,7 @@ spec:
           - name: out-zarr
             value: "{{ inputs.parameters.out-zarr }}"
       script:
-        image: downscalecmip6.azurecr.io/dodola:0.5.0
+        image: us-central1-docker.pkg.dev/downscalecmip6/private/dodola:0.5.0
         env:
           - name: IN_ZARR
             value: "{{ inputs.parameters.in-zarr }}"
@@ -1743,16 +1635,6 @@ spec:
             value: "{{ inputs.parameters.nontime-variables }}"
           - name: ADD_CYCLIC_LON
             value: "{{ inputs.parameters.add-cyclic-lon }}"
-          - name: AZURE_STORAGE_ACCOUNT_NAME
-            valueFrom:
-              secretKeyRef:
-                name: workerstoragecreds-secret
-                key: azurestorageaccount
-          - name: AZURE_STORAGE_ACCOUNT_KEY
-            valueFrom:
-              secretKeyRef:
-                name: workerstoragecreds-secret
-                key: azurestoragekey
         command: [ python ]
         source: |
           import os
@@ -1821,7 +1703,7 @@ spec:
           - name: simulation-zarr
           - name: variable
           - name: out-zarr
-            value: "az://scratch/{{ workflow.name }}/{{ pod.name }}/downscaled.zarr"
+            value: "gs://scratch-170cd6ec/{{ workflow.name }}/{{ pod.name }}/downscaled.zarr"
           - name: nonlat-variables
             value: "time lon"
       outputs:
@@ -1829,18 +1711,7 @@ spec:
           - name: out-zarr
             value: "{{ inputs.parameters.out-zarr }}"
       script:
-        image: downscalecmip6.azurecr.io/dodola:0.5.0
-        env:
-          - name: AZURE_STORAGE_ACCOUNT_NAME
-            valueFrom:
-              secretKeyRef:
-                name: workerstoragecreds-secret
-                key: azurestorageaccount
-          - name: AZURE_STORAGE_ACCOUNT_KEY
-            valueFrom:
-              secretKeyRef:
-                name: workerstoragecreds-secret
-                key: azurestoragekey
+        image: us-central1-docker.pkg.dev/downscalecmip6/private/dodola:0.5.0
         command: [ python ]
         source: |
           import dodola.repository

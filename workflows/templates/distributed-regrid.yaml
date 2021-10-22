@@ -13,7 +13,7 @@ spec:
       - name: regrid-method
         value: "bilinear"
       - name: domain-file
-        value: "az://support/domain.0p25x0p25.zarr"
+        value: "gs://support-c23ff1a3/domain.0p25x0p25.zarr"
       - name: firstyear
         value: 2015
       - name: lastyear
@@ -97,7 +97,7 @@ spec:
           - name: out-zarr
             value: "{{ inputs.parameters.out-zarr }}"
       script:
-        image: downscalecmip6.azurecr.io/dodola:0.5.0
+        image: us-central1-docker.pkg.dev/downscalecmip6/private/dodola:0.5.0
         env:
           - name: IN_ZARR
             value: "{{ inputs.parameters.in-zarr }}"
@@ -113,16 +113,6 @@ spec:
             value: "{{ inputs.parameters.domain-file }}"
           - name: NONTIME_VARIABLES
             value: "{{ inputs.parameters.nontime-variables }}"
-          - name: AZURE_STORAGE_ACCOUNT_NAME
-            valueFrom:
-              secretKeyRef:
-                name: workerstoragecreds-secret
-                key: azurestorageaccount
-          - name: AZURE_STORAGE_ACCOUNT_KEY
-            valueFrom:
-              secretKeyRef:
-                name: workerstoragecreds-secret
-                key: azurestoragekey
         command: [ python ]
         source: |
           import os
@@ -193,7 +183,7 @@ spec:
           - name: out-zarr
             value: "{{ inputs.parameters.out-zarr }}"
       script:
-        image: downscalecmip6.azurecr.io/dodola:0.5.0
+        image: us-central1-docker.pkg.dev/downscalecmip6/private/dodola:0.5.0
         env:
           - name: IN_ZARR
             value: "{{ inputs.parameters.in-zarr }}"
@@ -207,16 +197,6 @@ spec:
             value: "{{ inputs.parameters.domain-file }}"
           - name: NONTIME_VARIABLES
             value: "{{ inputs.parameters.nontime-variables }}"
-          - name: AZURE_STORAGE_ACCOUNT_NAME
-            valueFrom:
-              secretKeyRef:
-                name: workerstoragecreds-secret
-                key: azurestorageaccount
-          - name: AZURE_STORAGE_ACCOUNT_KEY
-            valueFrom:
-              secretKeyRef:
-                name: workerstoragecreds-secret
-                key: azurestoragekey
         command: [ python ]
         source: |
           import os

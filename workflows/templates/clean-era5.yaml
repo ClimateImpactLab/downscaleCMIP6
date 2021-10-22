@@ -12,9 +12,9 @@ spec:
   arguments:
     parameters:
     - name: in-zarr
-      value: "az://raw-era5/F320/tasmax.1995-2015.F320.v2.zarr"
+      value: "gs://raw-305d04da/reanalysis/ERA-5/F320/tasmax.1995-2015.F320.v2.zarr"
     - name: out-zarr
-      value: "az://clean-era5/F320/tasmax.1995-2015.F320.zarr"
+      value: "gs://clean-b1dbca25/reanalysis/ERA-5/F320/tasmax.1995-2015.F320.zarr"
   templates:
 
   - name: main
@@ -43,7 +43,7 @@ spec:
       - name: out-zarr
         value: "{{ inputs.parameters.out-zarr }}"
     container:
-      image: downscalecmip6.azurecr.io/dodola:0.5.0
+      image: us-central1-docker.pkg.dev/downscalecmip6/private/dodola:0.5.0
       env:
       - name: IN_ZARR
         value: "{{  inputs.parameters.in-zarr }}"
@@ -89,7 +89,7 @@ spec:
       - name: out-zarr
         value: "{{ inputs.parameters.out-zarr }}"
     script:
-      image: downscalecmip6.azurecr.io/dodola:0.5.0
+      image: us-central1-docker.pkg.dev/downscalecmip6/private/dodola:0.5.0
       env:
       - name: IN_ZARR
         value: "{{  inputs.parameters.in-zarr }}"
@@ -97,16 +97,6 @@ spec:
         value: "{{  inputs.parameters.out-zarr }}"
       - name: PYTHONUNBUFFERED
         value: "1"
-      - name: AZURE_STORAGE_ACCOUNT_NAME
-        valueFrom:
-          secretKeyRef:
-            name: workerstoragecreds-secret
-            key: azurestorageaccount
-      - name: AZURE_STORAGE_ACCOUNT_KEY
-        valueFrom:
-          secretKeyRef:
-            name: workerstoragecreds-secret
-            key: azurestoragekey
       - name: PYTHONUNBUFFERED
         value: "1"
       command: [python]
@@ -165,20 +155,7 @@ spec:
         - name: out-zarr
           value: "{{ inputs.parameters.out-zarr }}"
     container:
-      image: downscalecmip6.azurecr.io/dodola:0.5.0
-      env:
-        - name: AZURE_STORAGE_ACCOUNT_NAME
-          valueFrom:
-            secretKeyRef:
-              name: workerstoragecreds-secret
-              key: azurestorageaccount
-        - name: AZURE_STORAGE_ACCOUNT_KEY
-          valueFrom:
-            secretKeyRef:
-              name: workerstoragecreds-secret
-              key: azurestoragekey
-        - name: PYTHONUNBUFFERED
-          value: "1"
+      image: us-central1-docker.pkg.dev/downscalecmip6/private/dodola:0.5.0
       command: [dodola]
       args:
         - "rechunk"
