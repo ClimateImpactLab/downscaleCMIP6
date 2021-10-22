@@ -24,15 +24,15 @@ Deploy `argo` onto the cluster with
 ```
 argocd app create argo \
     --repo https://github.com/ClimateImpactLab/downscaleCMIP6.git \
-    --path infrastructure/kubernetes/argo \
+    --path "infrastructure/kubernetes-az/argo" \
     --dest-server https://kubernetes.default.svc \
     --dest-namespace argo \
     --sync-policy automated \
     --auto-prune \
     --port-forward-namespace argocd
-argocd app create workflows-default \
+argocd app create "workflows-default" \
     --repo https://github.com/ClimateImpactLab/downscaleCMIP6.git \
-    --path infrastructure/kubernetes/workflows-default \
+    --path "infrastructure/kubernetes-az/workflows-default" \
     --dest-server https://kubernetes.default.svc \
     --dest-namespace argo \
     --sync-policy automated \
@@ -80,7 +80,7 @@ Deploy `minio` into the `argo` namespace with:
 ```
 argocd app create minio \
     --repo https://github.com/ClimateImpactLab/downscaleCMIP6 \
-    --path infrastructure/kubernetes/minio \
+    --path "infrastructure/kubernetes-az/minio" \
     --values values.yaml \
     --dest-server https://kubernetes.default.svc \
     --dest-namespace argo \
