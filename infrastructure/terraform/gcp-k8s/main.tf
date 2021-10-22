@@ -114,7 +114,7 @@ module "workflows_default_wli" {
   use_existing_gcp_sa             = true
   name                            = data.terraform_remote_state.gcp_core.outputs.workflows_default_account_id
   k8s_sa_name                     = "workflows-default"
-  namespace                       = kubernetes_namespace.argo.metadata.0.name
+  namespace                       = "default"
   automount_service_account_token = true
 
   project_id = var.project_id

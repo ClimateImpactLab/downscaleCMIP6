@@ -58,13 +58,23 @@ output "kubernetes_external_secrets_email" {
   description = "Email to created Argo Workflows worker service account."
 }
 
+output "argo_server_account_id" {
+  value       = google_service_account.argo_server.account_id
+  description = "argo-server service account ID."
+}
+
+output "argo_server_email" {
+  value       = google_service_account.argo_server.email
+  description = "Email to created Argo server service account."
+}
+
 output "cert_manager_account_id" {
-  value       = google_service_account.cert_manager.account_id
+  value       = google_service_account.dns01_solver.account_id
   description = "cert-manager service account ID."
 }
 
 output "cert_manager_email" {
-  value       = google_service_account.cert_manager.email
+  value       = google_service_account.dns01_solver.email
   description = "Email to created cert-manager service account."
 }
 
@@ -102,12 +112,12 @@ output "argo_cloudsql_password" {
   sensitive   = true
 }
 
-output "argoserver_static_ip" {
-  description = "Static external IP reserved for argoserver loadbalancer."
-  value       = module.networking.argoserver_static_ip
+output "github_actions_account_id" {
+  value       = google_service_account.github_actions.account_id
+  description = "cert-manager service account ID."
 }
 
-output "argoserver_domain_name" {
-  description = "Domain name pointing to argoserver loadbalancer IP."
-  value       = module.networking.argoserver_domain_name
+output "github_actions_email" {
+  value       = google_service_account.github_actions.email
+  description = "Email to created Github Actions service account."
 }

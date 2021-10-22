@@ -23,6 +23,12 @@ jobs: |
       "variable_id": "tasmax",
       "historical": { "activity_id": "CMIP", "experiment_id": "historical", "table_id": "day", "variable_id": "tasmax", "source_id": "EC-Earth3", "institution_id": "EC-Earth-Consortium", "member_id": "r1i1p1f1", "grid_label": "gr", "version": "20200310" },
       "ssp": { "activity_id": "ScenarioMIP", "experiment_id": "ssp126", "table_id": "day", "variable_id": "tasmax", "source_id": "EC-Earth3", "institution_id": "EC-Earth-Consortium", "member_id": "r1i1p1f1", "grid_label": "gr", "version": "20200310" }
+    },
+    {
+      "target": "ssp",
+      "variable_id": "tasmax",
+      "historical": { "activity_id": "CMIP", "experiment_id": "historical", "table_id": "day", "variable_id": "tasmax", "source_id": "EC-Earth3", "institution_id": "EC-Earth-Consortium", "member_id": "r1i1p1f1", "grid_label": "gr", "version": "20200310" },
+      "ssp": { "activity_id": "ScenarioMIP", "experiment_id": "ssp585", "table_id": "day", "variable_id": "tasmax", "source_id": "EC-Earth3", "institution_id": "EC-Earth-Consortium", "member_id": "r1i1p1f1", "grid_label": "gr", "version": "20200310" }
     }
   ]
 

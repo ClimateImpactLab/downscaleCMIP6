@@ -54,9 +54,6 @@ module "networking" {
   services_range = var.services_range
   pod_ranges     = var.pod_ranges
 
-  argoserver_subdomain = "argo"
-  dns_zone_name        = var.dns_zone_name
-
   company     = var.company
   application = var.application
 
@@ -123,6 +120,28 @@ resource "google_storage_bucket_iam_member" "argoworker_buckets_iammember" {
 }
 
 
+# Service account for Argo Workflows server on Kubernetes.
+# We need this so argo-server can read log from bucket storage.
+resource "random_id" "argo_server_suffix" {
+  byte_length = 4
+}
+resource "google_service_account" "argo_server" {
+  account_id   = "argo-server-${random_id.argo_server_suffix.hex}"
+  description  = "Argo Server service account"
+  display_name = "argo-server"
+}
+resource "google_storage_bucket_iam_member" "argoserver_logread_iammember" {
+  bucket = module.datalake_storage.scratch_bucket_name
+  member = "serviceAccount:${google_service_account.argo_server.email}"
+  role   = "roles/storage.objectViewer"
+}
+resource "google_service_account_iam_member" "argoserver_ksa_iammember" {
+  service_account_id = google_service_account.argo_server.name
+  role               = "roles/iam.workloadIdentityUser"
+  member             = "serviceAccount:${var.project_id}.svc.id.goog[argo/argo-server]"
+}
+
+
 # So kubernetes-external-secrets-manager can access Secrets on Google Secret Manager
 # and put into k8s Secrets.
 resource "random_id" "kubernetes_external_secrets_suffix" {
@@ -135,17 +154,52 @@ resource "google_service_account" "kubernetes_external_secrets" {
 }
 
 
-# Given to cert-manager on k8s to resolve DNS-01 challenges with CloudDNS.
-# TODO: Should create custom minimal IAM role for this with: dns.resourceRecordSets.*, dns.changes.*, dns.managedZones.list
-resource "random_id" "cert_manager_suffix" {
-  byte_length = 4
+# Create custom role and GCP service account to solve letsencrypt DNS01 challenges
+# This service account is later expanded to a full Workload Identity service account
+# bridging k8s and GCP.
+resource "google_project_iam_custom_role" "dns01solver" {
+  role_id     = "dns01solver"
+  title       = "DNS01 Solver"
+  description = "Role used to resolve dns01 challenges for cert-manager and TLS certificates"
+  permissions = [
+    "dns.resourceRecordSets.create",
+    "dns.resourceRecordSets.delete",
+    "dns.resourceRecordSets.get",
+    "dns.resourceRecordSets.list",
+    "dns.resourceRecordSets.update",
+    "dns.changes.create",
+    "dns.changes.get",
+    "dns.changes.list",
+    "dns.managedZones.list"
+  ]
 }
-resource "google_service_account" "cert_manager" {
-  account_id   = "cert-manager-${random_id.cert_manager_suffix.hex}"
+# Given to cert-manager on k8s to resolve DNS-01 challenges with CloudDNS.
+resource "google_service_account" "dns01_solver" {
+  account_id   = "dns01-solver"
   description  = "Workload Identity service account for Kubernetes cert-manager to solve DNS01 challenges"
-  display_name = "cert-manager"
+  display_name = "dns01-solver"
+}
+resource "google_project_iam_member" "dns01_solver_rolebinding" {
+  member = "serviceAccount:${google_service_account.dns01_solver.email}"
+  role   = google_project_iam_custom_role.dns01solver.id
 }
 resource "google_project_iam_member" "cert_manager-dnsadmin-iammember" {
-  member = "serviceAccount:${google_service_account.cert_manager.email}"
+  member = "serviceAccount:${google_service_account.dns01_solver.email}"
   role   = "roles/dns.admin"
+}
+
+# GCP Service Account for Github Actions.
+resource "google_service_account" "github_actions" {
+  account_id   = "github-actions"
+  description  = "Github Actions service account for Github Repository CI/CD"
+  display_name = "github-actions"
+}
+# Let Github Actions release to Google Docker Repository.
+resource "google_artifact_registry_repository_iam_member" "github_actions_artifactregistrywriter_iammember" {
+  provider   = google-beta
+  location   = module.artifact_registry.location
+  project    = module.artifact_registry.project
+  repository = module.artifact_registry.private_docker_repository_id
+  role       = "roles/artifactregistry.writer"
+  member     = "serviceAccount:${google_service_account.github_actions.email}"
 }

@@ -1,0 +1,538 @@
+apiVersion: argoproj.io/v1alpha1
+kind: WorkflowTemplate
+metadata:
+  name: clean-cmip6
+  labels:
+    component: clean-cmip6
+spec:
+  workflowMetadata:
+    labels:
+      component: clean-cmip6
+  entrypoint: with-jobs
+  arguments:
+    parameters:
+      - name: jobs
+        value: |
+          [
+            {
+              "target": "ssp",
+              "variable_id": "tasmax",
+              "historical": {
+                "activity_id": "CMIP",
+                "experiment_id": "historical",
+                "table_id": "day",
+                "variable_id": "tasmax",
+                "source_id": "GFDL-ESM4",
+                "institution_id": "NOAA-GFDL",
+                "member_id": "r1i1p1f1",
+                "grid_label": "gr1",
+                "version": "20190726"
+              },
+              "ssp": {
+                "activity_id": "ScenarioMIP",
+                "experiment_id": "ssp370",
+                "table_id": "day",
+                "variable_id": "tasmax",
+                "source_id": "GFDL-ESM4",
+                "institution_id": "NOAA-GFDL",
+                "member_id": "r1i1p1f1",
+                "grid_label": "gr1",
+                "version": "20180701"
+              }
+            }
+          ]
+  templates:
+
+
+      # Loop through each job listed.
+    - name: with-jobs
+      inputs:
+        parameters:
+          - name: jobs
+      steps:
+        - - name: process-job
+            template: process-job
+            arguments:
+              parameters:
+                - name: target
+                  value: "{{ item.target }}"
+                - name: historical
+                  value: "{{ item.historical }}"
+                - name: ssp
+                  value: "{{ item.ssp }}"
+            withParam: "{{ inputs.parameters.jobs }}"
+
+
+      # Do common tasks for cleaning/standardizing the job data, then break
+      # into target-specific tasks.
+    - name: process-job
+      inputs:
+        parameters:
+          - name: target
+          - name: historical
+          - name: ssp
+      steps:
+        - - name: get-input-raw-historical-url
+            templateRef:
+              name: catalog
+              template: get-fsspec-url-from-parameters
+            arguments:
+              parameters:
+                - name: experiment-id
+                  value: "{{=jsonpath(inputs.parameters.historical, '$.experiment_id')}}"
+                - name: activity-id
+                  value: "{{=jsonpath(inputs.parameters.historical, '$.activity_id')}}"
+                - name: table-id
+                  value: "{{=jsonpath(inputs.parameters.historical, '$.table_id')}}"
+                - name: variable-id
+                  value: "{{=jsonpath(inputs.parameters.historical, '$.variable_id')}}"
+                - name: source-id
+                  value: "{{=jsonpath(inputs.parameters.historical, '$.source_id')}}"
+                - name: institution-id
+                  value: "{{=jsonpath(inputs.parameters.historical, '$.institution_id')}}"
+                - name: member-id
+                  value: "{{=jsonpath(inputs.parameters.historical, '$.member_id')}}"
+                - name: grid-label
+                  value: "{{=jsonpath(inputs.parameters.historical, '$.grid_label')}}"
+                - name: version
+                  value: "{{=jsonpath(inputs.parameters.historical, '$.version')}}"
+                - name: base-url
+                  value: "az://raw-cmip6"
+          - name: get-input-raw-ssp-url
+            templateRef:
+              name: catalog
+              template: get-fsspec-url-from-parameters
+            arguments:
+              parameters:
+                - name: experiment-id
+                  value: "{{=jsonpath(inputs.parameters.ssp, '$.experiment_id')}}"
+                - name: activity-id
+                  value: "{{=jsonpath(inputs.parameters.ssp, '$.activity_id')}}"
+                - name: table-id
+                  value: "{{=jsonpath(inputs.parameters.ssp, '$.table_id')}}"
+                - name: variable-id
+                  value: "{{=jsonpath(inputs.parameters.ssp, '$.variable_id')}}"
+                - name: source-id
+                  value: "{{=jsonpath(inputs.parameters.ssp, '$.source_id')}}"
+                - name: institution-id
+                  value: "{{=jsonpath(inputs.parameters.ssp, '$.institution_id')}}"
+                - name: member-id
+                  value: "{{=jsonpath(inputs.parameters.ssp, '$.member_id')}}"
+                - name: grid-label
+                  value: "{{=jsonpath(inputs.parameters.ssp, '$.grid_label')}}"
+                - name: version
+                  value: "{{=jsonpath(inputs.parameters.ssp, '$.version')}}"
+                - name: base-url
+                  value: "az://raw-cmip6"
+          - name: get-output-clean-training-url
+            templateRef:
+              name: catalog
+              template: get-fsspec-url-from-parameters
+            arguments:
+              parameters:
+                - name: experiment-id
+                  value: training
+                - name: activity-id
+                  value: "{{=jsonpath(inputs.parameters.historical, '$.activity_id')}}"
+                - name: table-id
+                  value: "{{=jsonpath(inputs.parameters.historical, '$.table_id')}}"
+                - name: variable-id
+                  value: "{{=jsonpath(inputs.parameters.historical, '$.variable_id')}}"
+                - name: source-id
+                  value: "{{=jsonpath(inputs.parameters.historical, '$.source_id')}}"
+                - name: institution-id
+                  value: "{{=jsonpath(inputs.parameters.historical, '$.institution_id')}}"
+                - name: member-id
+                  value: "{{=jsonpath(inputs.parameters.historical, '$.member_id')}}"
+                - name: grid-label
+                  value: "{{=jsonpath(inputs.parameters.historical, '$.grid_label')}}"
+                - name: version
+                  value: "{{=jsonpath(inputs.parameters.historical, '$.version')}}"
+                - name: base-url
+                  value: "az://clean-cmip6"
+            # We're slicing historical to time period of interest to reduce memory in later steps.
+        - - name: crop-historical-time
+            template: timeslicezarr
+            arguments:
+              parameters:
+                - name: in-zarr
+                  value: "{{ steps.get-input-raw-historical-url.outputs.parameters.out-url }}"
+                - name: from-time
+                  value: "1950"
+                - name: to-time
+                  value: "2014"
+        - - name: standardize-historical-run
+            template: standardize-cmip6
+            arguments:
+              parameters:
+                - name: in-zarr
+                  value: "{{ steps.crop-historical-time.outputs.parameters.out-zarr }}"
+          - name: standardize-ssp-run
+            template: standardize-cmip6
+            arguments:
+              parameters:
+                - name: in-zarr
+                  value: "{{ steps.get-input-raw-ssp-url.outputs.parameters.out-url }}"
+        - - name: slice-training
+            template: timeslicezarr
+            arguments:
+              parameters:
+                - name: in-zarr
+                  value: "{{ steps.standardize-historical-run.outputs.parameters.out-zarr }}"
+                - name: out-zarr
+                  value: "{{ steps.get-output-clean-training-url.outputs.parameters.out-url }}"
+                  # Matches window of "reference" ERA-5 data +/- 15 days.
+                - name: from-time
+                  value: "1994-12-17"
+                - name: to-time
+                  value: "2015-01-15"
+          - name: process-historical
+            template: process-historical
+            arguments:
+              parameters:
+                - name: target-json
+                  value: "{{ inputs.parameters.historical }}"
+                - name: historical-zarr
+                  value: "{{ steps.standardize-historical-run.outputs.parameters.out-zarr }}"
+                - name: ssp-zarr
+                  value: "{{ steps.standardize-ssp-run.outputs.parameters.out-zarr }}"
+            when: "{{inputs.parameters.target}} == historical"
+          - name: process-ssp
+            template: process-ssp
+            arguments:
+              parameters:
+                - name: target-json
+                  value: "{{ inputs.parameters.ssp }}"
+                - name: historical-zarr
+                  value: "{{ steps.standardize-historical-run.outputs.parameters.out-zarr }}"
+                - name: ssp-zarr
+                  value: "{{ steps.standardize-ssp-run.outputs.parameters.out-zarr }}"
+            when: "{{inputs.parameters.target}} == ssp"
+
+
+    - name: process-historical
+      inputs:
+        parameters:
+          - name: target-json
+          - name: historical-zarr
+          - name: ssp-zarr
+      outputs:
+        parameters:
+          - name: out-zarr
+            valueFrom:
+              parameter: "{{ steps.concatenate-ssp-to-historical.outputs.parameters.out-zarr }}"
+      steps:
+        - - name: get-output-clean-historical-url
+            templateRef:
+              name: catalog
+              template: get-fsspec-url-from-parameters
+            arguments:
+              parameters:
+                - name: experiment-id
+                  value: "{{=jsonpath(inputs.parameters['target-json'], '$.experiment_id')}}"
+                - name: activity-id
+                  value: "{{=jsonpath(inputs.parameters['target-json'], '$.activity_id')}}"
+                - name: table-id
+                  value: "{{=jsonpath(inputs.parameters['target-json'], '$.table_id')}}"
+                - name: variable-id
+                  value: "{{=jsonpath(inputs.parameters['target-json'], '$.variable_id')}}"
+                - name: source-id
+                  value: "{{=jsonpath(inputs.parameters['target-json'], '$.source_id')}}"
+                - name: institution-id
+                  value: "{{=jsonpath(inputs.parameters['target-json'], '$.institution_id')}}"
+                - name: member-id
+                  value: "{{=jsonpath(inputs.parameters['target-json'], '$.member_id')}}"
+                - name: grid-label
+                  value: "{{=jsonpath(inputs.parameters['target-json'], '$.grid_label')}}"
+                - name: version
+                  value: "{{=jsonpath(inputs.parameters['target-json'], '$.version')}}"
+                - name: base-url
+                  value: "az://clean-cmip6"
+          - name: remove-late-ssp
+            template: timeslicezarr
+            arguments:
+              parameters:
+                - name: in-zarr
+                  value: "{{ inputs.parameters.ssp-zarr }}"
+                - name: from-time
+                  value: "2015"
+                - name: to-time
+                  value: "2025"
+        - - name: concatenate-ssp-to-historical
+            template: timeconcatzarrs
+            arguments:
+              parameters:
+                  # Make first arg hist zarr, so outputs with historical attrs.
+                - name: in1-zarr
+                  value: "{{ inputs.parameters.historical-zarr }}"
+                - name: in2-zarr
+                  value: "{{ steps.remove-late-ssp.outputs.parameters.out-zarr }}"
+                - name: out-zarr
+                  value: "{{ steps.get-output-clean-historical-url.outputs.parameters.out-url }}"
+
+
+    - name: process-ssp
+      inputs:
+        parameters:
+          - name: target-json
+          - name: historical-zarr
+          - name: ssp-zarr
+      outputs:
+        parameters:
+          - name: out-zarr
+            valueFrom:
+              parameter: "{{ steps.concatenate-hist-to-ssp.outputs.parameters.out-zarr }}"
+      steps:
+        - - name: get-output-clean-ssp-url
+            templateRef:
+              name: catalog
+              template: get-fsspec-url-from-parameters
+            arguments:
+              parameters:
+                - name: experiment-id
+                  value: "{{=jsonpath(inputs.parameters['target-json'], '$.experiment_id')}}"
+                - name: activity-id
+                  value: "{{=jsonpath(inputs.parameters['target-json'], '$.activity_id')}}"
+                - name: table-id
+                  value: "{{=jsonpath(inputs.parameters['target-json'], '$.table_id')}}"
+                - name: variable-id
+                  value: "{{=jsonpath(inputs.parameters['target-json'], '$.variable_id')}}"
+                - name: source-id
+                  value: "{{=jsonpath(inputs.parameters['target-json'], '$.source_id')}}"
+                - name: institution-id
+                  value: "{{=jsonpath(inputs.parameters['target-json'], '$.institution_id')}}"
+                - name: member-id
+                  value: "{{=jsonpath(inputs.parameters['target-json'], '$.member_id')}}"
+                - name: grid-label
+                  value: "{{=jsonpath(inputs.parameters['target-json'], '$.grid_label')}}"
+                - name: version
+                  value: "{{=jsonpath(inputs.parameters['target-json'], '$.version')}}"
+                - name: base-url
+                  value: "az://clean-cmip6"
+          - name: remove-early-historical
+            template: timeslicezarr
+            arguments:
+              parameters:
+                - name: in-zarr
+                  value: "{{ inputs.parameters.historical-zarr }}"
+                - name: from-time
+                  value: "2004"
+                - name: to-time
+                  value: "2015"
+        - - name: concatenate-hist-to-ssp
+            template: timeconcatzarrs
+            arguments:
+              parameters:
+                 # Make first arg SSP zarr, so outputs with SSP attrs.
+                - name: in1-zarr
+                  value: "{{ inputs.parameters.ssp-zarr }}"
+                - name: in2-zarr
+                  value: "{{ steps.remove-early-historical.outputs.parameters.out-zarr }}"
+                - name: out-zarr
+                  value: "{{ steps.get-output-clean-ssp-url.outputs.parameters.out-url }}"
+
+
+    - name: standardize-cmip6
+      inputs:
+        parameters:
+          - name: in-zarr
+          - name: out-zarr
+            value: "az://scratch/{{ workflow.name }}/{{ pod.name }}/standardized.zarr"
+      outputs:
+        parameters:
+          - name: out-zarr
+            value: "{{ inputs.parameters.out-zarr }}"
+      container:
+        image: downscalecmip6.azurecr.io/dodola:0.5.0
+        env:
+          - name: AZURE_STORAGE_ACCOUNT_NAME
+            valueFrom:
+              secretKeyRef:
+                name: workerstoragecreds-secret
+                key: azurestorageaccount
+          - name: AZURE_STORAGE_ACCOUNT_KEY
+            valueFrom:
+              secretKeyRef:
+                name: workerstoragecreds-secret
+                key: azurestoragekey
+        command: [ "dodola" ]
+        args:
+          - "cleancmip6"
+          - "{{ inputs.parameters.in-zarr }}"
+          - "{{ inputs.parameters.out-zarr }}"
+        resources:
+          requests:
+            memory: 16Gi
+            cpu: "500m"
+          limits:
+            memory: 48Gi  # Bump for large EC-Earth3 data.
+            cpu: "6000m"
+      activeDeadlineSeconds: 3600
+      retryStrategy:
+        limit: 4
+        retryPolicy: "Always"
+        backoff:
+          duration: 30s
+          factor: 2
+
+
+    - name: timeslicezarr
+      inputs:
+        parameters:
+          - name: in-zarr
+          - name: from-time
+          - name: to-time
+          - name: out-zarr
+            value: "az://scratch/{{ workflow.name }}/{{ pod.name }}/timesliced.zarr"
+      outputs:
+        parameters:
+          - name: out-zarr
+            value: "{{ inputs.parameters.out-zarr }}"
+      script:
+        image: downscalecmip6.azurecr.io/dodola:0.5.0
+        env:
+          - name: IN_ZARR
+            value: "{{ inputs.parameters.in-zarr }}"
+          - name: FROM_TIME
+            value: "{{ inputs.parameters.from-time }}"
+          - name: TO_TIME
+            value: "{{ inputs.parameters.to-time }}"
+          - name: OUT_ZARR
+            value: "{{ inputs.parameters.out-zarr }}"
+          - name: AZURE_STORAGE_ACCOUNT_NAME
+            valueFrom:
+              secretKeyRef:
+                name: workerstoragecreds-secret
+                key: azurestorageaccount
+          - name: AZURE_STORAGE_ACCOUNT_KEY
+            valueFrom:
+              secretKeyRef:
+                name: workerstoragecreds-secret
+                key: azurestoragekey
+        command: [ python ]
+        source: |
+          import os
+          import xarray as xr
+
+          in_zarr = os.environ.get("IN_ZARR")
+          from_time = os.environ.get("FROM_TIME")
+          to_time = os.environ.get("TO_TIME")
+          out_zarr = os.environ.get("OUT_ZARR")
+
+          ds = xr.open_dataset(
+              in_zarr,
+              chunks={},
+              engine="zarr"
+          )
+          print(f"Read {in_zarr}")  # DEBUG
+
+          print(f"slicing {from_time} : {to_time}")
+          ds = ds.sel(time=slice(from_time, to_time))
+
+          ds = ds.chunk({"time": 365})
+
+          # Hack to get around issue with writing chunks to zarr in xarray v0.17.0
+          for v in ds.data_vars.keys():
+              del ds[v].encoding["chunks"]
+
+          ds.to_zarr(
+              out_zarr,
+              mode="w"
+          )
+          print(f"Written to {out_zarr}")  # DEBUG
+        resources:
+          requests:
+            memory: 8Gi
+            cpu: "1000m"
+          limits:
+            memory: 16Gi  # Generally takes 8 Gi, but can need more for Ec-Earth.
+            cpu: "4000m"
+      activeDeadlineSeconds: 3600
+      retryStrategy:
+        limit: 2
+        retryPolicy: "Always"
+
+
+
+    - name: timeconcatzarrs
+      inputs:
+        parameters:
+          - name: in1-zarr
+          - name: in2-zarr
+          - name: out-zarr
+            value: "az://scratch/{{ workflow.name }}/{{ pod.name }}/concatenated.zarr"
+      outputs:
+        parameters:
+          - name: out-zarr
+            value: "{{ inputs.parameters.out-zarr }}"
+      script:
+        image: downscalecmip6.azurecr.io/dodola:0.5.0
+        env:
+          - name: IN1_ZARR
+            value: "{{ inputs.parameters.in1-zarr }}"
+          - name: IN2_ZARR
+            value: "{{ inputs.parameters.in2-zarr }}"
+          - name: OUT_ZARR
+            value: "{{ inputs.parameters.out-zarr }}"
+          - name: AZURE_STORAGE_ACCOUNT_NAME
+            valueFrom:
+              secretKeyRef:
+                name: workerstoragecreds-secret
+                key: azurestorageaccount
+          - name: AZURE_STORAGE_ACCOUNT_KEY
+            valueFrom:
+              secretKeyRef:
+                name: workerstoragecreds-secret
+                key: azurestoragekey
+        command: [ python ]
+        source: |
+          import os
+          import xarray as xr
+
+          print(os.environ.get("IN1_ZARR"))  # DEBUG
+          print(os.environ.get("IN2_ZARR"))  # DEBUG
+
+          ds1 = xr.open_zarr(os.environ.get("IN1_ZARR"))
+          ds2 = xr.open_zarr(os.environ.get("IN2_ZARR"))
+          # # Seems a bit more reliable this week if we pre-load:
+          # ds1.load()
+          # ds2.load()
+
+          print("ds1:")  # DEBUG
+          print(ds1)  # DEBUG
+          print("ds2:")  # DEBUG
+          print(ds2)  # DEBUG
+
+          ds = xr.concat([ds1, ds2], dim="time").sortby("time")
+
+          # some models have axis_nbounds dim instead of bnds
+          if "axis_nbounds" in ds.dims:
+              ds = ds.rename({"axis_nbounds": "bnds"})
+          ds = ds.chunk({"time": 365, "lat": -1, "lon": -1, "bnds": 2})
+
+          # Hack to get around issue with writing chunks to zarr in xarray v0.17.0
+          for v in ds.data_vars.keys():
+              del ds[v].encoding["chunks"]
+          # TODO: For whatever reason these where not removed in the above loop, even if iter over ds.keys()...
+          if "lat_bnds" in ds.coords:
+              del ds["lat_bnds"].encoding["chunks"]
+          if "lon_bnds" in ds.coords:
+              del ds["lon_bnds"].encoding["chunks"]
+
+          print(os.environ.get("OUT_ZARR"))  # DEBUG
+          ds.to_zarr(
+              os.environ.get("OUT_ZARR"),
+              mode="w",
+          )
+          print("Output written")  # DEBUG
+        resources:
+          requests:
+            memory: 48Gi
+            cpu: "1000m"
+          limits:
+            memory: 48Gi
+            cpu: "2000m"
+      activeDeadlineSeconds: 3600
+      retryStrategy:
+        limit: 2
+        retryPolicy: "Always"
