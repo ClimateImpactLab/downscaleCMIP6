@@ -1,0 +1,65 @@
+apiVersion: argoproj.io/v1alpha1
+kind: EventSource
+metadata:
+  name: workflowsuccess-eventsource
+spec:
+  template:
+    serviceAccountName: argoworkflow-eventsource-sa
+  resource:
+    download-cmip6-success:
+      namespace: argo
+      group: argoproj.io
+      version: v1alpha1
+      resource: workflows
+      eventTypes:
+        - ADD
+      filter:
+        afterStart: true
+        labels:
+          - key: component
+            operation: ==
+            value: "download-cmip6"
+          - key: workflows.argoproj.io/completed
+            operation: ==
+            value: "true"
+          - key: workflows.argoproj.io/phase
+            operation: ==
+            value: "Succeeded"
+    cleancmip6-success:
+      namespace: argo
+      group: argoproj.io
+      version: v1alpha1
+      resource: workflows
+      eventTypes:
+        - ADD
+      filter:
+        afterStart: true
+        labels:
+          - key: component
+            operation: ==
+            value: "clean-cmip6"
+          - key: workflows.argoproj.io/completed
+            operation: ==
+            value: "true"
+          - key: workflows.argoproj.io/phase
+            operation: ==
+            value: "Succeeded"
+    dc6-success:
+      namespace: argo
+      group: argoproj.io
+      version: v1alpha1
+      resource: workflows
+      eventTypes:
+        - ADD
+      filter:
+        afterStart: true
+        labels:
+          - key: component
+            operation: ==
+            value: "dc6"
+          - key: workflows.argoproj.io/completed
+            operation: ==
+            value: "true"
+          - key: workflows.argoproj.io/phase
+            operation: ==
+            value: "Succeeded"
