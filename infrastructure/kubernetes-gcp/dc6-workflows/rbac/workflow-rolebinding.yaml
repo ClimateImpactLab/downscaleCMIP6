@@ -1,0 +1,11 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: workflow-rolebinding
+subjects:
+  - kind: ServiceAccount
+    name: workflows-default
+roleRef:
+  kind: Role
+  name: workflow-role
+  apiGroup: rbac.authorization.k8s.io

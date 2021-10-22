@@ -1,0 +1,82 @@
+# downscaleCMIP6-infra-argo
+Kubernetes internals and Argo Workflow configuration for CMIP6 downscaling project.
+
+Manifests for Argo Workflow itself are in `./argo/`. The `./workflows-default/` directory contains manifests required to run analysis Workflows. `./minio/` is a configuration Helm Chart to deploy the artifact repository. Cluster internals are mostly managed with `argocd`. The hard infrastructure we're deploying on top of is in `/infrastructure/terraform/`.
+
+## Updating
+
+If there is already a deployment -- file a pull request with changes to `main`. Merged changes are automatically pulled into the cluster through ArgoCD.
+
+## Deploying
+
+### Setup (`argocd`)
+To begin, you need to have `argocd` deployed on a cluster. If it is not already deployed, you can do so with
+
+```bash
+kubectl apply -n argocd -f https://raw.githubusercontent.com/argoproj/argo-cd/v2.1.2/manifests/install.yaml
+kubectl patch deploy argocd-server -n argocd -p '[{"op": "add", "path": "/spec/template/spec/containers/0/command/-", "value": "--disable-auth"}]' --type json
+```
+
+### Argo Workflows
+
+Deploy `argo` onto the cluster with
+
+```bash
+argocd app create argo \
+    --repo https://github.com/ClimateImpactLab/downscaleCMIP6 \
+    --path infrastructure/kubernetes/argo \
+    --dest-server https://kubernetes.default.svc \
+    --dest-namespace "argo" \
+    --sync-policy automated \
+    --auto-prune \
+    --port-forward-namespace argocd
+```
+
+Test either deployment method with
+
+```bash
+argo submit -n argo --serviceaccount workflows-default --watch https://raw.githubusercontent.com/argoproj/argo-workflows/master/examples/hello-world.yaml 
+```
+
+This assumes you have the `argo` CLI application installed locally. From the output, grab the workflow name and run
+
+```bash
+argo logs -n argo <workflow-name>
+```
+
+If all is well, you will see a happy whale:
+
+```
+hello-world-kqvvg:  _____________ 
+hello-world-kqvvg: < hello world >
+hello-world-kqvvg:  ------------- 
+hello-world-kqvvg:     \
+hello-world-kqvvg:      \
+hello-world-kqvvg:       \     
+hello-world-kqvvg:                     ##        .            
+hello-world-kqvvg:               ## ## ##       ==            
+hello-world-kqvvg:            ## ## ## ##      ===            
+hello-world-kqvvg:        /""""""""""""""""___/ ===        
+hello-world-kqvvg:   ~~~ {~~ ~~~~ ~~~ ~~~~ ~~ ~ /  ===- ~~~   
+hello-world-kqvvg:        \______ o          __/            
+hello-world-kqvvg:         \    \        __/             
+hello-world-kqvvg:           \____\______/   
+```
+
+### Argo Workflow artifact repository (minio)
+
+`minio` works as an S3 wrapper to an underlying Azure Blob Storage. With the S3 interface, we can easily use Azure storage as an Argo Workflows artifact repository.
+
+Deploy `minio` into the `argo` namespace with:
+
+```
+argocd app create minio \
+    --repo https://github.com/ClimateImpactLab/downscaleCMIP6 \
+    --path infrastructure/kubernetes/minio \
+    --values values.yaml \
+    --dest-server https://kubernetes.default.svc \
+    --dest-namespace argo \
+    --sync-policy automated \
+    --auto-prune \
+    --port-forward-namespace argocd
+```
