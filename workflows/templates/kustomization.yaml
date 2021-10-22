@@ -7,4 +7,5 @@ resources:
   - biascorrectdownscale.yaml
   - distributed-regrid.yaml
   - download-cmip6.yaml
+  - qualitycontrol-check-cmip6.yaml
   - zarr-transfer.yaml
