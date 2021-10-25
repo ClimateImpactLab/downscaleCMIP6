@@ -1577,6 +1577,12 @@ spec:
           ds_out = xesmf_regrid(ds_in, domain_fl, regrid_method, astype="float32")
           ds_out = ds_out.chunk({"time": 365, "lat": 2, "lon": -1})
 
+          # Merge original attrs into output.
+          ds_out.attrs |= ds_in.attrs
+          for k, v in ds_in.variables.items():
+              if k in ds_out:
+                  ds_out[k].attrs |= v.attrs
+
           print(f"{ds_out=}")  # DEBUG
 
           # Output metadata to Zarr store.
