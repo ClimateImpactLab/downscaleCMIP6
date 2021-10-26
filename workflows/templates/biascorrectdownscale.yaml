@@ -1755,7 +1755,7 @@ spec:
           # the original Dataset. Not 100 % sure this is needed.
           ds_out_all = dodola.repository.read(simulation_zarr)
           ds_out = ds_out_all[[variable]]
-          ds_out.attr = ds_out_all.attrs
+          ds_out.attrs = ds_out_all.attrs
 
           # Add downscaling metadata to attrs
           ds_out.attrs["dc6_workflow_name"] = os.environ["ARGO_WORKFLOW_NAME"]
