@@ -1701,14 +1701,14 @@ spec:
           domain_fl.load()
 
           # Append mean of highest and lowest latitude band to data arrays
-          # to cover noth and south poles in global datasets. Assumes lat is
+          # to cover north and south poles in global datasets. Assumes lat is
           # sorted from lowest to highest.
           if add_lat_buffer:
               # What are steps between latitudes. Rounding to avoid getting multiple
               # unique values just from float precision. Assumes regular steps and nothing fancy:
               delta = np.unique(ds_in["lat"].diff("lat").round(decimals=2).data).item()
 
-              # Append additional latitude for pole that is mean of lowest latittude.
+              # Append additional latitude for pole that is mean of lowest latitude.
               min_lat = ds_in.isel(lat=0)
               min_lat = xr.ones_like(min_lat) * min_lat.mean(dim="lon")
               min_lat["lat"].data -= delta
