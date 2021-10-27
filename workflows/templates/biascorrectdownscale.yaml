@@ -648,6 +648,8 @@ spec:
                   value: "{{ inputs.parameters.domain-file }}"
                 - name: add-cyclic-lon
                   value: "true"
+                - name: add-lat-buffer
+                  value: "true"
         - - name: move-chunks-to-space
             template: rechunk
             arguments:
@@ -709,6 +711,8 @@ spec:
                   value: "{{ inputs.parameters.domainfile0p25x0p25 }}"
                 - name: add-cyclic-lon
                   value: "true"
+                - name: add-lat-buffer
+                  value: "true"
         - - name: move-chunks-to-space
             template: rechunk
             arguments:
@@ -759,6 +763,8 @@ spec:
                 - name: domain-file
                   value: "{{ inputs.parameters.domain-file }}"
                 - name: add-cyclic-lon
+                  value: "true"
+                - name: add-lat-buffer
                   value: "true"
 
 
@@ -1475,6 +1481,8 @@ spec:
           - name: domain-file
           - name: add-cyclic-lon
             value: "false"
+          - name: add-lat-buffer
+            value: "false"
           # Space delimited list of all variables/coords in "in-zarr" without need for time dimension.
           - name: nontime-variables
             value: "lat lon"
@@ -1514,6 +1522,8 @@ spec:
                   value: "{{ item }}"
                 - name: add-cyclic-lon
                   value: "{{ inputs.parameters.add-cyclic-lon }}"
+                - name: add-lat-buffer
+                  value: "{{ inputs.parameters.add-lat-buffer }}"
             withSequence:
               start: "{{ steps.prime-regrid-zarr.outputs.parameters.firstyear }}"
               end: "{{ steps.prime-regrid-zarr.outputs.parameters.lastyear }}"
@@ -1632,6 +1642,8 @@ spec:
           - name: out-zarr
           - name: add-cyclic-lon
             value: "false"
+          - name: add-lat-buffer
+            value: "false"
           - name: nontime-variables
             value: "lat lon"
       outputs:
@@ -1655,6 +1667,8 @@ spec:
             value: "{{ inputs.parameters.nontime-variables }}"
           - name: ADD_CYCLIC_LON
             value: "{{ inputs.parameters.add-cyclic-lon }}"
+          - name: ADD_LAT_BUFFER
+            value: "{{ inputs.parameters.add-lat-buffer }}"
         command: [ python ]
         source: |
           import os
@@ -1674,6 +1688,7 @@ spec:
           # TODO: We could make this dynamically find non-time dependent variables/coord variables.
           non_time = os.environ["NONTIME_VARIABLES"].strip().rsplit()
           add_cyclic_lon =  os.environ["ADD_CYCLIC_LON"].lower() == "true"
+          add_lat_buffer =  os.environ["ADD_LAT_BUFFER"].lower() == "true"
 
           # Setup regrid calculation for a time range.
           # Clip out target year from input data. This is a mess because we need the matches AND their index along
@@ -1684,6 +1699,26 @@ spec:
           ds_in.load()
           domain_fl = dodola.repository.read(domain_file)
           domain_fl.load()
+
+          # Append mean of highest and lowest latitude band to data arrays
+          # to cover noth and south poles in global datasets. Assumes lat is
+          # sorted from lowest to highest.
+          if add_lat_buffer:
+              # What are steps between latitudes. Rounding to avoid getting multiple
+              # unique values just from float precision. Assumes regular steps and nothing fancy:
+              delta = np.unique(ds_in["lat"].diff("lat").round(decimals=2).data).item()
+
+              # Append additional latitude for pole that is mean of lowest latittude.
+              min_lat = ds_in.isel(lat=0)
+              min_lat = xr.ones_like(min_lat) * min_lat.mean(dim="lon")
+              min_lat["lat"].data -= delta
+
+              # Same but for other hemisphere pole
+              max_lat = ds_in.isel(lat=-1)
+              max_lat = xr.ones_like(max_lat) * max_lat.mean(dim="lon")
+              max_lat["lat"].data += delta
+
+              ds_in = xr.concat([min_lat, ds_in, max_lat], dim="lat")
 
           if add_cyclic_lon:
               ds_out = xesmf_regrid(ds_in, domain_fl, regrid_method, astype="float32", add_cyclic="lon")
