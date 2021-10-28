@@ -425,7 +425,9 @@ spec:
                 - name: in-zarr
                   value: "{{ steps.check-wetday-frequency.outputs.parameters.out-zarr }}"
         - - name: move-chunks-to-time
-            template: rechunk
+            templateRef:
+              name: rechunk
+              template: rechunk
             arguments:
               parameters:
                 - name: in-zarr
@@ -447,7 +449,9 @@ spec:
                 - name: domain-file
                   value: "{{ inputs.parameters.domain-file }}"
         - - name: move-chunks-to-space
-            template: rechunk
+            templateRef:
+              name: rechunk
+              template: rechunk
             arguments:
               parameters:
                 - name: in-zarr
@@ -475,7 +479,9 @@ spec:
       dag:
         tasks:
           - name: move-chunks-to-time
-            template: rechunk
+            templateRef:
+              name: rechunk
+              template: rechunk
             arguments:
               parameters:
                 - name: in-zarr
@@ -499,7 +505,9 @@ spec:
                   value: "{{ inputs.parameters.domain-file }}"
           - name: move-chunks-to-space
             dependencies: [ regrid ]
-            template: rechunk
+            templateRef:
+              name: rechunk
+              template: rechunk
             arguments:
               parameters:
                 - name: in-zarr
@@ -567,51 +575,6 @@ spec:
         retryPolicy: "Always"
 
 
-    - name: rechunk
-      inputs:
-        parameters:
-          - name: in-zarr
-          - name: out-zarr
-            value: "gs://scratch-170cd6ec/{{ workflow.name }}/{{ pod.name }}/rechunked.zarr"
-          - name: time-chunk
-            value: 365
-          - name: lat-chunk
-            value: 10
-          - name: lon-chunk
-            value: 10
-          - name: time-dim-name
-            value: time
-      outputs:
-        parameters:
-          - name: out-zarr
-            value: "{{ inputs.parameters.out-zarr }}"
-      container:
-        image: us-central1-docker.pkg.dev/downscalecmip6/private/dodola:0.5.0
-        command: [ dodola ]
-        args:
-          - "rechunk"
-          - "{{ inputs.parameters.in-zarr }}"
-          - "--out"
-          - "{{ inputs.parameters.out-zarr }}"
-          - "--chunk"
-          - "{{ inputs.parameters.time-dim-name }}={{ inputs.parameters.time-chunk }}"
-          - "--chunk"
-          - "lat={{ inputs.parameters.lat-chunk }}"
-          - "--chunk"
-          - "lon={{ inputs.parameters.lon-chunk }}"
-        resources:
-          requests:
-            memory: 48Gi
-            cpu: "1000m"
-          limits:
-            memory: 48Gi
-            cpu: "2000m"
-      activeDeadlineSeconds: 1800
-      retryStrategy:
-        limit: 1
-        retryPolicy: "Always"
-
-
     - name: create-fine-reference
       inputs:
         parameters:
@@ -625,7 +588,9 @@ spec:
               parameter: "{{ steps.move-chunks-to-space.outputs.parameters.out-zarr }}"
       steps:
         - - name: move-chunks-to-time
-            template: rechunk
+            templateRef:
+              name: rechunk
+              template: rechunk
             arguments:
               parameters:
                 - name: in-zarr
@@ -649,7 +614,9 @@ spec:
                 - name: add-cyclic-lon
                   value: "true"
         - - name: move-chunks-to-space
-            template: rechunk
+            templateRef:
+              name: rechunk
+              template: rechunk
             arguments:
               parameters:
                 - name: in-zarr
@@ -686,7 +653,9 @@ spec:
                 - name: domain-file
                   value: "{{ inputs.parameters.domainfile1x1 }}"
         - - name: move-chunks-to-time
-            template: rechunk
+            templateRef:
+              name: rechunk
+              template: rechunk
             arguments:
               parameters:
                 - name: in-zarr
@@ -710,7 +679,9 @@ spec:
                 - name: add-cyclic-lon
                   value: "true"
         - - name: move-chunks-to-space
-            template: rechunk
+            templateRef:
+              name: rechunk
+              template: rechunk
             arguments:
               parameters:
                 - name: in-zarr
@@ -737,7 +708,9 @@ spec:
               parameter: "{{ steps.regrid.outputs.parameters.out-zarr }}"
       steps:
         - - name: move-chunks-to-time
-            template: rechunk
+            templateRef:
+              name: rechunk
+              template: rechunk
             arguments:
               parameters:
                 - name: in-zarr
@@ -830,7 +803,9 @@ spec:
               end: "17"
           - name: rechunk-biascorrected
             depends: "with-lat-chunk && prime-qdm-output-zarrstore"
-            template: rechunk
+            templateRef:
+              name: rechunk
+              template: rechunk
             arguments:
               parameters:
                 - name: in-zarr
