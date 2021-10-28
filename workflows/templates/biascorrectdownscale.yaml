@@ -1130,6 +1130,13 @@ spec:
               out_all_years = out_all_years.drop_vars(nonlat_variables)
 
           out_all_years = out_all_years.transpose("time", "lat", "lon")
+
+          with xr.open_zarr(qdm_out_zarr) as out_store:
+              out_all_years.attrs |= out_store.attrs
+              for k, v in out_store.variables.items():
+                  if k in out_all_years:
+                      out_all_years[k].attrs |= v.attrs
+
           print(f"{out_all_years=}")  # DEBUG
 
           # Output to region of existing zarr store.
@@ -1404,6 +1411,7 @@ spec:
         source: |
           import dodola.repository
           from dodola.core import adjust_analogdownscaling
+          import xarray as xr
 
 
           nonlat_variables = ["lon", "time"]
@@ -1448,6 +1456,13 @@ spec:
               downscaled_ds = downscaled_ds.drop_vars(nonlat_variables)
 
           downscaled_ds = downscaled_ds.transpose("time", "lat", "lon")
+
+          with xr.open_zarr(out_zarr) as out_store:
+              downscaled_ds.attrs |= out_store.attrs
+              for k, v in out_store.variables.items():
+                  if k in downscaled_ds:
+                      downscaled_ds[k].attrs |= v.attrs
+
           print(f"{downscaled_ds=}")  # DEBUG
 
           # Output to region of existing zarr store.
@@ -1551,7 +1566,7 @@ spec:
             valueFrom:
               path: "/tmp/lastyear.txt"
       script:
-        image: us-central1-docker.pkg.dev/downscalecmip6/private/dodola:0.5.0
+        image: us-central1-docker.pkg.dev/downscalecmip6/private/dodola:dev
         env:
           - name: IN_ZARR
             value: "{{ inputs.parameters.in-zarr }}"
@@ -1651,7 +1666,7 @@ spec:
           - name: out-zarr
             value: "{{ inputs.parameters.out-zarr }}"
       script:
-        image: us-central1-docker.pkg.dev/downscalecmip6/private/dodola:0.5.0
+        image: us-central1-docker.pkg.dev/downscalecmip6/private/dodola:dev
         env:
           - name: IN_ZARR
             value: "{{ inputs.parameters.in-zarr }}"
@@ -1728,6 +1743,10 @@ spec:
           ds_out = ds_out.chunk({"time": 365, "lat": 2, "lon": -1})
 
           with xr.open_zarr(out_zarr) as out_store:
+              ds_out.attrs |= out_store.attrs
+              for k, v in out_store.variables.items():
+                  if k in ds_out:
+                      ds_out[k].attrs |= v.attrs
               target_idx_slice = out_store["time"].to_index().get_loc(sel_time)
 
           if non_time:
