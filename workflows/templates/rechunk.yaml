@@ -1,0 +1,57 @@
+apiVersion: argoproj.io/v1alpha1
+kind: WorkflowTemplate
+metadata:
+  name: rechunk
+  annotations:
+    workflows.argoproj.io/description: >-
+      Templates to rechunk a small xarray Zarr Store in-memory, given an fsspec URL.
+    workflows.argoproj.io/tags: fsspec,rechunk,zarr,xarray
+    workflows.argoproj.io/version: '>= 3.1.0'
+  labels:
+    component: utils
+spec:
+  templates:
+
+    - name: rechunk
+      inputs:
+        parameters:
+          - name: in-zarr
+          - name: out-zarr
+            value: "gs://scratch-170cd6ec/{{ workflow.name }}/{{ pod.name }}/rechunked.zarr"
+          - name: time-chunk
+            value: 365
+          - name: lat-chunk
+            value: 10
+          - name: lon-chunk
+            value: 10
+          - name: time-dim-name
+            value: time
+      outputs:
+        parameters:
+          - name: out-zarr
+            value: "{{ inputs.parameters.out-zarr }}"
+      container:
+        image: us-central1-docker.pkg.dev/downscalecmip6/private/dodola:0.5.0
+        command: [ dodola ]
+        args:
+          - "rechunk"
+          - "{{ inputs.parameters.in-zarr }}"
+          - "--out"
+          - "{{ inputs.parameters.out-zarr }}"
+          - "--chunk"
+          - "{{ inputs.parameters.time-dim-name }}={{ inputs.parameters.time-chunk }}"
+          - "--chunk"
+          - "lat={{ inputs.parameters.lat-chunk }}"
+          - "--chunk"
+          - "lon={{ inputs.parameters.lon-chunk }}"
+        resources:
+          requests:
+            memory: 48Gi
+            cpu: "1000m"
+          limits:
+            memory: 48Gi
+            cpu: "2000m"
+      activeDeadlineSeconds: 1800
+      retryStrategy:
+        limit: 1
+        retryPolicy: "Always"
