@@ -269,6 +269,20 @@ spec:
                   value: "{{ steps.remove-late-ssp.outputs.parameters.out-zarr }}"
                 - name: out-zarr
                   value: "{{ steps.get-output-clean-historical-url.outputs.parameters.out-url }}"
+        - - name: validate-historical
+            templateRef:
+              name: qualitycontrol-check-cmip6
+              template: qualitycontrol-check-cmip6
+            arguments:
+              parameters:
+                - name: in-zarr
+                  value: "{{ steps.get-output-clean-historical-url.outputs.parameters.out-url }}"
+                - name: variable
+                  value: "{{=jsonpath(inputs.parameters['target-json'], '$.variable_id')}}"
+                - name: data
+                  value: "cmip6"
+                - name: time
+                  value: "historical"
 
 
     - name: process-ssp
@@ -330,6 +344,20 @@ spec:
                   value: "{{ steps.remove-early-historical.outputs.parameters.out-zarr }}"
                 - name: out-zarr
                   value: "{{ steps.get-output-clean-ssp-url.outputs.parameters.out-url }}"
+        - - name: validate-ssp
+            templateRef:
+              name: qualitycontrol-check-cmip6
+              template: qualitycontrol-check-cmip6
+            arguments:
+              parameters:
+                - name: in-zarr
+                  value: "{{ steps.get-output-clean-ssp-url.outputs.parameters.out-url }}"
+                - name: variable
+                  value: "{{=jsonpath(inputs.parameters['target-json'], '$.variable_id')}}"
+                - name: data
+                  value: "cmip6"
+                - name: time
+                  value: "future"
 
 
     - name: standardize-cmip6
