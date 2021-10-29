@@ -1,0 +1,67 @@
+apiVersion: argoproj.io/v1alpha1
+kind: WorkflowTemplate
+metadata:
+  name: regrid
+  annotations:
+    workflows.argoproj.io/description: >-
+      Templates to regrid a small xarray Zarr Store in-memory, given an fsspec URL.
+    workflows.argoproj.io/tags: fsspec,regrid,zarr,xarray
+    workflows.argoproj.io/version: '>= 3.1.0'
+  labels:
+    component: utils
+spec:
+  templates:
+
+    - name: regrid
+      inputs:
+        parameters:
+          - name: in-zarr
+          - name: out-zarr
+            value: "gs://scratch-170cd6ec/{{ workflow.name }}/{{ pod.name }}/out.zarr"
+          - name: regrid-method
+          - name: domain-file
+      outputs:
+        parameters:
+          - name: out-zarr
+            value: "{{ inputs.parameters.out-zarr }}"
+      script:
+        image: us-central1-docker.pkg.dev/downscalecmip6/private/dodola:0.5.0
+        command: [ "python" ]
+        source: |
+          import xarray as xr
+          import xesmf as xe
+          import dodola.repository as storage
+          from dodola.core import xesmf_regrid
+
+
+          ds = storage.read("{{ inputs.parameters.in-zarr }}")
+          print(f"{ds =}")
+
+          domain_ds = storage.read("{{ inputs.parameters.domain-file }}")
+
+          out_ds = xesmf_regrid(
+              ds,
+              domain_ds,
+              method="{{ inputs.parameters.regrid-method }}",
+              astype="float32"
+          )
+
+          # Merge original attrs into output.
+          out_ds.attrs |= ds.attrs
+          for k, v in ds.variables.items():
+              if k in out_ds:
+                  out_ds[k].attrs |= v.attrs
+
+          print(f"{out_ds =}")
+          storage.write("{{ inputs.parameters.out-zarr }}", out_ds)
+        resources:
+          requests:
+            memory: 48Gi
+            cpu: "1000m"
+          limits:
+            memory: 48Gi
+            cpu: "2000m"
+      activeDeadlineSeconds: 3600
+      retryStrategy:
+        limit: 2
+        retryPolicy: "Always"
