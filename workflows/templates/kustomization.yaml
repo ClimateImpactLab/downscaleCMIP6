@@ -9,4 +9,5 @@ resources:
   - download-cmip6.yaml
   - qualitycontrol-check-cmip6.yaml
   - rechunk.yaml
+  - regrid.yaml
   - zarr-transfer.yaml
