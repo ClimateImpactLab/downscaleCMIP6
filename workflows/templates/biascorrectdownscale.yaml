@@ -340,6 +340,22 @@ spec:
                   value: "{{ inputs.parameters.first-year }}"
                 - name: last-year
                   value: "{{ inputs.parameters.last-year }}"
+          - name: validate-biascorrected
+            depends: qdm
+            templateRef:
+              name: qualitycontrol-check-cmip6
+              template: qualitycontrol-check-cmip6
+            arguments:
+              parameters:
+                - name: in-zarr
+                  value: "{{ tasks.qdm.outputs.parameters.out-zarr }}"
+                - name: variable
+                  value: "{{=jsonpath(inputs.parameters.simulation, '$.variable_id')}}"
+                - name: data
+                  value: "bias_corrected"
+                - name: time
+                  value: >-
+                    {{=jsonpath(inputs.parameters.simulation, '$.experiment_id') == 'historical' ? 'historical' : 'future'}}
           - name: preprocess-biascorrected
             template: preprocess-biascorrected
             depends: qdm
@@ -390,6 +406,22 @@ spec:
             withSequence:
               start: "0"
               end: "359"
+          - name: validate-downscaled
+            depends: aiqpd && prime-aiqpd-biascorrected-output-zarr
+            templateRef:
+              name: qualitycontrol-check-cmip6
+              template: qualitycontrol-check-cmip6
+            arguments:
+              parameters:
+                - name: in-zarr
+                  value: "{{ tasks.prime-aiqpd-biascorrected-output-zarr.outputs.parameters.out-zarr }}"
+                - name: variable
+                  value: "{{=jsonpath(inputs.parameters.simulation, '$.variable_id')}}"
+                - name: data
+                  value: "downscaled"
+                - name: time
+                  value: >-
+                    {{=jsonpath(inputs.parameters.simulation, '$.experiment_id') == 'historical' ? 'historical' : 'future'}}
 
 
       # Regridding and rechunking required for GCM simulations before bias correction.
