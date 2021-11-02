@@ -125,6 +125,12 @@ spec:
 
         print(f"standardized tmax/latitude/longitude name to tasmax/lat/lon")
 
+        for v, u in [("tasmax", "K"), ("tasmin", "K"), ("dtr", "K"), ("pr", "mm day-1")]:
+            if v in ds.variables:
+                print(f"writing light units metadata ({u}) to variable {v}")
+                ds[v].attrs["units"] = u
+        print("added units metadata to variables")
+
         ds.to_zarr(out_store_path, mode="w")
         print(f"written to {out_store_path}")
 
