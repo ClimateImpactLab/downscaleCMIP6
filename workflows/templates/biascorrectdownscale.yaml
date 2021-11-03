@@ -1415,7 +1415,6 @@ spec:
               variable=variable
           )
 
-          downscaled_ds = downscaled_ds.reset_coords(["sim_q"], drop=True)
           if nonlat_variables:
               downscaled_ds = downscaled_ds.drop_vars(nonlat_variables)
 
