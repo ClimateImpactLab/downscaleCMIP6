@@ -1415,7 +1415,6 @@ spec:
               variable=variable
           )
 
-          downscaled_ds = downscaled_ds.reset_coords(["sim_q"], drop=True)
           if nonlat_variables:
               downscaled_ds = downscaled_ds.drop_vars(nonlat_variables)
 
@@ -1441,7 +1440,7 @@ spec:
             memory: 24Gi
             cpu: "1000m"
           limits:
-            memory: 24Gi
+            memory: 38Gi
             cpu: "6000m"
       activeDeadlineSeconds: 900
       retryStrategy:
