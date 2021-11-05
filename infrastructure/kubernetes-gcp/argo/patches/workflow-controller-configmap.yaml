@@ -62,7 +62,7 @@ data:
     archiveLogs: true
     gcs:
       bucket: scratch-170cd6ec
-      keyFormat: "{{workflow.name}}/{{pod.name}}"
+      keyFormat: "{{workflow.uid}}/{{pod.name}}"
 
   persistence: |
     connectionPool:

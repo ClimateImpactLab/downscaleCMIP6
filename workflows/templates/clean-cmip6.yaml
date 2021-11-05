@@ -365,7 +365,7 @@ spec:
         parameters:
           - name: in-zarr
           - name: out-zarr
-            value: "gs://scratch-170cd6ec/{{ workflow.name }}/{{ pod.name }}/standardized.zarr"
+            value: "gs://scratch-170cd6ec/{{ workflow.uid }}/{{ pod.name }}/standardized.zarr"
       outputs:
         parameters:
           - name: out-zarr
@@ -400,7 +400,7 @@ spec:
           - name: from-time
           - name: to-time
           - name: out-zarr
-            value: "gs://scratch-170cd6ec/{{ workflow.name }}/{{ pod.name }}/timesliced.zarr"
+            value: "gs://scratch-170cd6ec/{{ workflow.uid }}/{{ pod.name }}/timesliced.zarr"
       outputs:
         parameters:
           - name: out-zarr
@@ -467,7 +467,7 @@ spec:
           - name: in1-zarr
           - name: in2-zarr
           - name: out-zarr
-            value: "gs://scratch-170cd6ec/{{ workflow.name }}/{{ pod.name }}/concatenated.zarr"
+            value: "gs://scratch-170cd6ec/{{ workflow.uid }}/{{ pod.name }}/concatenated.zarr"
       outputs:
         parameters:
           - name: out-zarr
