@@ -102,7 +102,7 @@ spec:
         parameters:
           - name: in-zarr
           - name: out-zarr
-            value: "gs://scratch-170cd6ec/{{ workflow.name }}/{{ pod.name }}/preprocessed.zarr"
+            value: "gs://scratch-170cd6ec/{{ workflow.uid }}/{{ pod.name }}/preprocessed.zarr"
           - name: regrid-method
           - name: domain-file
           - name: correct-wetday-frequency
@@ -322,7 +322,7 @@ spec:
           - name: first-year
           - name: last-year
           - name: out-zarr
-            value: "gs://scratch-170cd6ec/{{ workflow.name }}/{{ pod.name }}/qdm_adjusted.zarr"
+            value: "gs://scratch-170cd6ec/{{ workflow.uid }}/{{ pod.name }}/qdm_adjusted.zarr"
           - name: include-quantiles
             value: "false"
       outputs:
@@ -410,7 +410,7 @@ spec:
           - name: lat-slice-max
           - name: kind
           - name: out-zarr
-            value: "gs://scratch-170cd6ec/{{ workflow.name }}/{{ pod.name }}/qdm_model.zarr"
+            value: "gs://scratch-170cd6ec/{{ workflow.uid }}/{{ pod.name }}/qdm_model.zarr"
       outputs:
         parameters:
           - name: out-zarr
@@ -456,7 +456,7 @@ spec:
           - name: include-quantiles
             value: "true"
           - name: out-zarr
-            value: "gs://scratch-170cd6ec/{{ workflow.name }}/{{ pod.name }}/qdm_adjusted.zarr"
+            value: "gs://scratch-170cd6ec/{{ workflow.uid }}/{{ pod.name }}/qdm_adjusted.zarr"
       outputs:
         parameters:
           - name: out-zarr

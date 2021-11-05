@@ -88,7 +88,7 @@ spec:
           - name: nontime-variables
             value: "lat lon"
           - name: out-zarr
-            value: "gs://scratch-170cd6ec/{{ workflow.name }}/{{ pod.name }}/regridded.zarr"
+            value: "gs://scratch-170cd6ec/{{ workflow.uid }}/{{ pod.name }}/regridded.zarr"
       outputs:
         parameters:
           - name: out-zarr

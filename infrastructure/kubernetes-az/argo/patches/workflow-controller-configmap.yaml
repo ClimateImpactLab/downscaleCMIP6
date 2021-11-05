@@ -54,7 +54,7 @@ data:
       secretKeySecret:
         name: artifactrepocreds-secret
         key: secretkey
-      keyFormat: "{{workflow.name}}/{{pod.name}}"
+      keyFormat: "{{workflow.uid}}/{{pod.name}}"
 
   sso: |
     issuer: https://login.microsoftonline.com/e26d3ccf-6270-4235-94ec-857966b171c1/v2.0
