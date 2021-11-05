@@ -12,7 +12,6 @@ metadata:
     workflows.argoproj.io/version: '>= 3.1.0'
   labels:
     component: qualitycontrol
-
 spec:
   entrypoint: qualitycontrol-check-cmip6
   arguments:
@@ -40,56 +39,15 @@ spec:
           - name: variable
           - name: data
           - name: time
-      script:
-        image: us-central1-docker.pkg.dev/downscalecmip6/private/dodola:0.7.0
-        command: [python]
-        source: |
-          import dask
-          import numpy as np
-          from dodola.core import (_test_for_nans, _test_variable_names, _test_timesteps, _test_temp_range, _test_dtr_range, _test_negative_values, _test_maximum_precip)
-          from dodola.repository import read
-          import xarray as xr
-
-          in_zarr = "{{ inputs.parameters.in-zarr }}"
-          variable = "{{ inputs.parameters.variable }}"
-          data_type = "{{ inputs.parameters.data }}"
-          time_period = "{{ inputs.parameters.time }}"
-
-          print(f"Validating {in_zarr}")
-
-          ds = read(in_zarr)
-
-          # These only read in Zarr Store metadata -- not memory intensive.
-          _test_variable_names(ds, variable)
-          _test_timesteps(ds, data_type, time_period)
-
-          # Other test are done on annual selections with dask.delayed to
-          # avoid large memory errors.
-          @dask.delayed
-          def clear_memory_intensive_tests(f, v, t):
-              d = read(f).sel(time=str(t))
-
-              _test_for_nans(d, v)
-
-              if v == "tasmin" or v == "tasmax":
-                  _test_temp_range(d, v)
-              if v == "dtr":
-                  _test_dtr_range(d, v)
-              if v == "dtr" or v == "pr":
-                 _test_negative_values(d, v)
-              if v == "pr":
-                 _test_maximum_precip(d, v)
-
-              # Assumes error thrown if had problem before this.
-              return True
-
-          tasks = []
-          for t in np.unique(ds["time"].dt.year.data):
-              test_results = clear_memory_intensive_tests(in_zarr, variable, t)
-              tasks.append(test_results)
-          tasks = dask.compute(*tasks)
-          assert all(tasks)  # Likely don't need this
-          print(f"Validated")
+      container:
+        image: us-central1-docker.pkg.dev/downscalecmip6/private/dodola:dev
+        command: [ "dodola" ]
+        args:
+          - "validate-dataset"
+          - "{{ inputs.parameters.in-zarr }}"
+          - "--variable={{ inputs.parameters.variable }}"
+          - "--data={{ inputs.parameters.data }}"
+          - "--time={{ inputs.parameters.time }}"
         resources:
           requests:
             memory: 8Gi
@@ -98,4 +56,3 @@ spec:
             memory: 8Gi
             cpu: "2000m"
       activeDeadlineSeconds: 3600
-
