@@ -46,8 +46,8 @@ spec:
           - "validate-dataset"
           - "{{ inputs.parameters.in-zarr }}"
           - "--variable={{ inputs.parameters.variable }}"
-          - "--data={{ inputs.parameters.data }}"
-          - "--time={{ inputs.parameters.time }}"
+          - "--data-type={{ inputs.parameters.data }}"
+          - "--time-period={{ inputs.parameters.time }}"
         resources:
           requests:
             memory: 8Gi
