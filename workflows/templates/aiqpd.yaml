@@ -1,0 +1,638 @@
+apiVersion: argoproj.io/v1alpha1
+kind: WorkflowTemplate
+metadata:
+  name: aiqpd
+  annotations:
+    workflows.argoproj.io/description: >-
+      Prototype AIQPD downscaling for bias-corrected CMIP6 GCM Zarr Stores.
+    workflows.argoproj.io/tags: zarr,downscale,cmip6,aiqpd,dc6
+    workflows.argoproj.io/version: '>= 3.1.0'
+  labels:
+    component: downscale
+spec:
+  entrypoint: main
+  arguments:
+    parameters:
+      - name: biascorrected-zarr
+        value: "gs://biascorrected-492e989a/stage/ScenarioMIP/NOAA-GFDL/GFDL-ESM4/ssp370/r1i1p1f1/day/tasmax/gr1/v20211103182935.zarr"
+      - name: variable-id
+        value: "tasmax"
+      - name: reference-zarr
+        value: "gs://clean-b1dbca25/reanalysis/ERA-5/F320/tasmax.1995-2015.F320.zarr"
+      - name: out-zarr
+        value: "gs://scratch-170cd6ec/{{ workflow.name }}/{{ pod.name }}/downscaled.zarr"
+      - name: regrid-method
+        value: "bilinear"
+      - name: qdm-kind
+        value: "additive"
+      - name: domainfile1x1
+        value: "gs://support-c23ff1a3/domain.1x1.zarr"
+      - name: domainfile0p25x0p25
+        value: "gs://support-c23ff1a3/domain.0p25x0p25.zarr"
+  templates:
+
+    - name: main
+      inputs:
+        parameters:
+          - name: biascorrected-zarr
+          - name: variable-id
+          - name: reference-zarr
+          - name: out-zarr
+          - name: regrid-method
+          - name: qdm-kind
+          - name: domainfile1x1
+          - name: domainfile0p25x0p25
+      outputs:
+        parameters:
+          - name: out-zarr
+            valueFrom:
+              parameter: "{{ tasks.aiqpd.outputs.parameters.out-zarr }}"
+      dag:
+        tasks:
+          - name: create-fine-reference
+            template: create-fine-reference
+            arguments:
+              parameters:
+                - name: in-zarr
+                  value: "{{ inputs.parameters.reference-zarr }}"
+                - name: regrid-method
+                  value: "{{ inputs.parameters.regrid-method }}"
+                - name: domain-file
+                  value: "{{ inputs.parameters.domainfile0p25x0p25 }}"
+          - name: create-coarse-reference
+            template: create-coarse-reference
+            arguments:
+              parameters:
+                - name: in-zarr
+                  value: "{{ inputs.parameters.reference-zarr }}"
+                - name: regrid-method
+                  value: "{{ inputs.parameters.regrid-method }}"
+                - name: domainfile0p25x0p25
+                  value: "{{ inputs.parameters.domainfile0p25x0p25 }}"
+                - name: domainfile1x1
+                  value: "{{ inputs.parameters.domainfile1x1 }}"
+          - name: preprocess-biascorrected
+            template: preprocess-biascorrected
+            arguments:
+              parameters:
+                - name: in-zarr
+                  value: "{{ inputs.parameters.biascorrected-zarr }}"
+                - name: domain-file
+                  value: "{{ inputs.parameters.domainfile0p25x0p25 }}"
+          - name: aiqpd
+            template: aiqpd
+            depends: >-
+              preprocess-biascorrected
+              && create-coarse-reference
+              && create-fine-reference
+            arguments:
+              parameters:
+                - name: variable-id
+                  value: "{{ inputs.parameters.variable-id }}"
+                - name: simulation-zarr
+                  value: "{{ tasks.preprocess-biascorrected.outputs.parameters.out-zarr }}"
+                - name: coarse-reference-zarr
+                  value: "{{ tasks.create-coarse-reference.outputs.parameters.out-zarr }}"
+                - name: fine-reference-zarr
+                  value: "{{ tasks.create-fine-reference.outputs.parameters.out-zarr }}"
+                - name: qdm-kind
+                  value: "{{ inputs.parameters.qdm-kind }}"
+                - name: out-zarr
+                  value: "{{ inputs.parameters.out-zarr }}"
+
+
+    - name: create-fine-reference
+      inputs:
+        parameters:
+          - name: in-zarr
+          - name: regrid-method
+          - name: domain-file
+      outputs:
+        parameters:
+          - name: out-zarr
+            valueFrom:
+              parameter: "{{ steps.move-chunks-to-space.outputs.parameters.out-zarr }}"
+      steps:
+        - - name: move-chunks-to-time
+            templateRef:
+              name: rechunk
+              template: rechunk
+            arguments:
+              parameters:
+                - name: in-zarr
+                  value: "{{ inputs.parameters.in-zarr }}"
+                - name: time-chunk
+                  value: "73"
+                - name: lat-chunk
+                  value: -1
+                - name: lon-chunk
+                  value: -1
+        - - name: regrid
+            templateRef:
+              name: distributed-regrid
+              template: main
+            arguments:
+              parameters:
+                - name: in-zarr
+                  value: "{{ steps.move-chunks-to-time.outputs.parameters.out-zarr }}"
+                - name: regrid-method
+                  value: "{{ inputs.parameters.regrid-method }}"
+                - name: domain-file
+                  value: "{{ inputs.parameters.domain-file }}"
+                - name: add-cyclic-lon
+                  value: "true"
+                - name: add-lat-buffer
+                  value: "true"
+        - - name: move-chunks-to-space
+            templateRef:
+              name: rechunk
+              template: rechunk
+            arguments:
+              parameters:
+                - name: in-zarr
+                  value: "{{ steps.regrid.outputs.parameters.out-zarr }}"
+                - name: time-chunk
+                  value: 365
+                - name: lat-chunk
+                  value: 2
+                - name: lon-chunk
+                  value: -1
+
+
+    - name: create-coarse-reference
+      inputs:
+        parameters:
+          - name: in-zarr
+          - name: regrid-method
+          - name: domainfile0p25x0p25
+          - name: domainfile1x1
+      outputs:
+        parameters:
+          - name: out-zarr
+            valueFrom:
+              parameter: "{{ steps.move-chunks-to-space.outputs.parameters.out-zarr }}"
+      steps:
+        - - name: coarse-regrid
+            templateRef:
+              name: regrid
+              template: regrid
+            arguments:
+              parameters:
+                - name: in-zarr
+                  value: "{{ inputs.parameters.in-zarr }}"
+                - name: regrid-method
+                  value: "{{ inputs.parameters.regrid-method }}"
+                - name: domain-file
+                  value: "{{ inputs.parameters.domainfile1x1 }}"
+        - - name: move-chunks-to-time
+            templateRef:
+              name: rechunk
+              template: rechunk
+            arguments:
+              parameters:
+                - name: in-zarr
+                  value: "{{ steps.coarse-regrid.outputs.parameters.out-zarr }}"
+                - name: time-chunk
+                  value: "73"
+                - name: lat-chunk
+                  value: -1
+                - name: lon-chunk
+                  value: -1
+        - - name: fine-regrid
+            templateRef:
+              name: distributed-regrid
+              template: main
+            arguments:
+              parameters:
+                - name: in-zarr
+                  value: "{{ steps.move-chunks-to-time.outputs.parameters.out-zarr }}"
+                - name: regrid-method
+                  value: "{{ inputs.parameters.regrid-method }}"
+                - name: domain-file
+                  value: "{{ inputs.parameters.domainfile0p25x0p25 }}"
+                - name: add-cyclic-lon
+                  value: "true"
+                - name: add-lat-buffer
+                  value: "true"
+        - - name: move-chunks-to-space
+            templateRef:
+              name: rechunk
+              template: rechunk
+            arguments:
+              parameters:
+                - name: in-zarr
+                  value: "{{ steps.fine-regrid.outputs.parameters.out-zarr }}"
+                - name: time-chunk
+                  value: 365
+                - name: lat-chunk
+                  value: 2
+                - name: lon-chunk
+                  value: -1
+
+
+    - name: preprocess-biascorrected
+      inputs:
+        parameters:
+          - name: in-zarr
+          - name: regrid-method
+            value: "nearest_s2d"
+          - name: domain-file
+      outputs:
+        parameters:
+          - name: out-zarr
+            valueFrom:
+              parameter: "{{ steps.regrid.outputs.parameters.out-zarr }}"
+      steps:
+        - - name: move-chunks-to-time
+            templateRef:
+              name: rechunk
+              template: rechunk
+            arguments:
+              parameters:
+                - name: in-zarr
+                  value: "{{ inputs.parameters.in-zarr }}"
+                - name: time-chunk
+                  value: "73"
+                - name: lat-chunk
+                  value: -1
+                - name: lon-chunk
+                  value: -1
+        - - name: regrid
+            templateRef:
+              name: distributed-regrid
+              template: main
+            arguments:
+              parameters:
+                - name: in-zarr
+                  value: "{{ steps.move-chunks-to-time.outputs.parameters.out-zarr }}"
+                - name: regrid-method
+                  value: "{{ inputs.parameters.regrid-method }}"
+                - name: domain-file
+                  value: "{{ inputs.parameters.domain-file }}"
+                - name: add-cyclic-lon
+                  value: "true"
+                - name: add-lat-buffer
+                  value: "true"
+
+
+    - name: aiqpd
+      inputs:
+        parameters:
+          - name: simulation-zarr
+          - name: coarse-reference-zarr
+          - name: fine-reference-zarr
+          - name: variable-id
+          - name: qdm-kind
+          - name: out-zarr
+      outputs:
+        parameters:
+          - name: out-zarr
+            valueFrom:
+              parameter: "{{ steps.prime-aiqpd-output-zarr.outputs.parameters.out-zarr }}"
+      steps:
+        - - name: prime-aiqpd-output-zarr
+            template: prime-aiqpd-output-zarr
+            arguments:
+              parameters:
+                - name: simulation-zarr
+                  value: "{{ inputs.parameters.simulation-zarr }}"
+                - name: variable
+                  value: "{{ inputs.parameters.variable-id}}"
+                - name: out-zarr
+                  value: "{{ inputs.parameters.out-zarr }}"
+        - - name: with-lat-chunk
+            template: with-lat-chunk
+            arguments:
+              parameters:
+                - name: variable-id
+                  value: "{{ inputs.parameters.variable-id}}"
+                - name: simulation-zarr
+                  value: "{{ inputs.parameters.simulation-zarr }}"
+                - name: coarse-reference-zarr
+                  value: "{{ inputs.parameters.coarse-reference-zarr }}"
+                - name: fine-reference-zarr
+                  value: "{{ inputs.parameters.fine-reference-zarr }}"
+                - name: qdm-kind
+                  value: "{{ inputs.parameters.qdm-kind }}"
+                - name: out-zarr
+                  value: "{{ steps.prime-aiqpd-output-zarr.outputs.parameters.out-zarr }}"
+                  # Looping over 2 degree latitude bands...
+                - name: lat-slice-min
+                  value: "{{=asInt(item) * 2 }}"
+                - name: lat-slice-max
+                  value: "{{=asInt(item) * 2 + 2 }}"
+            # Also, looping over 2 pixel chunk latitude bands:
+            withSequence:
+              start: "0"
+              end: "359"
+
+
+    - name: with-lat-chunk
+      inputs:
+        parameters:
+          - name: simulation-zarr
+          - name: coarse-reference-zarr
+          - name: fine-reference-zarr
+          - name: variable-id
+          - name: qdm-kind
+          - name: lat-slice-min
+          - name: lat-slice-max
+          - name: out-zarr
+      steps:
+        - - name: train-aiqpd
+            template: train-aiqpd
+            arguments:
+              parameters:
+                - name: variable-id
+                  value: "{{ inputs.parameters.variable-id }}"
+                - name: coarse-reference-zarr
+                  value: "{{ inputs.parameters.coarse-reference-zarr }}"
+                - name: fine-reference-zarr
+                  value: "{{ inputs.parameters.fine-reference-zarr }}"
+                - name: qdm-kind
+                  value: "{{ inputs.parameters.qdm-kind }}"
+                - name: lat-slice-min
+                  value: "{{ inputs.parameters.lat-slice-min}}"
+                - name: lat-slice-max
+                  value: "{{ inputs.parameters.lat-slice-max}}"
+        - - name: apply-aiqpd
+            template: apply-aiqpd
+            arguments:
+              parameters:
+                - name: variable
+                  value: "{{ inputs.parameters.variable-id }}"
+                - name: simulation-zarr
+                  value: "{{ inputs.parameters.simulation-zarr }}"
+                - name: aiqpd-model-zarr
+                  value: "{{ steps.train-aiqpd.outputs.parameters.out-zarr }}"
+                - name: qdm-kind
+                  value: "{{ inputs.parameters.qdm-kind }}"
+                - name: lat-slice-min
+                  value: "{{ inputs.parameters.lat-slice-min }}"
+                - name: lat-slice-max
+                  value: "{{ inputs.parameters.lat-slice-max }}"
+                - name: out-zarr
+                  value: "{{ inputs.parameters.out-zarr }}"
+
+
+    - name: train-aiqpd
+      inputs:
+        parameters:
+          - name: coarse-reference-zarr
+          - name: fine-reference-zarr
+          - name: variable-id
+          - name: qdm-kind
+          - name: lat-slice-min
+          - name: lat-slice-max
+          - name: time-sel-start
+            value: "1994-12-17"
+          - name: time-sel-stop
+            value: "2015-01-15"
+          - name: out-zarr
+            value: "gs://scratch-170cd6ec/{{ workflow.name }}/{{ pod.name }}/aiqpd-model.zarr"
+      outputs:
+        parameters:
+          - name: out-zarr
+            value: "{{ inputs.parameters.out-zarr }}"
+      script:
+        image: us-central1-docker.pkg.dev/downscalecmip6/private/dodola:0.7.0
+        command: [ python ]
+        source: |
+          import os
+          import dodola.repository
+          from dodola.core import train_analogdownscaling
+
+          kind_map = {"multiplicative": "*", "additive": "+"}
+
+          cref_zarr = "{{ inputs.parameters.coarse-reference-zarr }}"
+          fref_zarr = "{{ inputs.parameters.fine-reference-zarr }}"
+          out_zarr = "{{ inputs.parameters.out-zarr }}"
+
+          time_sel_start = "{{ inputs.parameters.time-sel-start }}"
+          time_sel_stop = "{{ inputs.parameters.time-sel-stop }}"
+          min_slice = int({{ inputs.parameters.lat-slice-min }})
+          max_slice = int({{ inputs.parameters.lat-slice-max }})
+
+          variable = "{{ inputs.parameters.variable-id }}"
+          kind = kind_map["{{ inputs.parameters.qdm-kind }}"]
+
+          latslice = slice(min_slice, max_slice)
+          print(f"{latslice=}")  # DEBUG
+          timeslice = slice(time_sel_start, time_sel_stop)
+          print(f"{timeslice=}")  # DEBUG
+
+          print(f"reading {cref_zarr}")
+          creference = dodola.repository.read(cref_zarr)
+          print(f"{creference=}")  # DEBUG
+          creference = creference.sel(time=timeslice)
+          creference = creference.isel(lat=latslice)
+          print(f"{creference=}")  # DEBUG
+
+          print(f"reading {fref_zarr}")
+          freference = dodola.repository.read(fref_zarr)
+          print(f"{freference=}")  # DEBUG
+          freference = freference.sel(time=timeslice)
+          freference = freference.isel(lat=latslice)
+          print(f"{freference=}")  # DEBUG
+
+          creference.load()
+          freference.load()
+
+          aiqpd = train_analogdownscaling(
+              coarse_reference=creference,
+              fine_reference=freference,
+              variable=variable,
+              kind=kind,
+              quantiles_n=620,
+              window_n=31,
+          )
+
+          print(f"{aiqpd.ds=}")  # DEBUG
+
+          dodola.repository.write(out_zarr, aiqpd.ds)
+          print(f"Output written to {out_zarr}")  # DEBUG
+        resources:
+          requests:
+            memory: 12Gi
+            cpu: "1000m"
+          limits:
+            memory: 12Gi
+            cpu: "3000m"
+      activeDeadlineSeconds: 600
+      retryStrategy:
+        limit: 2
+        retryPolicy: "Always"
+        backoff:
+          duration: 30s
+          factor: 2
+
+
+    - name: apply-aiqpd
+      inputs:
+        parameters:
+          - name: simulation-zarr
+          - name: aiqpd-model-zarr
+          - name: variable
+          - name: qdm-kind
+          - name: lat-slice-min
+          - name: lat-slice-max
+          - name: out-zarr
+            value: "gs://scratch-170cd6ec/{{ workflow.name }}/{{ pod.name }}/aiqpd_adjusted.zarr"
+      script:
+        image: us-central1-docker.pkg.dev/downscalecmip6/private/dodola:0.7.0
+        command: [ python ]
+        source: |
+          import dodola.repository
+          from dodola.core import adjust_analogdownscaling
+          import xarray as xr
+
+
+          nonlat_variables = ["lon", "time"]
+          kind_map = {"multiplicative": "*", "additive": "+"}
+
+          sim_zarr = "{{ inputs.parameters.simulation-zarr }}"
+          aiqpd_model_zarr = "{{ inputs.parameters.aiqpd-model-zarr }}"
+          out_zarr = "{{ inputs.parameters.out-zarr }}"
+          min_slice = int({{ inputs.parameters.lat-slice-min }})
+          max_slice = int({{ inputs.parameters.lat-slice-max }})
+          variable = "{{ inputs.parameters.variable }}"
+          kind = kind_map["{{ inputs.parameters.qdm-kind }}"]
+
+          latslice = slice(min_slice, max_slice)
+          print(f"{latslice=}")  # DEBUG
+
+          sim_ds = dodola.repository.read(sim_zarr).isel(lat=latslice)
+          sim_ds = sim_ds.set_coords(["sim_q"])
+          print(f"{sim_ds=}")  # DEBUG
+          print("loading data...")
+          sim_ds.load()
+          print("data loaded")
+
+          aiqpd_ds = dodola.repository.read(aiqpd_model_zarr)
+          print(f"{aiqpd_ds=}")  # DEBUG
+          print("loading data...")
+          aiqpd_ds.load()
+          print("data loaded")
+
+          # zarr dimensions can be switched, and if dim order
+          # is not lat, lon, dayofyear, quantile, cannot broadcast
+          #aiqpd_ds = aiqpd_ds.transpose("lon", "lat", "dayofyear", "quantiles")  # OOM error?
+
+          downscaled_ds = adjust_analogdownscaling(
+              simulation=sim_ds,
+              aiqpd=aiqpd_ds,
+              variable=variable
+          )
+
+          if nonlat_variables:
+              downscaled_ds = downscaled_ds.drop_vars(nonlat_variables)
+
+          downscaled_ds = downscaled_ds.transpose("time", "lat", "lon")
+
+          with xr.open_zarr(out_zarr) as out_store:
+              downscaled_ds.attrs |= out_store.attrs
+              for k, v in out_store.variables.items():
+                  if k in downscaled_ds:
+                      downscaled_ds[k].attrs |= v.attrs
+
+          print(f"{downscaled_ds=}")  # DEBUG
+
+          # Output to region of existing zarr store.
+          downscaled_ds[[variable]].to_zarr(
+              out_zarr,
+              region={"lat": latslice},
+              mode="a"
+          )
+          print(f"Output written to {out_zarr}")  # DEBUG
+        resources:
+          requests:
+            memory: 24Gi
+            cpu: "1000m"
+          limits:
+            memory: 38Gi
+            cpu: "6000m"
+      activeDeadlineSeconds: 900
+      retryStrategy:
+        limit: 2
+        retryPolicy: "Always"
+        backoff:
+          duration: 30s
+          factor: 2
+
+
+    # Sets up output zarr file and metadata without writing time-related data to the zarr store.
+    - name: prime-aiqpd-output-zarr
+      inputs:
+        parameters:
+          - name: simulation-zarr
+          - name: variable
+          - name: out-zarr
+            value: "gs://scratch-170cd6ec/{{ workflow.name }}/{{ pod.name }}/downscaled.zarr"
+          - name: nonlat-variables
+            value: "time lon"
+      outputs:
+        parameters:
+          - name: out-zarr
+            value: "{{ inputs.parameters.out-zarr }}"
+      script:
+        image: us-central1-docker.pkg.dev/downscalecmip6/private/dodola:0.7.0
+        env:
+          - name: ARGO_WORKFLOW_NAME
+            value: "{{ workflow.name }}"
+          - name: ARGO_WORKFLOW_UID
+            value: "{{ workflow.uid }}"
+          - name: DC6_VERSION_ID
+            value: "v{{workflow.creationTimestamp.Y}}{{workflow.creationTimestamp.m}}{{workflow.creationTimestamp.d}}{{workflow.creationTimestamp.H}}{{workflow.creationTimestamp.M}}{{workflow.creationTimestamp.S}}"
+        command: [ python ]
+        source: |
+          import os
+          import dodola.repository
+          import xarray as xr
+
+          nonlat_variables = ["lon", "time"]
+
+          simulation_zarr = "{{ inputs.parameters.simulation-zarr }}"
+          variable = "{{ inputs.parameters.variable }}"
+          out_zarr = "{{ inputs.parameters.out-zarr }}"
+
+          # Select target variable but ensure we include attrs metadata for
+          # the original Dataset. Not 100 % sure this is needed.
+          ds_out_all = dodola.repository.read(simulation_zarr)
+          ds_out = ds_out_all[[variable]]
+          ds_out.attrs = ds_out_all.attrs
+
+          # Add downscaling metadata to attrs
+          ds_out.attrs["dc6_workflow_name"] = os.environ["ARGO_WORKFLOW_NAME"]
+          ds_out.attrs["dc6_workflow_uid"] = os.environ["ARGO_WORKFLOW_UID"]
+          ds_out.attrs["dc6_version_id"] = os.environ["DC6_VERSION_ID"]
+
+          print(f"{ds_out=}")  # DEBUG
+
+          # Output metadata to Zarr store.
+          ds_out.to_zarr(
+              out_zarr,
+              mode="w",
+              compute=False,
+              consolidated=True
+          )
+
+          # Append variables that do not depend on "lat"
+          if nonlat_variables:
+              print(f"{ds_out[nonlat_variables]=}")  # DEBUG
+              ds_out[nonlat_variables].to_zarr(
+                  out_zarr,
+                  mode="a",
+                  compute=True,
+                  consolidated=True
+              )
+        resources:
+          requests:
+            memory: 4Gi
+            cpu: "1000m"
+          limits:
+            memory: 4Gi
+            cpu: "1000m"
+      activeDeadlineSeconds: 900
+      retryStrategy:
+        limit: 2
+        retryPolicy: "Always"
