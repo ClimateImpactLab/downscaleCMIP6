@@ -1,6 +1,5 @@
 apiVersion: argoproj.io/v1alpha1
-kind: Workflow
-#kind: WorkflowTemplate
+kind: WorkflowTemplate
 metadata:
   name: biascorrectdownscale
   labels:
