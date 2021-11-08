@@ -394,63 +394,20 @@ spec:
         parameters:
           - name: out-zarr
             value: "{{ inputs.parameters.out-zarr }}"
-      script:
-        image: us-central1-docker.pkg.dev/downscalecmip6/private/dodola:0.7.0
-        command: [ python ]
-        source: |
-          import os
-          import dodola.repository
-          from dodola.core import train_analogdownscaling
-
-          kind_map = {"multiplicative": "*", "additive": "+"}
-
-          cref_zarr = "{{ inputs.parameters.coarse-reference-zarr }}"
-          fref_zarr = "{{ inputs.parameters.fine-reference-zarr }}"
-          out_zarr = "{{ inputs.parameters.out-zarr }}"
-
-          time_sel_start = "{{ inputs.parameters.time-sel-start }}"
-          time_sel_stop = "{{ inputs.parameters.time-sel-stop }}"
-          min_slice = int({{ inputs.parameters.lat-slice-min }})
-          max_slice = int({{ inputs.parameters.lat-slice-max }})
-
-          variable = "{{ inputs.parameters.variable-id }}"
-          kind = kind_map["{{ inputs.parameters.qdm-kind }}"]
-
-          latslice = slice(min_slice, max_slice)
-          print(f"{latslice=}")  # DEBUG
-          timeslice = slice(time_sel_start, time_sel_stop)
-          print(f"{timeslice=}")  # DEBUG
-
-          print(f"reading {cref_zarr}")
-          creference = dodola.repository.read(cref_zarr)
-          print(f"{creference=}")  # DEBUG
-          creference = creference.sel(time=timeslice)
-          creference = creference.isel(lat=latslice)
-          print(f"{creference=}")  # DEBUG
-
-          print(f"reading {fref_zarr}")
-          freference = dodola.repository.read(fref_zarr)
-          print(f"{freference=}")  # DEBUG
-          freference = freference.sel(time=timeslice)
-          freference = freference.isel(lat=latslice)
-          print(f"{freference=}")  # DEBUG
-
-          creference.load()
-          freference.load()
-
-          aiqpd = train_analogdownscaling(
-              coarse_reference=creference,
-              fine_reference=freference,
-              variable=variable,
-              kind=kind,
-              quantiles_n=620,
-              window_n=31,
-          )
-
-          print(f"{aiqpd.ds=}")  # DEBUG
-
-          dodola.repository.write(out_zarr, aiqpd.ds)
-          print(f"Output written to {out_zarr}")  # DEBUG
+      container:
+        image: us-central1-docker.pkg.dev/downscalecmip6/private/dodola:dev
+        command: [ dodola ]
+        args:
+          - "train-aiqpd"
+          - "--variable={{ inputs.parameters.variable-id }}"
+          - "--coarse-reference={{ inputs.parameters.coarse-reference-zarr }}"
+          - "--fine-reference={{ inputs.parameters.fine-reference-zarr }}"
+          - "--out={{ inputs.parameters.out-zarr }}"
+          - "--kind={{ inputs.parameters.qdm-kind }}"
+          - "--selslice"
+          - "time={{ inputs.parameters.time-sel-start }},{{ inputs.parameters.time-sel-stop }}"
+          - "--iselslice"
+          - "lat={{ inputs.parameters.lat-slice-min }},{{ inputs.parameters.lat-slice-max }}"
         resources:
           requests:
             memory: 12Gi
