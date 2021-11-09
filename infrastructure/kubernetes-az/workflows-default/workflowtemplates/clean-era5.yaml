@@ -12,9 +12,9 @@ spec:
   arguments:
     parameters:
     - name: in-zarr
-      value: "gs://raw-305d04da/reanalysis/ERA-5/F320/tasmax.1995-2015.F320.v2.zarr"
+      value: "az://raw-era5/F320/tasmax.1995-2015.F320.v2.zarr"
     - name: out-zarr
-      value: "gs://clean-b1dbca25/reanalysis/ERA-5/F320/tasmax.1995-2015.F320.zarr"
+      value: "az://clean-era5/F320/tasmax.1995-2015.F320.zarr"
   templates:
 
   - name: main
@@ -43,7 +43,7 @@ spec:
       - name: out-zarr
         value: "{{ inputs.parameters.out-zarr }}"
     container:
-      image: us-central1-docker.pkg.dev/downscalecmip6/private/dodola:0.5.0
+      image: downscalecmip6.azurecr.io/dodola:0.5.0
       env:
       - name: IN_ZARR
         value: "{{  inputs.parameters.in-zarr }}"
@@ -89,7 +89,7 @@ spec:
       - name: out-zarr
         value: "{{ inputs.parameters.out-zarr }}"
     script:
-      image: us-central1-docker.pkg.dev/downscalecmip6/private/dodola:0.5.0
+      image: downscalecmip6.azurecr.io/dodola:0.5.0
       env:
       - name: IN_ZARR
         value: "{{  inputs.parameters.in-zarr }}"
@@ -97,6 +97,16 @@ spec:
         value: "{{  inputs.parameters.out-zarr }}"
       - name: PYTHONUNBUFFERED
         value: "1"
+      - name: AZURE_STORAGE_ACCOUNT_NAME
+        valueFrom:
+          secretKeyRef:
+            name: workerstoragecreds-secret
+            key: azurestorageaccount
+      - name: AZURE_STORAGE_ACCOUNT_KEY
+        valueFrom:
+          secretKeyRef:
+            name: workerstoragecreds-secret
+            key: azurestoragekey
       - name: PYTHONUNBUFFERED
         value: "1"
       command: [python]
@@ -125,12 +135,6 @@ spec:
 
         print(f"standardized tmax/latitude/longitude name to tasmax/lat/lon")
 
-        for v, u in [("tasmax", "K"), ("tasmin", "K"), ("dtr", "K"), ("pr", "mm day-1")]:
-            if v in ds.variables:
-                print(f"writing light units metadata ({u}) to variable {v}")
-                ds[v].attrs["units"] = u
-        print("added units metadata to variables")
-
         ds.to_zarr(out_store_path, mode="w")
         print(f"written to {out_store_path}")
 
@@ -143,6 +147,58 @@ spec:
           memory: 42Gi
           cpu: "2000m"
     activeDeadlineSeconds: 21600
+    retryStrategy:
+      limit: 3
+      retryPolicy: "Always"
+
+
+  - name: rechunk
+    inputs:
+      parameters:
+        - name: in-zarr
+        - name: out-zarr
+        - name: time-chunk
+        - name: lat-chunk
+        - name: lon-chunk
+    outputs:
+      parameters:
+        - name: out-zarr
+          value: "{{ inputs.parameters.out-zarr }}"
+    container:
+      image: downscalecmip6.azurecr.io/dodola:0.5.0
+      env:
+        - name: AZURE_STORAGE_ACCOUNT_NAME
+          valueFrom:
+            secretKeyRef:
+              name: workerstoragecreds-secret
+              key: azurestorageaccount
+        - name: AZURE_STORAGE_ACCOUNT_KEY
+          valueFrom:
+            secretKeyRef:
+              name: workerstoragecreds-secret
+              key: azurestoragekey
+        - name: PYTHONUNBUFFERED
+          value: "1"
+      command: [dodola]
+      args:
+        - "rechunk"
+        - "{{ inputs.parameters.in-zarr }}"
+        - "--out"
+        - "{{ inputs.parameters.out-zarr }}"
+        - "--chunk"
+        - "time={{ inputs.parameters.time-chunk }}"
+        - "--chunk"
+        - "lat={{ inputs.parameters.lat-chunk }}"
+        - "--chunk"
+        - "lon={{ inputs.parameters.lon-chunk }}"
+      resources:
+        requests:
+          memory: 48Gi
+          cpu: "2000m"
+        limits:
+          memory: 48Gi
+          cpu: "2000m"
+    activeDeadlineSeconds: 10800
     retryStrategy:
       limit: 3
       retryPolicy: "Always"

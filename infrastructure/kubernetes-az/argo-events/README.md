@@ -16,10 +16,10 @@ kubectl create namespace "argo-events"
 You can deploy this in a dev environment with `argocd` from the CLI with
 
 ```bash
-argocd app create argo-events \
+argocd app create "argo-events" \
     --repo https://github.com/ClimateImpactLab/downscaleCMIP6 \
     --revision master \
-    --path infrastructure/kubernetes/argo-events \
+    --path "infrastructure/kubernetes-az/argo-events" \
     --dest-server https://kubernetes.default.svc \
     --dest-namespace argo-events \
     --sync-policy automated \

@@ -135,7 +135,7 @@ spec:
                 - name: version
                   value: "{{inputs.parameters.version}}"
                 - name: base-url
-                  value: "gs://raw-305d04da/cmip6"
+                  value: "az://raw-cmip6"
         - - name: download
             template: download-gcm
             arguments:
@@ -182,7 +182,7 @@ spec:
           - name: out-zarr
             value: "{{ inputs.parameters.out-url }}"
       script:
-        image: us-central1-docker.pkg.dev/downscalecmip6/private/dodola:0.6.0
+        image: downscalecmip6.azurecr.io/dodola:0.6.0
         env:
           - name: ACTIVITY_ID
             value: "{{inputs.parameters.activity-id}}"
@@ -204,6 +204,16 @@ spec:
             value: "{{inputs.parameters.version}}"
           - name: OUTPATH
             value: "{{inputs.parameters.out-url}}"
+          - name: AZURE_STORAGE_ACCOUNT_NAME
+            valueFrom:
+              secretKeyRef:
+                name: workerstoragecreds-secret
+                key: azurestorageaccount
+          - name: AZURE_STORAGE_ACCOUNT_KEY
+            valueFrom:
+              secretKeyRef:
+                name: workerstoragecreds-secret
+                key: azurestoragekey
         command: [python]
         source: |
           import os

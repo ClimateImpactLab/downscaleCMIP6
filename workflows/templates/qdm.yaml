@@ -1,0 +1,541 @@
+apiVersion: argoproj.io/v1alpha1
+kind: WorkflowTemplate
+metadata:
+  name: qdm
+  annotations:
+    workflows.argoproj.io/description: >-
+      Quantile Delta Mapping bias correction for CMIP6 GCM Zarr Stores.
+    workflows.argoproj.io/tags: zarr,biascorrect,cmip6,qdm,dc6
+    workflows.argoproj.io/version: '>= 3.1.0'
+  labels:
+    component: biascorrect
+spec:
+  templates:
+
+    - name: main
+      inputs:
+        parameters:
+          - name: variable-id
+          - name: simulation-zarr
+          - name: training-zarr
+          - name: reference-zarr
+          - name: out-zarr
+          - name: regrid-method
+          - name: domainfile1x1
+          - name: correct-wetday-frequency
+          - name: qdm-kind
+          - name: first-year
+          - name: last-year
+      outputs:
+        parameters:
+          - name: out-zarr
+            valueFrom:
+              parameter: "{{ tasks.qdm.outputs.parameters.out-zarr }}"
+      dag:
+        tasks:
+          - name: preprocess-reference
+            template: preprocess
+            arguments:
+              parameters:
+                - name: in-zarr
+                  value: "{{ inputs.parameters.reference-zarr }}"
+                - name: regrid-method
+                  value: "{{ inputs.parameters.regrid-method }}"
+                - name: domain-file
+                  value: "{{ inputs.parameters.domainfile1x1 }}"
+                - name: correct-wetday-frequency
+                  value: "false"
+                - name: add-cyclic
+                  value: "false"
+          - name: preprocess-training
+            template: preprocess
+            arguments:
+              parameters:
+                - name: in-zarr
+                  value: "{{ inputs.parameters.training-zarr }}"
+                - name: regrid-method
+                  value: "{{ inputs.parameters.regrid-method }}"
+                - name: domain-file
+                  value: "{{ inputs.parameters.domainfile1x1 }}"
+                - name: correct-wetday-frequency
+                  value: "{{ inputs.parameters.correct-wetday-frequency }}"
+          - name: preprocess-simulation
+            template: preprocess
+            arguments:
+              parameters:
+                - name: in-zarr
+                  value: "{{ inputs.parameters.simulation-zarr }}"
+                - name: regrid-method
+                  value: "{{ inputs.parameters.regrid-method }}"
+                - name: domain-file
+                  value: "{{ inputs.parameters.domainfile1x1 }}"
+                - name: correct-wetday-frequency
+                  value: "{{ inputs.parameters.correct-wetday-frequency }}"
+          - name: qdm
+            depends: >-
+              preprocess-reference
+              && preprocess-training
+              && preprocess-simulation
+            template: qdm
+            arguments:
+              parameters:
+                - name: variable
+                  value: "{{ inputs.parameters.variable-id }}"
+                - name: ref-zarr
+                  value: "{{ tasks.preprocess-reference.outputs.parameters.out-zarr }}"
+                - name: train-zarr
+                  value: "{{ tasks.preprocess-training.outputs.parameters.out-zarr }}"
+                - name: simulation-zarr
+                  value: "{{ tasks.preprocess-simulation.outputs.parameters.out-zarr }}"
+                - name: out-zarr
+                  value: "{{ inputs.parameters.out-zarr }}"
+                - name: kind
+                  value: "{{ inputs.parameters.qdm-kind }}"
+                - name: first-year
+                  value: "{{ inputs.parameters.first-year }}"
+                - name: last-year
+                  value: "{{ inputs.parameters.last-year }}"
+
+
+    - name: preprocess
+      inputs:
+        parameters:
+          - name: in-zarr
+          - name: out-zarr
+            value: "gs://scratch-170cd6ec/{{ workflow.uid }}/{{ pod.name }}/preprocessed.zarr"
+          - name: regrid-method
+          - name: domain-file
+          - name: correct-wetday-frequency
+          - name: add-cyclic
+            value: "lon"
+      outputs:
+        parameters:
+          - name: out-zarr
+            value: "{{ inputs.parameters.out-zarr }}"
+      script:
+        image: us-central1-docker.pkg.dev/downscalecmip6/private/dodola:0.7.0
+        command: [ python ]
+        source: |
+          import logging
+          import dodola.services
+
+          logger = logging.getLogger(__name__)
+          logging.basicConfig(level=logging.INFO)
+
+          input_zarr = "{{ inputs.parameters.in-zarr }}"
+
+          correct_wetday_frequency = "{{ inputs.parameters.correct-wetday-frequency }}".lower() == "true"
+          if correct_wetday_frequency:
+              wdf_corrected_zarr = "/workspace/wdf_corrected.zarr"
+              dodola.services.correct_wet_day_frequency(
+                  input_zarr,
+                  process="pre",
+                  out=wdf_corrected_zarr
+              )
+              input_zarr = wdf_corrected_zarr
+
+          # Prevents regridding artifacts along international dateline.
+          add_cyclic = "{{ inputs.parameters.add-cyclic }}".lower()
+          if add_cyclic != "false":
+              import dodola.repository as storage
+              from dodola.core import _add_cyclic
+
+              cyclic_added_zarr = "/workspace/cyclic_added.zarr"
+              storage.write(
+                  cyclic_added_zarr,
+                  _add_cyclic(storage.read(input_zarr), dim=add_cyclic)
+              )
+              input_zarr = cyclic_added_zarr
+
+          # Regridding requires lat/lon to be contiguous.
+          dodola.services.rechunk(
+              input_zarr,
+              target_chunks = {"time": 365, "lat": -1, "lon": -1},
+              out="/workspace/annual_chunks.zarr"
+          )
+
+          dodola.services.regrid(
+              "/workspace/annual_chunks.zarr",
+              method="{{ inputs.parameters.regrid-method }}",
+              domain_file="{{ inputs.parameters.domain-file }}",
+              astype="float32",
+              out="/workspace/regridded.zarr"
+          )
+
+          # QDM steps require time to be contiguous in memory.
+          dodola.services.rechunk(
+              "/workspace/regridded.zarr",
+              target_chunks = {"time": -1, "lat": 10, "lon": 10},
+              out="{{ inputs.parameters.out-zarr }}"
+          )
+        resources:
+          requests:
+            memory: 16Gi
+            cpu: "1000m"
+          limits:
+            memory: 18Gi
+            cpu: "2000m"
+        volumeMounts:
+          - mountPath: /workspace
+            name: workspace
+      volumes:
+        - name: workspace
+          emptyDir:
+            sizeLimit: 20Gi
+      activeDeadlineSeconds: 1200
+      retryStrategy:
+        limit: 2
+        retryPolicy: "Always"
+
+
+      # Quantile Delta Mapping bias correction, output to staging.
+    - name: qdm
+      inputs:
+        parameters:
+          - name: variable
+          - name: ref-zarr
+          - name: train-zarr
+          - name: simulation-zarr
+          - name: kind
+          - name: first-year
+          - name: last-year
+          - name: out-zarr
+          - name: include-quantiles
+            value: "true"
+      outputs:
+        parameters:
+          - name: out-zarr
+            valueFrom:
+              parameter: "{{ tasks.prime-qdm-output-zarrstore.outputs.parameters.out-zarr }}"
+      dag:
+        tasks:
+          - name: prime-qdm-output-zarrstore
+            template: prime-qdm-output-zarrstore
+            arguments:
+              parameters:
+                - name: variable
+                  value: "{{ inputs.parameters.variable }}"
+                - name: simulation-zarr
+                  value: "{{ inputs.parameters.simulation-zarr }}"
+                - name: first-year
+                  value: "{{ inputs.parameters.first-year }}"
+                - name: last-year
+                  value: "{{ inputs.parameters.last-year }}"
+                - name: include-quantiles
+                  value: "{{ inputs.parameters.include-quantiles }}"
+          - name: with-lat-chunk
+            depends: "prime-qdm-output-zarrstore"
+            template: with-lat-chunk
+            arguments:
+              parameters:
+                - name: variable
+                  value: "{{ inputs.parameters.variable }}"
+                - name: ref-zarr
+                  value: "{{ inputs.parameters.ref-zarr }}"
+                - name: train-zarr
+                  value: "{{ inputs.parameters.train-zarr }}"
+                - name: simulation-zarr
+                  value: "{{ inputs.parameters.simulation-zarr }}"
+                - name: first-year
+                  value: "{{ inputs.parameters.first-year }}"
+                - name: last-year
+                  value: "{{ inputs.parameters.last-year }}"
+                - name: kind
+                  value: "{{ inputs.parameters.kind }}"
+                - name: include-quantiles
+                  value: "{{ inputs.parameters.include-quantiles }}"
+                - name: out-zarr
+                  value: "{{ tasks.prime-qdm-output-zarrstore.outputs.parameters.out-zarr }}"
+                  # Operate on 10 cell latitude chunks...
+                - name: lat-slice-min
+                  value: "{{=asInt(item) * 10 }}"
+                - name: lat-slice-max
+                  value: "{{=asInt(item) * 10 + 10 }}"
+            withSequence:
+              start: "0"
+              end: "17"
+
+
+    - name: with-lat-chunk
+      inputs:
+        parameters:
+          - name: variable
+          - name: ref-zarr
+          - name: train-zarr
+          - name: simulation-zarr
+          - name: kind
+          - name: lat-slice-min
+          - name: lat-slice-max
+          - name: first-year
+          - name: last-year
+          - name: include-quantiles
+          - name: out-zarr
+      dag:
+        tasks:
+          - name: train-qdm
+            template: train-qdm
+            arguments:
+              parameters:
+                - name: variable
+                  value: "{{ inputs.parameters.variable }}"
+                - name: ref-zarr
+                  value: "{{ inputs.parameters.ref-zarr }}"
+                - name: train-zarr
+                  value: "{{ inputs.parameters.train-zarr }}"
+                - name: kind
+                  value: "{{ inputs.parameters.kind }}"
+                - name: lat-slice-min
+                  value: "{{ inputs.parameters.lat-slice-min }}"
+                - name: lat-slice-max
+                  value: "{{ inputs.parameters.lat-slice-max }}"
+          - name: apply-qdm
+            depends: "train-qdm"
+            template: apply-qdm
+            arguments:
+              parameters:
+                - name: variable
+                  value: "{{ inputs.parameters.variable }}"
+                - name: qdm-zarr
+                  value: "{{ tasks.train-qdm.outputs.parameters.out-zarr }}"
+                - name: simulation-zarr
+                  value: "{{ inputs.parameters.simulation-zarr }}"
+                - name: ref-zarr
+                  value: "{{ inputs.parameters.ref-zarr }}"
+                - name: first-year
+                  value: "{{ inputs.parameters.first-year }}"
+                - name: last-year
+                  value: "{{ inputs.parameters.last-year }}"
+                - name: lat-slice-min
+                  value: "{{ inputs.parameters.lat-slice-min }}"
+                - name: lat-slice-max
+                  value: "{{ inputs.parameters.lat-slice-max }}"
+                - name: include-quantiles
+                  value: "{{ inputs.parameters.include-quantiles }}"
+                - name: out-zarr
+                  value: "{{ inputs.parameters.out-zarr }}"
+
+    - name: prime-qdm-output-zarrstore
+      inputs:
+        parameters:
+          - name: variable
+          - name: simulation-zarr
+          - name: first-year
+          - name: last-year
+          - name: out-zarr
+            value: "gs://scratch-170cd6ec/{{ workflow.uid }}/{{ pod.name }}/qdm_adjusted.zarr"
+          - name: include-quantiles
+            value: "false"
+      outputs:
+        parameters:
+          - name: out-zarr
+            value: "{{ inputs.parameters.out-zarr }}"
+      script:
+        image: us-central1-docker.pkg.dev/downscalecmip6/private/dodola:0.7.0
+        env:
+          - name: ARGO_WORKFLOW_NAME
+            value: "{{ workflow.name }}"
+          - name: ARGO_WORKFLOW_UID
+            value: "{{ workflow.uid }}"
+          - name: DC6_VERSION_ID
+            value: "v{{workflow.creationTimestamp.Y}}{{workflow.creationTimestamp.m}}{{workflow.creationTimestamp.d}}{{workflow.creationTimestamp.H}}{{workflow.creationTimestamp.M}}{{workflow.creationTimestamp.S}}"
+        command: [ python ]
+        source: |
+          import os
+          import dodola.repository
+          import xarray as xr
+
+          nonlat_variables = ["lon", "time"]
+          quantiles_variable = "sim_q"
+
+          simulation_zarr = "{{ inputs.parameters.simulation-zarr }}"
+          qdm_out_zarr = "{{ inputs.parameters.out-zarr }}"
+          first_year = int({{ inputs.parameters.first-year }})
+          last_year = int({{ inputs.parameters.last-year }})
+          variable = "{{ inputs.parameters.variable }}"
+          include_quantiles = "{{ inputs.parameters.include-quantiles }}".lower() == "true"
+          print(f"{include_quantiles=}")  # DEBUG
+
+          timeslice = slice(str(first_year), str(last_year))  # This is inclusive!
+
+          primed_out = dodola.repository.read(simulation_zarr).sel(time=timeslice).chunk({"time": 73, "lat": 10, "lon":180})
+          if include_quantiles:
+              primed_out[quantiles_variable] = xr.zeros_like(primed_out[variable])
+
+          # Add downscaling metadata to attrs
+          primed_out.attrs["dc6_workflow_name"] = os.environ["ARGO_WORKFLOW_NAME"]
+          primed_out.attrs["dc6_workflow_uid"] = os.environ["ARGO_WORKFLOW_UID"]
+          primed_out.attrs["dc6_version_id"] = os.environ["DC6_VERSION_ID"]
+
+          print(f"{primed_out=}")  # DEBUG
+
+          primed_out.to_zarr(
+              qdm_out_zarr,
+              mode="w",
+              compute=False,
+              consolidated=True,
+              safe_chunks=False
+          )
+          print(f"Output written to {qdm_out_zarr}")  # DEBUG
+
+          # Append variables that do not depend on "lat"
+          if nonlat_variables:
+              primed_out[nonlat_variables].to_zarr(
+                  qdm_out_zarr,
+                  mode="a",
+                  compute=True,
+                  consolidated=True,
+                  safe_chunks=False
+              )
+              print(f"Non-latitude variables written to to {qdm_out_zarr}")  # DEBUG
+        resources:
+          requests:
+            memory: 4Gi
+            cpu: "1000m"
+          limits:
+            memory: 4Gi
+            cpu: "1000m"
+      activeDeadlineSeconds: 900
+      retryStrategy:
+        limit: 4
+        retryPolicy: "Always"
+
+
+    - name: train-qdm
+      inputs:
+        parameters:
+          - name: variable
+          - name: ref-zarr
+          - name: train-zarr
+          - name: lat-slice-min
+          - name: lat-slice-max
+          - name: kind
+          - name: out-zarr
+            value: "gs://scratch-170cd6ec/{{ workflow.uid }}/{{ pod.name }}/qdm_model.zarr"
+      outputs:
+        parameters:
+          - name: out-zarr
+            value: "{{ inputs.parameters.out-zarr }}"
+      container:
+        image: us-central1-docker.pkg.dev/downscalecmip6/private/dodola:dev
+        command: [ "dodola" ]
+        args:
+          - "train-qdm"
+          - "--variable={{ inputs.parameters.variable }}"
+          - "--historical={{ inputs.parameters.train-zarr }}"
+          - "--reference={{ inputs.parameters.ref-zarr }}"
+          - "--out={{ inputs.parameters.out-zarr }}"
+          - "--kind={{ inputs.parameters.kind }}"
+          - "--iselslice"
+          - "lat={{ inputs.parameters.lat-slice-min }},{{ inputs.parameters.lat-slice-max }}"
+        resources:
+          requests:
+            memory: 24Gi
+            cpu: "1000m"
+          limits:
+            memory: 32Gi
+            cpu: "8000m"
+      activeDeadlineSeconds: 3600
+      retryStrategy:
+        limit: 3
+        retryPolicy: "Always"
+        backoff:
+          duration: 30s
+          factor: 2
+
+
+    - name: apply-qdm
+      inputs:
+        parameters:
+          - name: variable
+          - name: qdm-zarr
+          - name: simulation-zarr
+          - name: first-year
+          - name: last-year
+          - name: lat-slice-min
+          - name: lat-slice-max
+          - name: include-quantiles
+            value: "true"
+          - name: out-zarr
+            value: "gs://scratch-170cd6ec/{{ workflow.uid }}/{{ pod.name }}/qdm_adjusted.zarr"
+      outputs:
+        parameters:
+          - name: out-zarr
+            value: "{{ inputs.parameters.out-zarr }}"
+      script:
+        image: us-central1-docker.pkg.dev/downscalecmip6/private/dodola:0.7.0
+        command: [ python ]
+        source: |
+          import dask.delayed
+          import dodola.repository
+          from dodola.core import adjust_quantiledeltamapping_year
+          import xarray as xr
+
+          nonlat_variables = ["lon", "time"]
+          quantile_variable = "sim_q"
+
+          qdm_zarr = "{{ inputs.parameters.qdm-zarr }}"
+          simulation_zarr = "{{ inputs.parameters.simulation-zarr }}"
+          qdm_out_zarr = "{{ inputs.parameters.out-zarr }}"
+          min_slice = int({{ inputs.parameters.lat-slice-min }})
+          max_slice = int({{ inputs.parameters.lat-slice-max }})
+          first_year = int({{ inputs.parameters.first-year }})
+          last_year = int({{ inputs.parameters.last-year }})
+          variable = "{{ inputs.parameters.variable }}"
+          include_quantiles = "{{ inputs.parameters.include-quantiles }}".lower() == "true"
+          print(f"{include_quantiles=}")  # DEBUG
+
+          latslice = slice(min_slice, max_slice)
+
+          print(f"slicing({min_slice}, {max_slice})")  # DEBUG
+
+          qdm = dodola.repository.read(qdm_zarr)
+          simulation = dodola.repository.read(simulation_zarr).isel(lat=latslice)
+
+          qdm.load()
+          simulation.load()
+
+          # TODO: Return this to dask.delayeds instead of raw for loops.
+          qdm_list = []
+          for year in range(first_year, last_year + 1):
+              adj = adjust_quantiledeltamapping_year(
+                  simulation=simulation,
+                  qdm=qdm,
+                  year=year,
+                  variable=variable,
+                  include_quantiles=include_quantiles
+              )
+              qdm_list.append(adj.astype("float32"))
+
+          out_all_years = xr.concat(qdm_list, dim="time")
+          out_all_years = out_all_years.reset_coords(quantile_variable)
+
+          if nonlat_variables:
+              out_all_years = out_all_years.drop_vars(nonlat_variables)
+
+          out_all_years = out_all_years.transpose("time", "lat", "lon")
+
+          with xr.open_zarr(qdm_out_zarr) as out_store:
+              out_all_years.attrs |= out_store.attrs
+              for k, v in out_store.variables.items():
+                  if k in out_all_years:
+                      out_all_years[k].attrs |= v.attrs
+
+          print(f"{out_all_years=}")  # DEBUG
+
+          # Output to region of existing zarr store.
+          out_all_years.to_zarr(qdm_out_zarr, region={"lat": latslice}, mode="a")
+          print(f"Output written to {qdm_out_zarr}")  # DEBUG
+        resources:
+          requests:
+            memory: 32Gi
+            cpu: "1000m"
+          limits:
+            memory: 32Gi
+            cpu: "8000m"
+      activeDeadlineSeconds: 900
+      retryStrategy:
+        limit: 3
+        retryPolicy: "Always"
+        backoff:
+          duration: 30s
+          factor: 2

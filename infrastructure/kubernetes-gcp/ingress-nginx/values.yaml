@@ -1,0 +1,14 @@
+ingress-nginx:
+  controller:
+    replicaCount: 2
+    # So two replicas don't sit on the same node:
+    affinity:
+      podAntiAffinity:
+        requiredDuringSchedulingIgnoredDuringExecution:
+          - labelSelector:
+              matchLabels:
+                app.kubernetes.io/name: ingress-nginx
+                app.kubernetes.io/component: controller
+  #              # This should be the same as the release name
+                app.kubernetes.io/instance: ingress-nginx
+            topologyKey: "kubernetes.io/hostname"

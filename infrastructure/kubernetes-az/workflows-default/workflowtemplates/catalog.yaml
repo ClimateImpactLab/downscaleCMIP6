@@ -24,7 +24,18 @@ spec:
             valueFrom:
               path: "/tmp/url.txt"
       script:
-        image: us-central1-docker.pkg.dev/downscalecmip6/private/dodola:0.6.0
+        image: downscalecmip6.azurecr.io/dodola:0.6.0
+        env:
+          - name: AZURE_STORAGE_ACCOUNT_NAME
+            valueFrom:
+              secretKeyRef:
+                name: workerstoragecreds-secret
+                key: azurestorageaccount
+          - name: AZURE_STORAGE_ACCOUNT_KEY
+            valueFrom:
+              secretKeyRef:
+                name: workerstoragecreds-secret
+                key: azurestoragekey
         command: [ python ]
         source: |
           import dodola.repository as storage
@@ -84,7 +95,18 @@ spec:
             valueFrom:
               path: "/tmp/url.txt"
       script:
-        image: us-central1-docker.pkg.dev/downscalecmip6/private/dodola:0.6.0
+        image: downscalecmip6.azurecr.io/dodola:0.6.0
+        env:
+          - name: AZURE_STORAGE_ACCOUNT_NAME
+            valueFrom:
+              secretKeyRef:
+                name: workerstoragecreds-secret
+                key: azurestorageaccount
+          - name: AZURE_STORAGE_ACCOUNT_KEY
+            valueFrom:
+              secretKeyRef:
+                name: workerstoragecreds-secret
+                key: azurestoragekey
         command: [ python ]
         source: |
           base_url = "{{ inputs.parameters.base-url }}"

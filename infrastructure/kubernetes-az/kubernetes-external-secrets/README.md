@@ -44,9 +44,9 @@ kubectl create secret generic azure-credentials \
 You can deploy this in a dev environment with `argocd` from the CLI with
 
 ```bash
-argocd app create kubernetes-external-secrets \
+argocd app create "kubernetes-external-secrets" \
     --repo https://github.com/ClimateImpactLab/downscaleCMIP6 \
-    --path infrastructure/kubernetes/kubernetes-external-secrets \
+    --path "infrastructure/kubernetes-az/kubernetes-external-secrets" \
     --values values.yaml \
     --dest-server https://kubernetes.default.svc \
     --dest-namespace kubernetes-external-secrets \
