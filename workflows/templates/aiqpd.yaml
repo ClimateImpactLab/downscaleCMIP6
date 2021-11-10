@@ -450,7 +450,7 @@ spec:
           - "--new-attrs=dc6_version_id=v{{workflow.creationTimestamp.Y}}{{workflow.creationTimestamp.m}}{{workflow.creationTimestamp.d}}{{workflow.creationTimestamp.H}}{{workflow.creationTimestamp.M}}{{workflow.creationTimestamp.S}}"
         resources:
           requests:
-            memory: 24Gi
+            memory: 38Gi
             cpu: "1000m"
           limits:
             memory: 38Gi
