@@ -17,12 +17,8 @@ def plot_diagnostic_climo_periods(ds_future, ssp, years, variable, metric, data_
     
     for i, key in enumerate(years): 
         
-        # if ds_hist is None, no historical data, skip 
-        if ds_hist == None:
-            i = 1
-        
         # different dataset for historical, select years 
-        if i == 0:
+        if i == 0 and ds_hist != None:
             da = ds_hist[variable].sel(time=slice(years[key]['start_yr'], years[key]['end_yr']))
         else:
             da = ds_future[variable].sel(time=slice(years[key]['start_yr'], years[key]['end_yr']))
@@ -35,16 +31,21 @@ def plot_diagnostic_climo_periods(ds_future, ssp, years, variable, metric, data_
             data = da.min(dim='time').load()
         
         
-        im = data.plot(ax=axes[i], 
+        if ds_hist is not None:
+            ind = i
+        else: 
+            ind = i+1
+        
+        im = data.plot(ax=axes[ind], 
                   cmap=cmap,
                   transform=ccrs.PlateCarree(), add_colorbar=False, vmin=vmin, vmax=vmax)
 
-        axes[i].coastlines()
-        axes[i].add_feature(cfeature.BORDERS, linestyle=":")
-        if i == 2:
-            axes[i].set_title('{} {}, {} \n {}'.format(metric, data_type, ssp, key))
+        axes[ind].coastlines()
+        axes[ind].add_feature(cfeature.BORDERS, linestyle=":")
+        if ind == 2:
+            axes[ind].set_title('{} {}, {} \n {}'.format(metric, data_type, ssp, key))
         else: 
-            axes[i].set_title("{}".format(key))
+            axes[ind].set_title("{}".format(key))
     
     # Adjust the location of the subplots on the page to make room for the colorbar
     fig.subplots_adjust(bottom=0.02, top=0.9, left=0.05, right=0.95,
@@ -114,7 +115,7 @@ def plot_gmst_diagnostic(ds_fut_cmip6, ds_fut_bc, variable='tasmax',
     plt.legend()
     plt.title('Global Mean {} {}'.format(variable, ssp))
 
-def plot_bias_correction_downscale_differences(da_hist_bc, da_hist_ds, da_future_bc, da_future_ds, plot_type, data_type, variable,
+def plot_bias_correction_downscale_differences(ds_future_bc, ds_future_ds, plot_type, data_type, variable, units, years, ds_hist_bc=None, ds_hist_ds=None,
                                                ssp='370', time_period='2080_2100'):
     """
     plot differences between bias corrected historical and future, downscaled historical and future, or bias corrected and downscaled. 
@@ -122,25 +123,38 @@ def plot_bias_correction_downscale_differences(da_hist_bc, da_hist_ds, da_future
     plot_type options: downscaled_minus_biascorrected, change_from_historical (takes bias corrected or downscaled)
     data_type options: bias_corrected, downscaled
     """
-    fig, axes = plt.subplots(1, 2, figsize=(20, 6), subplot_kw={'projection': ccrs.PlateCarree()})
+    fig, axes = plt.subplots(1, 2, figsize=(10, 6), subplot_kw={'projection': ccrs.PlateCarree()})
 
     if plot_type == 'change_from_historical':
         if data_type == 'bias_corrected':
-            diff1 = da_hist_bc
-            diff2 = da_future_bc - da_hist_bc
+            diff1 = ds_hist_bc[variable]
+            diff2 = ds_future_bc[variable] - ds_hist_bc[variable]
         elif data_type == 'downscaled':
-            diff1 = da_hist_ds
-            diff2 = da_future_ds - da_hist_ds
+            diff1 = ds_hist_ds[variable]
+            diff2 = ds_future_ds[variable] - ds_hist_ds[variable]
         suptitle = "{} change from historical: {}".format(ssp, data_type)
         cmap = cm.viridis
     elif plot_type == 'downscaled_minus_biascorrected':
-        diff1 = da_hist_ds - da_hist_bc
-        diff2 = da_future_ds - da_future_bc
+        if ds_hist_bc is not None:
+            
+            da_hist_ds = ds_hist_ds[variable].sel(time=slice(years['hist']['start_yr'], years[time_period]['end_yr']))
+            da_hist_bc = ds_hist_bc[variable].sel(time=slice(years['hist']['start_yr'], years[time_period]['end_yr']))
+            
+            diff1 = da_hist_ds - da_hist_bc
+            diff1 = diff1.load()
+            
+        da_future_ds = ds_future_ds[variable].sel(time=slice(years[time_period]['start_yr'], years[time_period]['end_yr']))
+        da_future_bc = ds_future_bc[variable].sel(time=slice(years[time_period]['start_yr'], years[time_period]['end_yr']))
+        
+        da_future_ds_mean = da_future_ds.mean('time').load()
+        da_future_bc_mean = da_future_bc.mean('time').load()
+        diff2 = da_future_ds_mean - da_future_bc_mean
         suptitle = "{} downscaled minus bias corrected".format(ssp)
         cmap = cm.bwr
 
     cbar_label = "{} ({})".format(variable, units[variable])
-    diff1.plot(ax=axes[0], cmap=cmap, transform=ccrs.PlateCarree(), robust=True, cbar_kwargs={'label': cbar_label})
+    if ds_hist_bc is not None:
+        diff1.plot(ax=axes[0], cmap=cmap, transform=ccrs.PlateCarree(), robust=True, cbar_kwargs={'label': cbar_label})
     diff2.plot(ax=axes[1], cmap=cmap, transform=ccrs.PlateCarree(), robust=True, cbar_kwargs={'label': cbar_label})
 
     axes[0].coastlines()
