@@ -10,6 +10,31 @@ metadata:
   labels:
     component: biascorrect
 spec:
+  entrypoint: main
+  arguments:
+    parameters:
+      - name: simulation-zarr
+        value: "gs://clean-b1dbca25/cmip6/ScenarioMIP/NOAA-GFDL/GFDL-ESM4/ssp370/r1i1p1f1/day/tasmax/gr1/v20180701.zarr"
+      - name: variable-id
+        value: "tasmax"
+      - name: training-zarr
+        value: "gs://clean-b1dbca25/cmip6/CMIP/NOAA-GFDL/GFDL-ESM4/training/r1i1p1f1/day/tasmax/gr1/v20190726.zarr"
+      - name: reference-zarr
+        value: "gs://clean-b1dbca25/reanalysis/ERA-5/F320/tasmax.1995-2015.F320.zarr"
+      - name: out-zarr
+        value: "gs://scratch-170cd6ec/{{ workflow.uid }}/{{ pod.name }}/biascorrected.zarr"
+      - name: regrid-method
+        value: "bilinear"
+      - name: qdm-kind
+        value: "additive"
+      - name: domainfile1x1
+        value: "gs://support-c23ff1a3/domain.1x1.zarr"
+      - name: correct-wetday-frequency
+        value: "false"
+      - name: first-year
+        value: 2015
+      - name: last-year
+        value: 2100
   templates:
 
     - name: main
