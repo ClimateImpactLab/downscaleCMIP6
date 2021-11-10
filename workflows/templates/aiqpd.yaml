@@ -430,80 +430,27 @@ spec:
           - name: simulation-zarr
           - name: aiqpd-model-zarr
           - name: variable
-          - name: qdm-kind
           - name: lat-slice-min
           - name: lat-slice-max
           - name: out-zarr
             value: "gs://scratch-170cd6ec/{{ workflow.uid }}/{{ pod.name }}/aiqpd_adjusted.zarr"
-      script:
-        image: us-central1-docker.pkg.dev/downscalecmip6/private/dodola:0.7.0
-        command: [ python ]
-        source: |
-          import dodola.repository
-          from dodola.core import adjust_analogdownscaling
-          import xarray as xr
-
-
-          nonlat_variables = ["lon", "time"]
-          kind_map = {"multiplicative": "*", "additive": "+"}
-
-          sim_zarr = "{{ inputs.parameters.simulation-zarr }}"
-          aiqpd_model_zarr = "{{ inputs.parameters.aiqpd-model-zarr }}"
-          out_zarr = "{{ inputs.parameters.out-zarr }}"
-          min_slice = int({{ inputs.parameters.lat-slice-min }})
-          max_slice = int({{ inputs.parameters.lat-slice-max }})
-          variable = "{{ inputs.parameters.variable }}"
-          kind = kind_map["{{ inputs.parameters.qdm-kind }}"]
-
-          latslice = slice(min_slice, max_slice)
-          print(f"{latslice=}")  # DEBUG
-
-          sim_ds = dodola.repository.read(sim_zarr).isel(lat=latslice)
-          sim_ds = sim_ds.set_coords(["sim_q"])
-          print(f"{sim_ds=}")  # DEBUG
-          print("loading data...")
-          sim_ds.load()
-          print("data loaded")
-
-          aiqpd_ds = dodola.repository.read(aiqpd_model_zarr)
-          print(f"{aiqpd_ds=}")  # DEBUG
-          print("loading data...")
-          aiqpd_ds.load()
-          print("data loaded")
-
-          # zarr dimensions can be switched, and if dim order
-          # is not lat, lon, dayofyear, quantile, cannot broadcast
-          #aiqpd_ds = aiqpd_ds.transpose("lon", "lat", "dayofyear", "quantiles")  # OOM error?
-
-          downscaled_ds = adjust_analogdownscaling(
-              simulation=sim_ds,
-              aiqpd=aiqpd_ds,
-              variable=variable
-          )
-
-          if nonlat_variables:
-              downscaled_ds = downscaled_ds.drop_vars(nonlat_variables)
-
-          downscaled_ds = downscaled_ds.transpose("time", "lat", "lon")
-
-          with xr.open_zarr(out_zarr) as out_store:
-              downscaled_ds.attrs |= out_store.attrs
-              for k, v in out_store.variables.items():
-                  if k in downscaled_ds:
-                      downscaled_ds[k].attrs |= v.attrs
-
-          print(f"{downscaled_ds=}")  # DEBUG
-
-          # Output to region of existing zarr store.
-          downscaled_ds[[variable]].to_zarr(
-              out_zarr,
-              region={"lat": latslice},
-              mode="a"
-          )
-          print(f"Output written to {out_zarr}")  # DEBUG
+      container:
+        image: us-central1-docker.pkg.dev/downscalecmip6/private/dodola:dev
+        command: [ dodola ]
+        args:
+          - "apply-aiqpd"
+          - "--simulation={{ inputs.parameters.simulation-zarr}}"
+          - "--aiqpd={{ inputs.parameters.aiqpd-model-zarr}}"
+          - "--variable={{ inputs.parameters.variable }}"
+          - "--out={{ inputs.parameters.out-zarr }}"
+          - "--iselslice=lat={{ inputs.parameters.lat-slice-min }},{{ inputs.parameters.lat-slice-max }}"
+          - "--out-zarr-region=lat={{ inputs.parameters.lat-slice-min }},{{ inputs.parameters.lat-slice-max }}"
+          - "--new-attrs=dc6_workflow_name={{ workflow.name }}"
+          - "--new-attrs=dc6_workflow_uid={{ workflow.uid }}"
+          - "--new-attrs=dc6_version_id=v{{workflow.creationTimestamp.Y}}{{workflow.creationTimestamp.m}}{{workflow.creationTimestamp.d}}{{workflow.creationTimestamp.H}}{{workflow.creationTimestamp.M}}{{workflow.creationTimestamp.S}}"
         resources:
           requests:
-            memory: 24Gi
+            memory: 38Gi
             cpu: "1000m"
           limits:
             memory: 38Gi
@@ -525,63 +472,22 @@ spec:
           - name: variable
           - name: out-zarr
             value: "gs://scratch-170cd6ec/{{ workflow.uid }}/{{ pod.name }}/downscaled.zarr"
-          - name: nonlat-variables
-            value: "time lon"
       outputs:
         parameters:
           - name: out-zarr
             value: "{{ inputs.parameters.out-zarr }}"
-      script:
-        image: us-central1-docker.pkg.dev/downscalecmip6/private/dodola:0.7.0
-        env:
-          - name: ARGO_WORKFLOW_NAME
-            value: "{{ workflow.name }}"
-          - name: ARGO_WORKFLOW_UID
-            value: "{{ workflow.uid }}"
-          - name: DC6_VERSION_ID
-            value: "v{{workflow.creationTimestamp.Y}}{{workflow.creationTimestamp.m}}{{workflow.creationTimestamp.d}}{{workflow.creationTimestamp.H}}{{workflow.creationTimestamp.M}}{{workflow.creationTimestamp.S}}"
-        command: [ python ]
-        source: |
-          import os
-          import dodola.repository
-          import xarray as xr
-
-          nonlat_variables = ["lon", "time"]
-
-          simulation_zarr = "{{ inputs.parameters.simulation-zarr }}"
-          variable = "{{ inputs.parameters.variable }}"
-          out_zarr = "{{ inputs.parameters.out-zarr }}"
-
-          # Select target variable but ensure we include attrs metadata for
-          # the original Dataset. Not 100 % sure this is needed.
-          ds_out_all = dodola.repository.read(simulation_zarr)
-          ds_out = ds_out_all[[variable]]
-          ds_out.attrs = ds_out_all.attrs
-
-          # Add downscaling metadata to attrs
-          ds_out.attrs["dc6_workflow_name"] = os.environ["ARGO_WORKFLOW_NAME"]
-          ds_out.attrs["dc6_workflow_uid"] = os.environ["ARGO_WORKFLOW_UID"]
-          ds_out.attrs["dc6_version_id"] = os.environ["DC6_VERSION_ID"]
-
-          print(f"{ds_out=}")  # DEBUG
-
-          # Output metadata to Zarr store.
-          ds_out.to_zarr(
-              out_zarr,
-              mode="w",
-              compute=False,
-              consolidated=True
-          )
-
-          # Append variables that do not depend on "lat"
-          if nonlat_variables:
-              print(f"{ds_out[nonlat_variables]=}")  # DEBUG
-              ds_out[nonlat_variables].to_zarr(
-                  out_zarr,
-                  mode="a",
-                  compute=True,
-                  consolidated=True
-              )
+      container:
+        image: us-central1-docker.pkg.dev/downscalecmip6/private/dodola:dev
+        command: [ dodola ]
+        args:
+          - "prime-aiqpd-output-zarrstore"
+          - "--simulation={{ inputs.parameters.simulation-zarr}}"
+          - "--variable={{ inputs.parameters.variable }}"
+          - "--out={{ inputs.parameters.out-zarr }}"
+          - "--zarr-region-dims=lat"
+          - "--new-attrs=dc6_workflow_name={{ workflow.name }}"
+          - "--new-attrs=dc6_workflow_uid={{ workflow.uid }}"
+          - "--new-attrs=dc6_version_id=v{{workflow.creationTimestamp.Y}}{{workflow.creationTimestamp.m}}{{workflow.creationTimestamp.d}}{{workflow.creationTimestamp.H}}{{workflow.creationTimestamp.M}}{{workflow.creationTimestamp.S}}"
         resources:
           requests:
             memory: 4Gi
