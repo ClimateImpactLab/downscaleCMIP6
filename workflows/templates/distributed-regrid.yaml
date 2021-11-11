@@ -100,7 +100,7 @@ spec:
             valueFrom:
               path: "/tmp/lastyear.txt"
       script:
-        image: us-central1-docker.pkg.dev/downscalecmip6/private/dodola:0.7.0
+        image: us-central1-docker.pkg.dev/downscalecmip6/private/dodola:0.8.0
         env:
           - name: IN_ZARR
             value: "{{ inputs.parameters.in-zarr }}"
@@ -200,7 +200,7 @@ spec:
           - name: out-zarr
             value: "{{ inputs.parameters.out-zarr }}"
       script:
-        image: us-central1-docker.pkg.dev/downscalecmip6/private/dodola:0.7.0
+        image: us-central1-docker.pkg.dev/downscalecmip6/private/dodola:0.8.0
         env:
           - name: IN_ZARR
             value: "{{ inputs.parameters.in-zarr }}"

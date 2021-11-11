@@ -138,7 +138,7 @@ spec:
           - name: out-zarr
             value: "{{ inputs.parameters.out-zarr }}"
       script:
-        image: us-central1-docker.pkg.dev/downscalecmip6/private/dodola:0.7.0
+        image: us-central1-docker.pkg.dev/downscalecmip6/private/dodola:0.8.0
         command: [ python ]
         source: |
           import logging
@@ -353,7 +353,7 @@ spec:
           - name: out-zarr
             value: "{{ inputs.parameters.out-zarr }}"
       container:
-        image: us-central1-docker.pkg.dev/downscalecmip6/private/dodola:dev
+        image: us-central1-docker.pkg.dev/downscalecmip6/private/dodola:0.8.0
         command: [ dodola ]
         args:
           - "prime-qdm-output-zarrstore"
@@ -394,7 +394,7 @@ spec:
           - name: out-zarr
             value: "{{ inputs.parameters.out-zarr }}"
       container:
-        image: us-central1-docker.pkg.dev/downscalecmip6/private/dodola:dev
+        image: us-central1-docker.pkg.dev/downscalecmip6/private/dodola:0.8.0
         command: [ "dodola" ]
         args:
           - "train-qdm"
@@ -437,7 +437,7 @@ spec:
           - name: out-zarr
             value: "{{ inputs.parameters.out-zarr }}"
       container:
-        image: us-central1-docker.pkg.dev/downscalecmip6/private/dodola:dev
+        image: us-central1-docker.pkg.dev/downscalecmip6/private/dodola:0.8.0
         command: [ dodola ]
         args:
           - "apply-qdm"
