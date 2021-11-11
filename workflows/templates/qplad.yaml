@@ -1,11 +1,11 @@
 apiVersion: argoproj.io/v1alpha1
 kind: WorkflowTemplate
 metadata:
-  name: aiqpd
+  name: qplad
   annotations:
     workflows.argoproj.io/description: >-
-      Prototype AIQPD downscaling for bias-corrected CMIP6 GCM Zarr Stores.
-    workflows.argoproj.io/tags: zarr,downscale,cmip6,aiqpd,dc6
+      Quantile-Preserving, Localized Analogs Downscaling for bias-corrected CMIP6 GCM Zarr Stores.
+    workflows.argoproj.io/tags: zarr,downscale,cmip6,aiqpd,dc6,qplad
     workflows.argoproj.io/version: '>= 3.1.0'
   labels:
     component: downscale
@@ -46,7 +46,7 @@ spec:
         parameters:
           - name: out-zarr
             valueFrom:
-              parameter: "{{ tasks.aiqpd.outputs.parameters.out-zarr }}"
+              parameter: "{{ tasks.qplad.outputs.parameters.out-zarr }}"
       dag:
         tasks:
           - name: create-fine-reference
@@ -79,8 +79,8 @@ spec:
                   value: "{{ inputs.parameters.biascorrected-zarr }}"
                 - name: domain-file
                   value: "{{ inputs.parameters.domainfile0p25x0p25 }}"
-          - name: aiqpd
-            template: aiqpd
+          - name: qplad
+            template: qplad
             depends: >-
               preprocess-biascorrected
               && create-coarse-reference
@@ -275,7 +275,7 @@ spec:
                   value: "true"
 
 
-    - name: aiqpd
+    - name: qplad
       inputs:
         parameters:
           - name: simulation-zarr
@@ -288,10 +288,10 @@ spec:
         parameters:
           - name: out-zarr
             valueFrom:
-              parameter: "{{ steps.prime-aiqpd-output-zarr.outputs.parameters.out-zarr }}"
+              parameter: "{{ steps.prime-qplad-output-zarr.outputs.parameters.out-zarr }}"
       steps:
-        - - name: prime-aiqpd-output-zarr
-            template: prime-aiqpd-output-zarr
+        - - name: prime-qplad-output-zarr
+            template: prime-qplad-output-zarr
             arguments:
               parameters:
                 - name: simulation-zarr
@@ -315,7 +315,7 @@ spec:
                 - name: qdm-kind
                   value: "{{ inputs.parameters.qdm-kind }}"
                 - name: out-zarr
-                  value: "{{ steps.prime-aiqpd-output-zarr.outputs.parameters.out-zarr }}"
+                  value: "{{ steps.prime-qplad-output-zarr.outputs.parameters.out-zarr }}"
                   # Looping over 2 degree latitude bands...
                 - name: lat-slice-min
                   value: "{{=asInt(item) * 2 }}"
@@ -339,8 +339,8 @@ spec:
           - name: lat-slice-max
           - name: out-zarr
       steps:
-        - - name: train-aiqpd
-            template: train-aiqpd
+        - - name: train-qplad
+            template: train-qplad
             arguments:
               parameters:
                 - name: variable-id
@@ -355,16 +355,16 @@ spec:
                   value: "{{ inputs.parameters.lat-slice-min}}"
                 - name: lat-slice-max
                   value: "{{ inputs.parameters.lat-slice-max}}"
-        - - name: apply-aiqpd
-            template: apply-aiqpd
+        - - name: apply-qplad
+            template: apply-qplad
             arguments:
               parameters:
                 - name: variable
                   value: "{{ inputs.parameters.variable-id }}"
                 - name: simulation-zarr
                   value: "{{ inputs.parameters.simulation-zarr }}"
-                - name: aiqpd-model-zarr
-                  value: "{{ steps.train-aiqpd.outputs.parameters.out-zarr }}"
+                - name: qplad-model-zarr
+                  value: "{{ steps.train-qplad.outputs.parameters.out-zarr }}"
                 - name: qdm-kind
                   value: "{{ inputs.parameters.qdm-kind }}"
                 - name: lat-slice-min
@@ -375,7 +375,7 @@ spec:
                   value: "{{ inputs.parameters.out-zarr }}"
 
 
-    - name: train-aiqpd
+    - name: train-qplad
       inputs:
         parameters:
           - name: coarse-reference-zarr
@@ -389,7 +389,7 @@ spec:
           - name: time-sel-stop
             value: "2015-01-15"
           - name: out-zarr
-            value: "gs://scratch-170cd6ec/{{ workflow.uid }}/{{ pod.name }}/aiqpd-model.zarr"
+            value: "gs://scratch-170cd6ec/{{ workflow.uid }}/{{ pod.name }}/qplad-model.zarr"
       outputs:
         parameters:
           - name: out-zarr
@@ -398,7 +398,7 @@ spec:
         image: us-central1-docker.pkg.dev/downscalecmip6/private/dodola:dev
         command: [ dodola ]
         args:
-          - "train-aiqpd"
+          - "train-qplad"
           - "--variable={{ inputs.parameters.variable-id }}"
           - "--coarse-reference={{ inputs.parameters.coarse-reference-zarr }}"
           - "--fine-reference={{ inputs.parameters.fine-reference-zarr }}"
@@ -424,23 +424,23 @@ spec:
           factor: 2
 
 
-    - name: apply-aiqpd
+    - name: apply-qplad
       inputs:
         parameters:
           - name: simulation-zarr
-          - name: aiqpd-model-zarr
+          - name: qplad-model-zarr
           - name: variable
           - name: lat-slice-min
           - name: lat-slice-max
           - name: out-zarr
-            value: "gs://scratch-170cd6ec/{{ workflow.uid }}/{{ pod.name }}/aiqpd_adjusted.zarr"
+            value: "gs://scratch-170cd6ec/{{ workflow.uid }}/{{ pod.name }}/qplad_adjusted.zarr"
       container:
         image: us-central1-docker.pkg.dev/downscalecmip6/private/dodola:dev
         command: [ dodola ]
         args:
-          - "apply-aiqpd"
+          - "apply-qplad"
           - "--simulation={{ inputs.parameters.simulation-zarr}}"
-          - "--aiqpd={{ inputs.parameters.aiqpd-model-zarr}}"
+          - "--qplad={{ inputs.parameters.qplad-model-zarr}}"
           - "--variable={{ inputs.parameters.variable }}"
           - "--out={{ inputs.parameters.out-zarr }}"
           - "--iselslice=lat={{ inputs.parameters.lat-slice-min }},{{ inputs.parameters.lat-slice-max }}"
@@ -465,7 +465,7 @@ spec:
 
 
     # Sets up output zarr file and metadata without writing time-related data to the zarr store.
-    - name: prime-aiqpd-output-zarr
+    - name: prime-qplad-output-zarr
       inputs:
         parameters:
           - name: simulation-zarr
@@ -480,7 +480,7 @@ spec:
         image: us-central1-docker.pkg.dev/downscalecmip6/private/dodola:dev
         command: [ dodola ]
         args:
-          - "prime-aiqpd-output-zarrstore"
+          - "prime-qplad-output-zarrstore"
           - "--simulation={{ inputs.parameters.simulation-zarr}}"
           - "--variable={{ inputs.parameters.variable }}"
           - "--out={{ inputs.parameters.out-zarr }}"
