@@ -321,7 +321,7 @@ spec:
                     {{=jsonpath(inputs.parameters.simulation, '$.experiment_id') == 'historical' ? 'historical' : 'future'}}
           - name: create-fine-reference
             templateRef:
-              name: aiqpd
+              name: qplad
               template: create-fine-reference
             arguments:
               parameters:
@@ -333,7 +333,7 @@ spec:
                   value: "{{ inputs.parameters.domainfile0p25x0p25 }}"
           - name: create-coarse-reference
             templateRef:
-              name: aiqpd
+              name: qplad
               template: create-coarse-reference
             arguments:
               parameters:
@@ -347,7 +347,7 @@ spec:
                   value: "{{ inputs.parameters.domainfile1x1 }}"
           - name: preprocess-biascorrected
             templateRef:
-              name: aiqpd
+              name: qplad
               template: preprocess-biascorrected
             depends: rechunk-biascorrected
             arguments:
@@ -356,15 +356,15 @@ spec:
                   value: "{{ tasks.rechunk-biascorrected.outputs.parameters.out-zarr }}"
                 - name: domain-file
                   value: "{{ inputs.parameters.domainfile0p25x0p25 }}"
-          - name: aiqpd
+          - name: qplad
             depends: >-
               get-output-downscaled-url
               && preprocess-biascorrected
               && create-coarse-reference
               && create-fine-reference
             templateRef:
-              name: aiqpd
-              template: aiqpd
+              name: qplad
+              template: qplad
             arguments:
               parameters:
                 - name: variable-id
@@ -380,14 +380,14 @@ spec:
                 - name: out-zarr
                   value: "{{ tasks.get-output-downscaled-url.outputs.parameters.out-url }}"
           - name: validate-downscaled
-            depends: aiqpd
+            depends: qplad
             templateRef:
               name: qualitycontrol-check-cmip6
               template: qualitycontrol-check-cmip6
             arguments:
               parameters:
                 - name: in-zarr
-                  value: "{{ tasks.aiqpd.outputs.parameters.out-zarr }}"
+                  value: "{{ tasks.qplad.outputs.parameters.out-zarr }}"
                 - name: variable
                   value: "{{=jsonpath(inputs.parameters.simulation, '$.variable_id')}}"
                 - name: data
