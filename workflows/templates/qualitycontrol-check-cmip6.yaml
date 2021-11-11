@@ -40,7 +40,7 @@ spec:
           - name: data
           - name: time
       script:
-        image: us-central1-docker.pkg.dev/downscalecmip6/private/dodola:0.7.0
+        image: us-central1-docker.pkg.dev/downscalecmip6/private/dodola:0.8.0
         command: [python]
         source: |
           import dask
