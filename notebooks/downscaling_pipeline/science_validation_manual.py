@@ -115,7 +115,7 @@ def plot_gmst_diagnostic(ds_fut_cmip6, ds_fut_bc, variable='tasmax',
     plt.legend()
     plt.title('Global Mean {} {}'.format(variable, ssp))
 
-def plot_bias_correction_downscale_differences(ds_future_bc, ds_future_ds, plot_type, data_type, variable, units, years, ds_hist_bc=None, ds_hist_ds=None,
+def plot_bias_correction_downscale_differences(ds_future_bc, ds_future_ds, plot_type, data_type, variable, units, years, robust=True, ds_hist_bc=None, ds_hist_ds=None,
                                                ssp='370', time_period='2080_2100'):
     """
     plot differences between bias corrected historical and future, downscaled historical and future, or bias corrected and downscaled. 
@@ -123,7 +123,7 @@ def plot_bias_correction_downscale_differences(ds_future_bc, ds_future_ds, plot_
     plot_type options: downscaled_minus_biascorrected, change_from_historical (takes bias corrected or downscaled)
     data_type options: bias_corrected, downscaled
     """
-    fig, axes = plt.subplots(1, 2, figsize=(10, 6), subplot_kw={'projection': ccrs.PlateCarree()})
+    fig, axes = plt.subplots(1, 2, figsize=(25, 4), subplot_kw={'projection': ccrs.PlateCarree()})
 
     if plot_type == 'change_from_historical':
         if data_type == 'bias_corrected':
@@ -154,8 +154,8 @@ def plot_bias_correction_downscale_differences(ds_future_bc, ds_future_ds, plot_
 
     cbar_label = "{} ({})".format(variable, units[variable])
     if ds_hist_bc is not None:
-        diff1.plot(ax=axes[0], cmap=cmap, transform=ccrs.PlateCarree(), robust=True, cbar_kwargs={'label': cbar_label})
-    diff2.plot(ax=axes[1], cmap=cmap, transform=ccrs.PlateCarree(), robust=True, cbar_kwargs={'label': cbar_label})
+        diff1.plot(ax=axes[0], cmap=cmap, transform=ccrs.PlateCarree(), robust=robust, cbar_kwargs={'label': cbar_label})
+    diff2.plot(ax=axes[1], cmap=cmap, transform=ccrs.PlateCarree(), robust=robust, cbar_kwargs={'label': cbar_label})
 
     axes[0].coastlines()
     axes[0].add_feature(cfeature.BORDERS, linestyle=":")
@@ -165,8 +165,6 @@ def plot_bias_correction_downscale_differences(ds_future_bc, ds_future_ds, plot_
 
     axes[1].coastlines()
     axes[1].add_feature(cfeature.BORDERS, linestyle=":")
-
-    plt.tight_layout()
 
 def read_gcs_zarr(zarr_url, token='/opt/gcsfuse_tokens/impactlab-data.json', check=False):
     """
