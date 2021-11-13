@@ -290,6 +290,16 @@ spec:
             valueFrom:
               parameter: "{{ steps.prime-qplad-output-zarr.outputs.parameters.out-zarr }}"
       steps:
+        - - name: create-qplad-output-metadata
+            templateRef:
+              name: create-output-metadata-json
+              template: create-output-metadata-json
+            arguments:
+              parameters:
+                - name: in-zarr
+                  value: "{{ inputs.parameters.simulation-zarr }}"
+                - name: workflowstep
+                  value: downscale
         - - name: prime-qplad-output-zarr
             template: prime-qplad-output-zarr
             arguments:
@@ -300,6 +310,9 @@ spec:
                   value: "{{ inputs.parameters.variable-id}}"
                 - name: out-zarr
                   value: "{{ inputs.parameters.out-zarr }}"
+              artifacts:
+                - name: global-attrs-json
+                  from: "{{ steps.create-qplad-output-metadata.outputs.artifacts.global-attrs-json }}"
         - - name: with-lat-chunk
             template: with-lat-chunk
             arguments:
@@ -321,6 +334,9 @@ spec:
                   value: "{{=asInt(item) * 2 }}"
                 - name: lat-slice-max
                   value: "{{=asInt(item) * 2 + 2 }}"
+              artifacts:
+                - name: global-attrs-json
+                  from: "{{ steps.create-qplad-output-metadata.outputs.artifacts.global-attrs-json }}"
             # Also, looping over 2 pixel chunk latitude bands:
             withSequence:
               start: "0"
@@ -338,6 +354,8 @@ spec:
           - name: lat-slice-min
           - name: lat-slice-max
           - name: out-zarr
+        artifacts:
+          - name: global-attrs-json
       steps:
         - - name: train-qplad
             template: train-qplad
@@ -373,6 +391,9 @@ spec:
                   value: "{{ inputs.parameters.lat-slice-max }}"
                 - name: out-zarr
                   value: "{{ inputs.parameters.out-zarr }}"
+              artifacts:
+                - name: global-attrs-json
+                  from: "{{ inputs.artifacts.global-attrs-json }}"
 
 
     - name: train-qplad
@@ -434,8 +455,11 @@ spec:
           - name: lat-slice-max
           - name: out-zarr
             value: "gs://scratch-170cd6ec/{{ workflow.uid }}/{{ pod.name }}/qplad_adjusted.zarr"
+        artifacts:
+          - name: global-attrs-json
+            path: /tmp/global_attrs.json
       container:
-        image: us-central1-docker.pkg.dev/downscalecmip6/private/dodola:0.8.0
+        image: us-central1-docker.pkg.dev/downscalecmip6/private/dodola:dev
         command: [ dodola ]
         args:
           - "apply-qplad"
@@ -445,9 +469,7 @@ spec:
           - "--out={{ inputs.parameters.out-zarr }}"
           - "--iselslice=lat={{ inputs.parameters.lat-slice-min }},{{ inputs.parameters.lat-slice-max }}"
           - "--out-zarr-region=lat={{ inputs.parameters.lat-slice-min }},{{ inputs.parameters.lat-slice-max }}"
-          - "--new-attrs=dc6_workflow_name={{ workflow.name }}"
-          - "--new-attrs=dc6_workflow_uid={{ workflow.uid }}"
-          - "--new-attrs=dc6_version_id=v{{workflow.creationTimestamp.Y}}{{workflow.creationTimestamp.m}}{{workflow.creationTimestamp.d}}{{workflow.creationTimestamp.H}}{{workflow.creationTimestamp.M}}{{workflow.creationTimestamp.S}}"
+          - "--root-attrs-json-file=/tmp/global_attrs.json"
         resources:
           requests:
             memory: 38Gi
@@ -472,12 +494,15 @@ spec:
           - name: variable
           - name: out-zarr
             value: "gs://scratch-170cd6ec/{{ workflow.uid }}/{{ pod.name }}/downscaled.zarr"
+        artifacts:
+          - name: global-attrs-json
+            path: /tmp/global_attrs.json
       outputs:
         parameters:
           - name: out-zarr
             value: "{{ inputs.parameters.out-zarr }}"
       container:
-        image: us-central1-docker.pkg.dev/downscalecmip6/private/dodola:0.8.0
+        image: us-central1-docker.pkg.dev/downscalecmip6/private/dodola:dev
         command: [ dodola ]
         args:
           - "prime-qplad-output-zarrstore"
@@ -485,9 +510,7 @@ spec:
           - "--variable={{ inputs.parameters.variable }}"
           - "--out={{ inputs.parameters.out-zarr }}"
           - "--zarr-region-dims=lat"
-          - "--new-attrs=dc6_workflow_name={{ workflow.name }}"
-          - "--new-attrs=dc6_workflow_uid={{ workflow.uid }}"
-          - "--new-attrs=dc6_version_id=v{{workflow.creationTimestamp.Y}}{{workflow.creationTimestamp.m}}{{workflow.creationTimestamp.d}}{{workflow.creationTimestamp.H}}{{workflow.creationTimestamp.M}}{{workflow.creationTimestamp.S}}"
+          - "--root-attrs-json-file=/tmp/global_attrs.json"
         resources:
           requests:
             memory: 4Gi
