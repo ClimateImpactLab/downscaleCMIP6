@@ -1,0 +1,132 @@
+apiVersion: argoproj.io/v1alpha1
+kind: WorkflowTemplate
+metadata:
+  name: create-output-metadata-json
+  annotations:
+    workflows.argoproj.io/description: >-
+      Create JSON artifact of output root metadata.
+
+      This JSON file is intended to be read in as an xarray Datasets root
+      attrs. This artifact is output as "global-attrs-json".
+    workflows.argoproj.io/tags: zarr,utils,metadata,dc6
+    workflows.argoproj.io/version: '>= 3.1.0'
+  labels:
+    component: utils
+spec:
+  entrypoint: create-output-metadata-json
+  arguments:
+    parameters:
+      - name: in-zarr
+        value: "gs://clean-b1dbca25/cmip6/ScenarioMIP/NOAA-GFDL/GFDL-ESM4/ssp370/r1i1p1f1/day/tasmax/gr1/v20180701.zarr"
+      - name: workflowstep
+        value: downscale
+  templates:
+
+    - name: create-output-metadata-json
+      inputs:
+        parameters:
+          - name: in-zarr
+          - name: workflowstep  # downscale, biascorrect, or clean
+      outputs:
+        artifacts:
+          - name: global-attrs-json
+            path: /tmp/global_attrs.json
+      script:
+        image: us-central1-docker.pkg.dev/downscalecmip6/private/dodola:0.8.0
+        command: [ python ]
+        source: |
+          import json
+          from pprint import pprint
+          import dodola.repository
+
+          input_zarr = "{{ inputs.parameters.in-zarr }}"
+          workflowstep = "{{ inputs.parameters.workflowstep }}"
+
+          ds_attrs = dodola.repository.read(input_zarr).attrs
+
+          # Controlled vocabulary from
+          # https://github.com/WCRP-CMIP/CMIP6_CVs/blob/6.2.56.5/CMIP6_required_global_attributes.json
+          required_attrs = [
+              "Conventions",
+              "activity_id",
+              "creation_date",
+              "data_specs_version",
+              "experiment",
+              "experiment_id",
+              "forcing_index",
+              "frequency",
+              "further_info_url",
+              "grid",
+              "grid_label",
+              "initialization_index",
+              "institution",
+              "institution_id",
+              "license",
+              "mip_era",
+              "nominal_resolution",
+              "physics_index",
+              "product",
+              "realization_index",
+              "realm",
+              "source",
+              "source_id",
+              "source_type",
+              "sub_experiment",
+              "sub_experiment_id",
+              "table_id",
+              "tracking_id",
+              "variable_id",
+              "variant_label",
+          ]
+
+          select_attrs = {k: ds_attrs[k] for k in required_attrs}
+          dc6_attrs = {
+              "contact": "climatesci@rhg.com",
+              'dc6_citation': 'Please refer to https://github.com/ClimateImpactLab/downscaleCMIP6/blob/master/README.rst for a dataset DOI and references.',
+              'dc6_creation_date': "{{workflow.creationTimestamp.Y}}-{{workflow.creationTimestamp.m}}-{{workflow.creationTimestamp.d}}",
+              'dc6_dataset_name': 'Rhodium Group/Climate Impact Lab Global Downscaled Projections for Climate Impacts Research (R/CIL GDPCIR)',
+              'dc6_data_version': 'v20211231',
+              'dc6_description': 'The prefix dc6 is the project-specific abbreviation for our R/CIL downscaling CMIP6 project',
+              'dc6_grid': '1 deg x 1 deg regular global grid, domain file: https://github.com/ClimateImpactLab/downscaleCMIP6/blob/master/grids/domain.1x1.nc',
+              'dc6_institution': 'Rhodium Group, New York, NY 10019 and Climate Impact Lab, https://impactlab.org/',
+              'dc6_institution_id': 'Rhodium Group / Climate Impact Lab',
+              'dc6_methods_description_url': 'https://github.com/ClimateImpactLab/downscaleCMIP6/blob/master/README.rst',
+              'dc6_version_id': "v{{workflow.creationTimestamp.Y}}{{workflow.creationTimestamp.m}}{{workflow.creationTimestamp.d}}{{workflow.creationTimestamp.H}}{{workflow.creationTimestamp.M}}{{workflow.creationTimestamp.S}}",
+              'dc6_workflow_name': "{{ workflow.name }}",
+              'dc6_workflow_uid': "{{ workflow.uid }}",
+              "license": f"https://github.com/ClimateImpactLab/downscaleCMIP6/tree/master/data_licenses/{select_attrs['source_id']}.txt",
+              "version_id": ds_attrs["version_id"]  # Required to read from CMIP6-in-the-cloud.
+          }
+          select_attrs |= dc6_attrs
+
+          if workflowstep == "clean":
+              pass
+          elif workflowstep == "downscale":
+              select_attrs |= {
+                  "dc6_downscaling_method": "Quantile Preserving Localized Analogs Downscaling",
+                  "dc6_bias_correction_method": "Quantile Delta Method (QDM)",
+                  "dc6_nominal_resolution": "25 km",
+              }
+          elif workflowstep == "biascorrect":
+              select_attrs |= {
+                  "dc6_bias_correction_method": "Quantile Delta Method (QDM)",
+                  "dc6_nominal_resolution": "100 km",
+              }
+          else:
+              raise ValueError(f"workflowstep must be 'clean', 'downscale' or 'biascorrect', got {workflowstep=}")
+
+          pprint(select_attrs)
+
+          with open("/tmp/global_attrs.json", mode="w") as fl:
+              json.dump(select_attrs, fl)
+        resources:
+          requests:
+            memory: 2Gi
+            cpu: "1000m"
+          limits:
+            memory: 2Gi
+            cpu: "1000m"
+      activeDeadlineSeconds: 1200
+      retryStrategy:
+        limit: 2
+        retryPolicy: "Always"

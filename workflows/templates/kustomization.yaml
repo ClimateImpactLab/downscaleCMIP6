@@ -6,6 +6,7 @@ resources:
   - catalog.yaml
   - clean-cmip6.yaml
   - clean-era5.yaml
+  - create-output-metadata-json.yaml
   - distributed-regrid.yaml
   - download-cmip6.yaml
   - qdm.yaml
