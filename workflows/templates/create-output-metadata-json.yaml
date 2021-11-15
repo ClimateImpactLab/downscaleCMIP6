@@ -87,7 +87,6 @@ spec:
               'dc6_dataset_name': 'Rhodium Group/Climate Impact Lab Global Downscaled Projections for Climate Impacts Research (R/CIL GDPCIR)',
               'dc6_data_version': 'v20211231',
               'dc6_description': 'The prefix dc6 is the project-specific abbreviation for our R/CIL downscaling CMIP6 project',
-              'dc6_grid': '1 deg x 1 deg regular global grid, domain file: https://github.com/ClimateImpactLab/downscaleCMIP6/blob/master/grids/domain.1x1.nc',
               'dc6_institution': 'Rhodium Group, New York, NY 10019 and Climate Impact Lab, https://impactlab.org/',
               'dc6_institution_id': 'Rhodium Group / Climate Impact Lab',
               'dc6_methods_description_url': 'https://github.com/ClimateImpactLab/downscaleCMIP6/blob/master/README.rst',
@@ -105,11 +104,13 @@ spec:
               select_attrs |= {
                   "dc6_downscaling_method": "Quantile Preserving Localized Analogs Downscaling",
                   "dc6_bias_correction_method": "Quantile Delta Method (QDM)",
+                  "dc6_grid": "0.25 deg x 0.25 deg regular global grid, domain file: https://github.com/ClimateImpactLab/downscaleCMIP6/blob/master/grids/domain.0p25x0p25.nc",
                   "dc6_nominal_resolution": "25 km",
               }
           elif workflowstep == "biascorrect":
               select_attrs |= {
                   "dc6_bias_correction_method": "Quantile Delta Method (QDM)",
+                  "dc6_grid": "1 deg x 1 deg regular global grid, domain file: https://github.com/ClimateImpactLab/downscaleCMIP6/blob/master/grids/domain.1x1.nc",
                   "dc6_nominal_resolution": "100 km",
               }
           else:
