@@ -356,8 +356,6 @@ spec:
           - name: out-zarr
         artifacts:
           - name: global-attrs-json
-      # Avoid overwhelming Google Cloud Storage API quotas for single object.
-      parallelism: 180
       steps:
         - - name: train-qplad
             template: train-qplad
