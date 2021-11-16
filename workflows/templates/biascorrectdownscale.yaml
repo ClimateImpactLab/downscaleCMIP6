@@ -43,9 +43,9 @@ spec:
           ]
       - name: regrid-method
         value: "bilinear"
-      - name: correct-wetday-frequency  # "true" or "false" STRING!
+      - name: correct-wetday-frequency
         value: "false"
-      - name: qdm-kind #additive or multiplicative
+      - name: qdm-kind
         value: "additive"
   templates:
 
@@ -55,6 +55,9 @@ spec:
       inputs:
         parameters:
           - name: jobs
+          - name: regrid-method
+          - name: correct-wetday-frequency  # "true" or "false" STRING!
+          - name: qdm-kind  # additive or multiplicative
       steps:
         - - name: parameterize
             template: parameterize
@@ -66,6 +69,12 @@ spec:
                   value: "{{ item.historical }}"
                 - name: ssp
                   value: "{{ item.ssp }}"
+                - name: regrid-method
+                  value: "{{ inputs.parameters.regrid-method }}"
+                - name: correct-wetday-frequency
+                  value: "{{ inputs.parameters.correct-wetday-frequency }}"
+                - name: qdm-kind
+                  value: "{{ inputs.parameters.qdm-kind }}"
             withParam: "{{ inputs.parameters.jobs }}"
 
 
@@ -77,11 +86,8 @@ spec:
           - name: ssp
           - name: historical
           - name: regrid-method
-            value: "{{ workflow.parameters.regrid-method }}"
           - name: qdm-kind
-            value: "{{ workflow.parameters.qdm-kind }}"
           - name: correct-wetday-frequency
-            value: "{{ workflow.parameters.correct-wetday-frequency }}"
           - name: domainfile1x1
             value: "gs://support-c23ff1a3/domain.1x1.zarr"
           - name: domainfile0p25x0p25

@@ -1,19 +1,18 @@
 apiVersion: argoproj.io/v1alpha1
-kind: Workflow
+kind: WorkflowTemplate
 metadata:
-  generateName: e2e-tasmax-
+  name: e2e-tasmax-jobs
+  annotations:
+    workflows.argoproj.io/description: >-
+      Download, clean, biascorrect, and downscale a list of CMIP6 "tasmax" data.
+    workflows.argoproj.io/tags: e2e,jobs,cmip6,dc6
+    workflows.argoproj.io/version: '>= 3.1.0'
+  labels:
+    component: e2e
 spec:
-  entrypoint: e2e-tasmax
+  entrypoint: e2e-tasmax-jobs
   arguments:
     parameters:
-      - name: overwrite
-        value: "false"
-      - name: regrid-method
-        value: "bilinear"
-      - name: qdm-kind
-        value: "additive"
-      - name: correct-wetday-frequency
-        value: "false"
       - name: jobs
         value: |
           [
@@ -45,7 +44,7 @@ spec:
             }
           ]
   templates:
-    - name: e2e-tasmax
+    - name: e2e-tasmax-jobs
       inputs:
         parameters:
           - name: jobs
@@ -74,3 +73,10 @@ spec:
               parameters:
                 - name: jobs
                   value: "{{ inputs.parameters.jobs }}"
+                - name: regrid-method
+                  value: "bilinear"
+                - name: correct-wetday-frequency
+                  value: "false"
+                - name: qdm-kind
+                  value: "additive"
+
