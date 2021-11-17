@@ -102,7 +102,7 @@ spec:
               pass
           elif workflowstep == "downscale":
               select_attrs |= {
-                  "dc6_downscaling_method": "Quantile Preserving Localized Analogs Downscaling",
+                  "dc6_downscaling_method": "Quantile Preserving Localized Analogs Downscaling (QPLAD)",
                   "dc6_bias_correction_method": "Quantile Delta Method (QDM)",
                   "dc6_grid": "0.25 deg x 0.25 deg regular global grid, domain file: https://github.com/ClimateImpactLab/downscaleCMIP6/blob/master/grids/domain.0p25x0p25.nc",
                   "dc6_nominal_resolution": "25 km",
