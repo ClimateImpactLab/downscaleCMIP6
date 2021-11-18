@@ -224,7 +224,7 @@ spec:
 
           overwrite_arg = "{{ inputs.parameters.overwrite }}".lower()
           if overwrite_arg not in ["true", "false"]:
-              raise ValueError(f"Argument for `overwrite` must be 'true' or 'false', got {overwrite_arg}"
+              raise ValueError(f"Argument for `overwrite` must be 'true' or 'false', got {overwrite_arg}")
           overwrite = "{{ inputs.parameters.overwrite }}".lower() == "true"
 
           print("Searching catalog")
