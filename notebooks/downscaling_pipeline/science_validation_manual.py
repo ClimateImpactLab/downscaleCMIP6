@@ -8,6 +8,7 @@ import os
 from matplotlib import cm
 import gcsfs
 import re
+import requests
 
 def plot_diagnostic_climo_periods(ds_future, ssp, years, variable, metric, data_type, units, ds_hist=None, vmin=240, vmax=320, transform = ccrs.PlateCarree()):    
     """
@@ -217,3 +218,28 @@ def get_output_paths(manifest, regex):
         raise Exception('I could not identify any node in the manifest')
 
     return ({'path': out_zarr_path, 'nodeId': nodeId})
+
+def get_manifest(workflow_uid, auth_token, argo_url='https://argo.cildc6.org/api/v1', workflow_location='workflows', namespace='default'):
+
+    """
+    make an http request to retrieve a workflow manifest from an argo server
+
+    Parameters
+    ----------
+    workflow_uid: str
+        unique workflow identifier
+    auth_token: str
+        argo server authentication
+    argo_url: str
+        url of argo server
+    workflow_location: str
+        probably only 'workflows' or 'archived_workflows'
+    namespace: str
+        argo namespace
+    Returns
+    -------
+    dict
+        representation of the workflow manifest in dict format parsed form json file
+    """
+    return requests.get(url=f'{argo_url}/{workflow_location}/{namespace}/' + workflow_uid,
+                              headers={'Authorization': auth_token}).json()
