@@ -51,6 +51,8 @@ spec:
       inputs:
         parameters:
           - name: jobs
+          - name: overwrite
+            value: "false"
       steps:
         - - name: divide
             template: with-specification
@@ -58,6 +60,8 @@ spec:
               parameters:
                 - name: simulations
                   value: "[{{ item.ssp }}, {{ item.historical }}]"
+                - name: overwrite
+                  value: "{{ inputs.parameters.overwrite }}"
             withParam: "{{ inputs.parameters.jobs }}"
 
 
@@ -66,6 +70,7 @@ spec:
       inputs:
         parameters:
           - name: simulations
+          - name: overwrite
       steps:
         - - name: process
             template: download-cmip6
@@ -89,6 +94,8 @@ spec:
                   value: "{{item.grid_label}}"
                 - name: version
                   value: "{{item.version}}"
+                - name: overwrite
+                  value: "{{ inputs.parameters.overwrite }}"
             withParam: "{{ inputs.parameters.simulations }}"
 
 
@@ -104,6 +111,7 @@ spec:
           - name: member-id
           - name: grid-label
           - name: version
+          - name: overwrite
       outputs:
         parameters:
           - name: out-zarr
@@ -160,6 +168,8 @@ spec:
                   value: "{{inputs.parameters.version}}"
                 - name: out-url
                   value: "{{ steps.get-destination-url.outputs.parameters.out-url }}"
+                - name: overwrite
+                  value: "{{ inputs.parameters.overwrite }}"
 
 
     - name: download-gcm
@@ -176,7 +186,6 @@ spec:
           - name: version
           - name: out-url
           - name: overwrite
-            value: "{{workflow.parameters.overwrite}}"
       outputs:
         parameters:
           - name: out-zarr
@@ -212,6 +221,10 @@ spec:
           import zarr
 
           outpath = os.environ.get("OUTPATH")
+
+          overwrite_arg = "{{ inputs.parameters.overwrite }}".lower()
+          if overwrite_arg not in ["true", "false"]:
+              raise ValueError(f"Argument for `overwrite` must be 'true' or 'false', got {overwrite_arg}")
           overwrite = "{{ inputs.parameters.overwrite }}".lower() == "true"
 
           print("Searching catalog")
