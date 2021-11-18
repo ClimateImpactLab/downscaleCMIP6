@@ -241,5 +241,4 @@ def get_manifest(workflow_uid, auth_token, argo_url='https://argo.cildc6.org/api
     dict
         representation of the workflow manifest in dict format parsed form json file
     """
-    return requests.get(url=f'{argo_url}/{workflow_location}/{namespace}/' + workflow_uid,
-                              headers={'Authorization': auth_token}).json()
+    return requests.get(url=f'{argo_url}/{workflow_location}/{namespace}/' + workflow_uid, headers={'Authorization': auth_token}).json()
