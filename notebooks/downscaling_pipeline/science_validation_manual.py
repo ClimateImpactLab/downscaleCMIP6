@@ -178,7 +178,7 @@ def read_gcs_zarr(zarr_url, token='/opt/gcsfuse_tokens/impactlab-data.json', che
     ds = xr.open_zarr(store_path)
     
     return ds 
-    
+
 def get_output_paths(manifest, regex):
     """
     lists status.nodes in an argo manifest, and grabs intermediary output files paths using the node tree represented by
@@ -188,7 +188,7 @@ def get_output_paths(manifest, regex):
     ----------
     manifest : dict
     regex : str
-        regular expression syntax str to filter nodes based on which templates where executed within a given node and before that given
+        regular expression syntax str to filter nodes based on which templates were executed within a given node and before that given
         node in the tree.
     Returns
     ------
