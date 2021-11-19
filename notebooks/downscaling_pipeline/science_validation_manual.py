@@ -222,6 +222,12 @@ def collect_paths(manifest, gcm='GFDL-ESM4', ssp='ssp370', var='tasmax'):
         }
     }
 
+    # hard coded historical data paths
+    data_dict['coarse']['cmip6']['historical'] = 'scratch/biascorrectdownscale-bk6n8/biascorrectdownscale-bk6n8-858077599/out.zarr'
+    data_dict['coarse']['bias_corrected']['historical'] = 'az://biascorrected-stage/CMIP/NOAA-GFDL/GFDL-ESM4/historical/r1i1p1f1/day/tasmax/gr1/v20210920214427.zarr'
+    data_dict['fine']['bias_corrected']['historical'] = 'az://scratch/biascorrectdownscale-bk6n8/biascorrectdownscale-bk6n8-1362934973/regridded.zarr'
+    data_dict['fine']['downscaled']['historical'] = 'az//downscaled-stage/CMIP/NOAA-GFDL/GFDL-ESM4/historical/r1i1p1f1/day/tasmax/gr1/v20210920214427.zarr'
+
     return data_dict
 
 def get_output_path(manifest, regex):
