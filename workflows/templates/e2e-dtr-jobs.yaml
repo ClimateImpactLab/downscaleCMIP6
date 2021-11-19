@@ -64,7 +64,7 @@ spec:
         - - name: compute-dtr
             templateRef:
               name: compute-dtr
-              template: with-jobs
+              template: compute-dtr-jobs
             arguments:
               parameters:
                 - name: jobs
