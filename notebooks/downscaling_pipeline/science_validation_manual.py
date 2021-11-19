@@ -215,10 +215,10 @@ def collect_paths(manifest, gcm='GFDL-ESM4', ssp='ssp370', var='tasmax'):
     f = get_output_path
     data_dict = {
         'coarse': {
-            k : f(manifest, f'{var_token}{ssp_token}{gcm_token}{v}')['path'] for k,v in node_names_tokens['coarse'].items()
+            k : {'ssp': f(manifest, f'{var_token}{ssp_token}{gcm_token}{v}')['path']} for k,v in node_names_tokens['coarse'].items()
         },
         'fine': {
-            k : f(manifest, f'{var_token}{ssp_token}{gcm_token}{v}')['path'] for k,v in node_names_tokens['fine'].items()
+            k : {'ssp': f(manifest, f'{var_token}{ssp_token}{gcm_token}{v}')['path']} for k,v in node_names_tokens['fine'].items()
         }
     }
 
@@ -290,4 +290,3 @@ def get_manifest(workflow_uid, auth_token, argo_url='https://argo.cildc6.org/api
         representation of the workflow manifest in dict format parsed form json file
     """
     return requests.get(url=f'{argo_url}/{workflow_location}/{namespace}/' + workflow_uid, headers={'Authorization': auth_token}).json()
-
