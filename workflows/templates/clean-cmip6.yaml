@@ -50,18 +50,45 @@ spec:
         parameters:
           - name: jobs
       steps:
-        - - name: process-job
+        - - name: variable-id-switch
+            template: variable-id-switch
+            arguments:
+              parameters:
+                - name: job
+                  value: "{{ item }}"
+            withParam: "{{ inputs.parameters.jobs }}"
+
+
+    - name: variable-id-switch
+      inputs:
+        parameters:
+          - name: job
+          - name: variable-id
+            value: "{{=jsonpath(inputs.parameters.job, '$.variable_id') }}"
+      steps:
+        - - name: process-simple-job
             template: process-job
             arguments:
               parameters:
                 - name: target
-                  value: "{{ item.target }}"
+                  value: "{{=jsonpath(inputs.parameters.job, '$.target')}}"
                 - name: historical
-                  value: "{{ item.historical }}"
+                  value:  "{{=toJson(jsonpath(inputs.parameters.job, '$.historical'))}}"
                 - name: ssp
-                  value: "{{ item.ssp }}"
-            withParam: "{{ inputs.parameters.jobs }}"
-
+                  value:  "{{=toJson(jsonpath(inputs.parameters.job, '$.ssp'))}}"
+            when: "{{ inputs.parameters.variable-id }} != 'dtr'"
+          - name: process-dtr-dependencies
+            template: with-jobs
+            arguments:
+              parameters:
+                - name: jobs
+                  # Run the list CMIP6 tasmin and tasmax inputs we need to compute DTR.
+                  value: >-
+                    {{=toJson([
+                        jsonpath(inputs.parameters.job, '$.tasmin'),
+                        jsonpath(inputs.parameters.job, '$.tasmax')
+                    ])}}
+            when: "{{ inputs.parameters.variable-id }} == 'dtr'"
 
       # Do common tasks for cleaning/standardizing the job data, then break
       # into target-specific tasks.

@@ -55,14 +55,53 @@ spec:
             value: "false"
       steps:
         - - name: divide
+            template: variable-id-switch
+            arguments:
+              parameters:
+                - name: job
+                  value: "{{ item }}"
+                - name: overwrite
+                  value: "{{ inputs.parameters.overwrite }}"
+            withParam: "{{ inputs.parameters.jobs }}"
+
+    - name: variable-id-switch
+      inputs:
+        parameters:
+          - name: job
+          - name: overwrite
+            value: "false"
+          - name: variable-id
+            value: "{{=jsonpath(inputs.parameters.job, '$.variable_id') }}"
+      steps:
+        - - name: with-simple-specification
             template: with-specification
             arguments:
               parameters:
                 - name: simulations
-                  value: "[{{ item.ssp }}, {{ item.historical }}]"
+                  value: >-
+                    {{=toJson([
+                        jsonpath(inputs.parameters.job, '$.ssp'),
+                        jsonpath(inputs.parameters.job, '$.historical')
+                    ])}}
                 - name: overwrite
                   value: "{{ inputs.parameters.overwrite }}"
-            withParam: "{{ inputs.parameters.jobs }}"
+            when: "{{ inputs.parameters.variable-id }} != 'dtr'"
+          - name: with-dtr-specification
+            template: with-specification
+            arguments:
+              parameters:
+                - name: simulations
+                  # Pool together all input CMIP6 tasmin and tasmax specs, historical and SSPs.
+                  value: >-
+                    {{=toJson([
+                        jsonpath(inputs.parameters.job, '$.tasmin.historical'),
+                        jsonpath(inputs.parameters.job, '$.tasmin.ssp'),
+                        jsonpath(inputs.parameters.job, '$.tasmax.historical'),
+                        jsonpath(inputs.parameters.job, '$.tasmax.ssp')
+                    ])}}
+                - name: overwrite
+                  value: "{{ inputs.parameters.overwrite }}"
+            when: "{{ inputs.parameters.variable-id }} == 'dtr'"
 
 
       # Break each specification into its components.
