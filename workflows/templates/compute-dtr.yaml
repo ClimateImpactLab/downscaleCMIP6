@@ -36,7 +36,6 @@ spec:
   templates:
 
 
-      # For each job, combine the ssp and historical specifications into a single JSON list.
     - name: compute-dtr-jobs
       inputs:
         parameters:
@@ -301,7 +300,7 @@ spec:
                   value: "{{ tasks.get-clean-dtr-training-url.outputs.parameters.out-url }}"
               artifacts:
                 - name: global-attrs-json
-                  from: "{{ tasks.create-training-dtr-metadata.artifacts.global-attrs-json }}"
+                  from: "{{ tasks.create-training-dtr-metadata.outputs.artifacts.global-attrs-json }}"
           - name: compute-simulation-dtr
             template: compute-dtr
             depends: >-
@@ -319,7 +318,7 @@ spec:
                   value: "{{ tasks.get-clean-dtr-simulation-url.outputs.parameters.out-url }}"
               artifacts:
                 - name: global-attrs-json
-                  from: "{{ tasks.create-simulation-dtr-metadata.artifacts.global-attrs-json }}"
+                  from: "{{ tasks.create-simulation-dtr-metadata.outputs.artifacts.global-attrs-json }}"
           - name: validate-simulation-dtr
             depends: compute-simulation-dtr
             templateRef:
@@ -367,14 +366,14 @@ spec:
           tasmax_ds = xr.open_zarr(tasmax_zarr)
           print(f"Read {tasmax_zarr}")  # DEBUG
 
-          assert tasmin_ds["tasmin"].attrs["units"] == tasmin_ds["tasmax"].attrs["units"]
+          assert tasmin_ds["tasmin"].attrs["units"] == tasmax_ds["tasmax"].attrs["units"]
 
-          dtr_ds = (tasmax_ds["tasmax"] - tasmin["tasmin"]).to_dataset(name="dtr")
+          dtr_ds = (tasmax_ds["tasmax"] - tasmin_ds["tasmin"]).to_dataset(name="dtr")
 
           # We're copying all attrs from `tasmin` to `dtr`, including shared variables.
-          dtr_ds.attrs = tasmin.attrs
+          dtr_ds.attrs = tasmin_ds.attrs
           dtr_ds.attrs["variable_id"] = "dtr"
-          for k, v in tasmin.variables.items():
+          for k, v in tasmin_ds.variables.items():
               if k in dtr_ds:
                   dtr_ds[k].attrs = v.attrs
 
@@ -395,7 +394,7 @@ spec:
           limits:
             memory: 16Gi
             cpu: "2000m"
-      activeDeadlineSeconds: 3600
+      activeDeadlineSeconds: 300
       retryStrategy:
         limit: 2
         retryPolicy: "Always"
