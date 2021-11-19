@@ -196,37 +196,37 @@ def collect_paths(manifest, gcm='GFDL-ESM4', ssp='ssp370', var='tasmax'):
     -------
     dict
     """
-    node_names_tokens = {
-        'coarse': {
-            'cmip6': '(?=.*biascorrect)(?=.*preprocess-simulation)',
-            'bias_corrected': '(?=.*rechunk-biascorrected)',
-            'ERA-5': '(?=.*biascorrect)(?=.*preprocess-reference)'
-        },
-        'fine': {
-            'bias_corrected': '(?=.*preprocess-biascorrected)(?=.*regrid)(?=.*prime-regrid-zarr)',
-            'downscaled': '(?=.*prime-qplad-output-zarr)',
-            'ERA-5_fine': '(?=.*create-fine-reference)(?=.*move-chunks-to-space)',
-            'ERA-5_coarse': '(?=.*create-coarse-reference)(?=.*move-chunks-to-space)'
-        }
-    }
+
     var_token  = f'(?=.*"variable_id":"{var}")'
     ssp_token = f'(?=.*"experiment_id":"{ssp}")'
     gcm_token = f'(?=.*"source_id":"{gcm}")'
     f = get_output_path
+
     data_dict = {
         'coarse': {
-            k : {'ssp': f(manifest, f'{var_token}{ssp_token}{gcm_token}{v}')['path']} for k,v in node_names_tokens['coarse'].items()
+            'cmip6': {
+                'ssp': f(manifest, f'{var_token}{ssp_token}{gcm_token}(?=.*biascorrect)(?=.*preprocess-simulation)')['path'],
+                'historical': 'scratch/biascorrectdownscale-bk6n8/biascorrectdownscale-bk6n8-858077599/out.zarr'
+            },
+            'bias_corrected': {
+                'ssp': f(manifest, f'{var_token}{ssp_token}{gcm_token}(?=.*rechunk-biascorrected)')['path'],
+                'historical': 'az://biascorrected-stage/CMIP/NOAA-GFDL/GFDL-ESM4/historical/r1i1p1f1/day/tasmax/gr1/v20210920214427.zarr'
+            },
+            'ERA-5': f(manifest, f'{var_token}{ssp_token}{gcm_token}(?=.*biascorrect)(?=.*preprocess-reference)')['path']
         },
         'fine': {
-            k : {'ssp': f(manifest, f'{var_token}{ssp_token}{gcm_token}{v}')['path']} for k,v in node_names_tokens['fine'].items()
+            'bias_corrected': {
+                'ssp': f(manifest, f'{var_token}{ssp_token}{gcm_token}(?=.*preprocess-biascorrected)(?=.*regrid)(?=.*prime-regrid-zarr)')['path'],
+                'historical': 'az://scratch/biascorrectdownscale-bk6n8/biascorrectdownscale-bk6n8-1362934973/regridded.zarr'
+            },
+            'downscaled': {
+                'ssp': f(manifest, f'{var_token}{ssp_token}{gcm_token}(?=.*prime-qplad-output-zarr)')['path'],
+                'historical': 'az//downscaled-stage/CMIP/NOAA-GFDL/GFDL-ESM4/historical/r1i1p1f1/day/tasmax/gr1/v20210920214427.zarr'
+            },
+            'ERA-5_fine': f(manifest, f'{var_token}{ssp_token}{gcm_token}(?=.*create-fine-reference)(?=.*move-chunks-to-space)')['path'],
+            'ERA-5_coarse': f(manifest, f'{var_token}{ssp_token}{gcm_token}(?=.*create-coarse-reference)(?=.*move-chunks-to-space)')['path']
         }
     }
-
-    # hard coded historical data paths
-    data_dict['coarse']['cmip6']['historical'] = 'scratch/biascorrectdownscale-bk6n8/biascorrectdownscale-bk6n8-858077599/out.zarr'
-    data_dict['coarse']['bias_corrected']['historical'] = 'az://biascorrected-stage/CMIP/NOAA-GFDL/GFDL-ESM4/historical/r1i1p1f1/day/tasmax/gr1/v20210920214427.zarr'
-    data_dict['fine']['bias_corrected']['historical'] = 'az://scratch/biascorrectdownscale-bk6n8/biascorrectdownscale-bk6n8-1362934973/regridded.zarr'
-    data_dict['fine']['downscaled']['historical'] = 'az//downscaled-stage/CMIP/NOAA-GFDL/GFDL-ESM4/historical/r1i1p1f1/day/tasmax/gr1/v20210920214427.zarr'
 
     return data_dict
 
