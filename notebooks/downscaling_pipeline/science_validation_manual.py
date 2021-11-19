@@ -182,8 +182,8 @@ def read_gcs_zarr(zarr_url, token='/opt/gcsfuse_tokens/impactlab-data.json', che
 
 def collect_paths(manifest, gcm='GFDL-ESM4', ssp='ssp370', var='tasmax'):
     """
-    collect intermediary output file paths to be validated : CMIP6, ERA-5, bias corrected, and downscaled for
-    low and high resolution.
+    collect intermediary output file paths to be validated from an argo manifest : CMIP6, ERA-5, bias corrected, and downscaled output
+    data, both in low and high resolution. Depends on a precise version of the workflow template names.
 
     Parameters
     ---------
