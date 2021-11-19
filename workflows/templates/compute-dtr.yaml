@@ -368,7 +368,7 @@ spec:
 
           assert tasmin_ds["tasmin"].attrs["units"] == tasmax_ds["tasmax"].attrs["units"]
 
-          dtr_ds = (tasmax_ds["tasmax"] - tasmin["tasmin"]).to_dataset(name="dtr")
+          dtr_ds = (tasmax_ds["tasmax"] - tasmin_ds["tasmin"]).to_dataset(name="dtr")
 
           # We're copying all attrs from `tasmin` to `dtr`, including shared variables.
           dtr_ds.attrs = tasmin.attrs
