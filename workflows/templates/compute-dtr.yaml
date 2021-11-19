@@ -300,7 +300,7 @@ spec:
                   value: "{{ tasks.get-clean-dtr-training-url.outputs.parameters.out-url }}"
               artifacts:
                 - name: global-attrs-json
-                  from: "{{ tasks.create-training-dtr-metadata.artifacts.global-attrs-json }}"
+                  from: "{{ tasks.create-training-dtr-metadata.outputs.artifacts.global-attrs-json }}"
           - name: compute-simulation-dtr
             template: compute-dtr
             depends: >-
@@ -318,7 +318,7 @@ spec:
                   value: "{{ tasks.get-clean-dtr-simulation-url.outputs.parameters.out-url }}"
               artifacts:
                 - name: global-attrs-json
-                  from: "{{ tasks.create-simulation-dtr-metadata.artifacts.global-attrs-json }}"
+                  from: "{{ tasks.create-simulation-dtr-metadata.outputs.artifacts.global-attrs-json }}"
           - name: validate-simulation-dtr
             depends: compute-simulation-dtr
             templateRef:
