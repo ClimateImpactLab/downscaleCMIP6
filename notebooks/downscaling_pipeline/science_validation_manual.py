@@ -180,28 +180,51 @@ def read_gcs_zarr(zarr_url, token='/opt/gcsfuse_tokens/impactlab-data.json', che
     
     return ds 
 
-def validation_data_dict(manifest, gcm='GFDL-ESM4', ssp='ssp370', var='tasmax'):
+def collect_paths(manifest, gcm='GFDL-ESM4', ssp='ssp370', var='tasmax'):
+    """
+    collect intermediary output file paths to be validated : CMIP6, ERA-5, bias corrected, and downscaled for
+    low and high resolution.
 
-    node_names_tokens = {'coarse': {
-        'cmip6': '(?=.*biascorrect)(?=.*preprocess-simulation)',
-        'bias_corrected': 'rechunk-biascorrected',
-        'ERA-5': '(?=.*biascorrect)(?=.*preprocess-reference)'},
-                 'fine': {
-                     'bias_corrected': '(?=.*preprocess-biascorrected)(?=.*regrid)(?=.*prime-regrid-zarr)',
-                     'downscaled': 'prime-qplad-output-zarr',
-                     'ERA-5_fine': '(?=.*create-fine-reference)(?=.*move-chunks-to-space)',
-                     'ERA-5_coarse': '(?=.*create-coarse-reference)(?=.*move-chunks-to-space)'}}
+    Parameters
+    ---------
+    manifest: dict
+    gcm: str
+    ssp: str
+    var: str
 
-    var_token  = f'(?=.*"variable_id": "{var}")'
-    ssp_token = f'(?=.*"experiment_id": "{ssp}")'
-    gcm_token = f'(?=.*"source_id": "{gcm}")'
-    f = get_output_paths
-    data_dict = {'coarse': {k : f(manifest, f'{var_token}{ssp_token}{gcm_token}{v}') for k,v in node_names_tokens['coarse'].items()}
-                 'fine': {k : f(manifest, f'{var_token}{ssp_token}{gcm_token}{v}') for k,v in node_names_tokens['fine'].items()}
+    Returns
+    -------
+    dict
+    """
+    node_names_tokens = {
+        'coarse': {
+            'cmip6': '(?=.*biascorrect)(?=.*preprocess-simulation)',
+            'bias_corrected': '(?=.*rechunk-biascorrected)',
+            'ERA-5': '(?=.*biascorrect)(?=.*preprocess-reference)'
+        },
+        'fine': {
+            'bias_corrected': '(?=.*preprocess-biascorrected)(?=.*regrid)(?=.*prime-regrid-zarr)',
+            'downscaled': '(?=.*prime-qplad-output-zarr)',
+            'ERA-5_fine': '(?=.*create-fine-reference)(?=.*move-chunks-to-space)',
+            'ERA-5_coarse': '(?=.*create-coarse-reference)(?=.*move-chunks-to-space)'
+        }
+    }
+    var_token  = f'(?=.*"variable_id":"{var}")'
+    ssp_token = f'(?=.*"experiment_id":"{ssp}")'
+    gcm_token = f'(?=.*"source_id":"{gcm}")'
+    f = get_output_path
+    data_dict = {
+        'coarse': {
+            k : f(manifest, f'{var_token}{ssp_token}{gcm_token}{v}')['path'] for k,v in node_names_tokens['coarse'].items()
+        },
+        'fine': {
+            k : f(manifest, f'{var_token}{ssp_token}{gcm_token}{v}')['path'] for k,v in node_names_tokens['fine'].items()
+        }
+    }
 
     return data_dict
 
-def get_output_paths(manifest, regex):
+def get_output_path(manifest, regex):
     """
     lists status.nodes in an argo manifest, and grabs intermediary output files paths using the node tree represented by
     status.nodes[*].name. Keeps only nodes of type 'Pod' and phase 'succeeded'.
@@ -218,7 +241,6 @@ def get_output_paths(manifest, regex):
         path : str, the path to the intermediary output file
         nodeId: the id of the manifest node that outputted this file
     """
-
     out_zarr_path = None
     nodeId = None
     i = 0
@@ -241,7 +263,6 @@ def get_output_paths(manifest, regex):
     return ({'path': out_zarr_path, 'nodeId': nodeId})
 
 def get_manifest(workflow_uid, auth_token, argo_url='https://argo.cildc6.org/api/v1', workflow_location='workflows', namespace='default'):
-
     """
     make an http request to retrieve a workflow manifest from an argo server
 
@@ -263,3 +284,4 @@ def get_manifest(workflow_uid, auth_token, argo_url='https://argo.cildc6.org/api
         representation of the workflow manifest in dict format parsed form json file
     """
     return requests.get(url=f'{argo_url}/{workflow_location}/{namespace}/' + workflow_uid, headers={'Authorization': auth_token}).json()
+
