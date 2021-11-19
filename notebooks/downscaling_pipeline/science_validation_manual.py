@@ -205,22 +205,22 @@ def collect_paths(manifest, gcm='GFDL-ESM4', ssp='ssp370', var='tasmax'):
     data_dict = {
         'coarse': {
             'cmip6': {
-                'ssp': f(manifest, f'{var_token}{ssp_token}{gcm_token}(?=.*biascorrect)(?=.*preprocess-simulation)')['path'],
+                ssp: f(manifest, f'{var_token}{ssp_token}{gcm_token}(?=.*biascorrect)(?=.*preprocess-simulation)')['path'],
                 'historical': 'scratch/biascorrectdownscale-bk6n8/biascorrectdownscale-bk6n8-858077599/out.zarr'
             },
             'bias_corrected': {
-                'ssp': f(manifest, f'{var_token}{ssp_token}{gcm_token}(?=.*rechunk-biascorrected)')['path'],
+                ssp: f(manifest, f'{var_token}{ssp_token}{gcm_token}(?=.*rechunk-biascorrected)')['path'],
                 'historical': 'az://biascorrected-stage/CMIP/NOAA-GFDL/GFDL-ESM4/historical/r1i1p1f1/day/tasmax/gr1/v20210920214427.zarr'
             },
             'ERA-5': f(manifest, f'{var_token}{ssp_token}{gcm_token}(?=.*biascorrect)(?=.*preprocess-reference)')['path']
         },
         'fine': {
             'bias_corrected': {
-                'ssp': f(manifest, f'{var_token}{ssp_token}{gcm_token}(?=.*preprocess-biascorrected)(?=.*regrid)(?=.*prime-regrid-zarr)')['path'],
+                ssp: f(manifest, f'{var_token}{ssp_token}{gcm_token}(?=.*preprocess-biascorrected)(?=.*regrid)(?=.*prime-regrid-zarr)')['path'],
                 'historical': 'az://scratch/biascorrectdownscale-bk6n8/biascorrectdownscale-bk6n8-1362934973/regridded.zarr'
             },
             'downscaled': {
-                'ssp': f(manifest, f'{var_token}{ssp_token}{gcm_token}(?=.*prime-qplad-output-zarr)')['path'],
+                ssp: f(manifest, f'{var_token}{ssp_token}{gcm_token}(?=.*prime-qplad-output-zarr)')['path'],
                 'historical': 'az//downscaled-stage/CMIP/NOAA-GFDL/GFDL-ESM4/historical/r1i1p1f1/day/tasmax/gr1/v20210920214427.zarr'
             },
             'ERA-5_fine': f(manifest, f'{var_token}{ssp_token}{gcm_token}(?=.*create-fine-reference)(?=.*move-chunks-to-space)')['path'],
