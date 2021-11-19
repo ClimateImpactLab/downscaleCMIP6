@@ -9,6 +9,7 @@ resources:
   - create-output-metadata-json.yaml
   - distributed-regrid.yaml
   - download-cmip6.yaml
+  - e2e-pr-jobs.yaml
   - e2e-tasmax-jobs.yaml
   - qdm.yaml
   - qualitycontrol-check-cmip6.yaml
