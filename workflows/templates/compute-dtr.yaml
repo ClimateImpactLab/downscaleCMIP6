@@ -366,7 +366,7 @@ spec:
           tasmax_ds = xr.open_zarr(tasmax_zarr)
           print(f"Read {tasmax_zarr}")  # DEBUG
 
-          assert tasmin_ds["tasmin"].attrs["units"] == tasmin_ds["tasmax"].attrs["units"]
+          assert tasmin_ds["tasmin"].attrs["units"] == tasmax_ds["tasmax"].attrs["units"]
 
           dtr_ds = (tasmax_ds["tasmax"] - tasmin["tasmin"]).to_dataset(name="dtr")
 
