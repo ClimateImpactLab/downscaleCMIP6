@@ -36,7 +36,6 @@ spec:
   templates:
 
 
-      # For each job, combine the ssp and historical specifications into a single JSON list.
     - name: compute-dtr-jobs
       inputs:
         parameters:
