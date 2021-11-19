@@ -394,7 +394,7 @@ spec:
           limits:
             memory: 16Gi
             cpu: "2000m"
-      activeDeadlineSeconds: 3600
+      activeDeadlineSeconds: 300
       retryStrategy:
         limit: 2
         retryPolicy: "Always"
