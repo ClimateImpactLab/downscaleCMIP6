@@ -267,7 +267,7 @@ spec:
           overwrite = overwrite_arg == "true"
 
           print("Searching catalog")
-          col = intake.open_esm_datastore("https://storage.googleapis.com/cmip6/pangeo-cmip6.json")
+          col = intake.open_esm_datastore("https://storage.googleapis.com/cmip6/pangeo-cmip6-noQC.json")
           cat = col.search(
               activity_id=os.environ.get("ACTIVITY_ID"),
               experiment_id=os.environ.get("EXPERIMENT_ID"),
