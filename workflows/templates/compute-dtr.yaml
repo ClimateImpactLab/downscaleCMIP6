@@ -370,20 +370,19 @@ spec:
 
           dtr_ds = (tasmax_ds["tasmax"] - tasmin_ds["tasmin"]).to_dataset(name="dtr")
 
-          # We're copying all attrs from `tasmin` to `dtr`, including shared variables.
-          dtr_ds.attrs = tasmin_ds.attrs
+          # Set attrs and metadata. Variable metadata comes from tasmin_ds.
+          dtr_ds.attrs = dodola.repository.read_attrs("/tmp/global_attrs.json")
+
           dtr_ds.attrs["variable_id"] = "dtr"
           for k, v in tasmin_ds.variables.items():
               if k in dtr_ds:
                   dtr_ds[k].attrs = v.attrs
-
           dtr_ds["dtr"].attrs = {
             "long_name": "Diurnal Near-Surface Air Temperature Range",
             "original_name": "dtr",
             "standard_name": "air_temperature",
             "units": tasmin_ds["tasmin"].attrs["units"],
           }
-          dtr_ds.attrs = dodola.repository.read_attrs("/tmp/global_attrs.json")
 
           dodola.repository.write(out_zarr, dtr_ds)
           print(f"Written to {out_zarr}")
