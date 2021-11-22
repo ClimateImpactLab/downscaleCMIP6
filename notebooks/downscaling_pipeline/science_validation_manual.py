@@ -7,7 +7,8 @@ import cartopy.feature as cfeature
 import os 
 from matplotlib import cm
 import gcsfs
-    
+import re
+
 def plot_diagnostic_climo_periods(ds_future, ssp, years, variable, metric, data_type, units, ds_hist=None, vmin=240, vmax=320, transform = ccrs.PlateCarree()):    
     """
     plot mean, max, min tasmax, dtr, precip for CMIP6, bias corrected and downscaled data 
@@ -177,4 +178,42 @@ def read_gcs_zarr(zarr_url, token='/opt/gcsfuse_tokens/impactlab-data.json', che
     ds = xr.open_zarr(store_path)
     
     return ds 
-    
+
+def get_output_paths(manifest, regex):
+    """
+    lists status.nodes in an argo manifest, and grabs intermediary output files paths using the node tree represented by
+    status.nodes[*].name. Keeps only nodes of type 'Pod' and phase 'succeeded'.
+
+    Parameters
+    ----------
+    manifest : dict
+    regex : str
+        regular expression syntax str to filter nodes based on which templates were executed within a given node and before that given
+        node in the tree.
+    Returns
+    ------
+    dict:
+        path : str, the path to the intermediary output file
+        nodeId: the id of the manifest node that outputted this file
+    """
+
+    out_zarr_path = None
+    nodeId = None
+    i = 0
+
+    for node in manifest['status']['nodes']:
+        this_node = manifest['status']['nodes'][node]
+        if this_node['type'] == 'Pod' and this_node['phase'] == 'Succeeded' and re.search(regex, this_node['name']):
+            i = i + 1
+            if i > 1:
+                raise Exception('I could not identify a unique node in the manifest. Id of the first match : ' + nodeId)
+            nodeId = this_node['id']
+            if 'outputs' in this_node and 'parameters' in this_node['outputs']:
+                for param in this_node['outputs']['parameters']:
+                    if param['name'] == 'out-zarr':
+                        out_zarr_path = param['value']
+
+    if out_zarr_path is None and nodeId is None:
+        raise Exception('I could not identify any node in the manifest')
+
+    return ({'path': out_zarr_path, 'nodeId': nodeId})
