@@ -206,7 +206,7 @@ spec:
       volumes:
         - name: workspace
           emptyDir:
-            sizeLimit: 20Gi
+            sizeLimit: 40Gi
       activeDeadlineSeconds: 1200
       retryStrategy:
         limit: 4
