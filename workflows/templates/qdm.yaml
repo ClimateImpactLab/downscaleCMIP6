@@ -209,8 +209,11 @@ spec:
             sizeLimit: 20Gi
       activeDeadlineSeconds: 1200
       retryStrategy:
-        limit: 2
+        limit: 4
         retryPolicy: "Always"
+        backoff:
+          duration: 30s
+          factor: 2
 
 
       # Quantile Delta Mapping bias correction, output to staging.

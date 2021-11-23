@@ -53,5 +53,8 @@ spec:
             cpu: "2000m"
       activeDeadlineSeconds: 1800
       retryStrategy:
-        limit: 1
+        limit: 4
         retryPolicy: "Always"
+        backoff:
+          duration: 30s
+          factor: 2

@@ -97,3 +97,9 @@ spec:
             memory: 8Gi
             cpu: "2000m"
       activeDeadlineSeconds: 3600
+      retryStrategy:
+        limit: 4
+        retryPolicy: "Always"
+        backoff:
+          duration: 5s
+          factor: 2
