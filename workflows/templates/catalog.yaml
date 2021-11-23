@@ -58,7 +58,7 @@ spec:
           limits:
             memory: 4Gi
             cpu: "500m"
-      activeDeadlineSeconds: 90
+      activeDeadlineSeconds: 180
       retryStrategy:
         limit: 2
         retryPolicy: "Always"
@@ -109,7 +109,7 @@ spec:
           limits:
             memory: 200Mi
             cpu: "200m"
-      activeDeadlineSeconds: 90
+      activeDeadlineSeconds: 180
       retryStrategy:
         limit: 2
         retryPolicy: "Always"
