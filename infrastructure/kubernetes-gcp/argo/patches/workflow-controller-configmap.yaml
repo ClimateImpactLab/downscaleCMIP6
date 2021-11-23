@@ -8,14 +8,7 @@ data:
   # Intended for cluster installs that are multi-tenancy environments, to prevent too many workflows in one
   # namespace impacting others.
   # >= v3.2
-  namespaceParallelism: "50"
-
-  # Globally limits the rate at which pods are created.
-  # This is intended to mitigate flooding of the Kubernetes API server by workflows with a large amount of
-  # parallel nodes.
-  resourceRateLimit: |
-    limit: 300
-    burst: 30
+  namespaceParallelism: "10"
 
   workflowDefaults: |
     metadata:
