@@ -8,6 +8,7 @@ import os
 from matplotlib import cm
 import gcsfs
 import re
+import requests
 
 def plot_diagnostic_climo_periods(ds_future, ssp, years, variable, metric, data_type, units, ds_hist=None, vmin=240, vmax=320, transform = ccrs.PlateCarree()):    
     """
@@ -179,7 +180,57 @@ def read_gcs_zarr(zarr_url, token='/opt/gcsfuse_tokens/impactlab-data.json', che
     
     return ds 
 
-def get_output_paths(manifest, regex):
+def collect_paths(manifest, gcm='GFDL-ESM4', ssp='ssp370', var='tasmax'):
+    """
+    collect intermediary output file paths to be validated from an argo manifest : CMIP6, ERA-5, bias corrected, and downscaled output
+    data, both in low and high resolution. Depends on a precise version of the workflow template names.
+
+    Parameters
+    ---------
+    manifest: dict
+    gcm: str
+    ssp: str
+    var: str
+
+    Returns
+    -------
+    dict
+    """
+
+    var_token  = f'(?=.*"variable_id":"{var}")'
+    ssp_token = f'(?=.*"experiment_id":"{ssp}")'
+    gcm_token = f'(?=.*"source_id":"{gcm}")'
+    f = get_output_path
+
+    data_dict = {
+        'coarse': {
+            'cmip6': {
+                ssp: f(manifest, f'{var_token}{ssp_token}{gcm_token}(?=.*biascorrect)(?=.*preprocess-simulation)')['path'],
+                'historical': 'scratch/biascorrectdownscale-bk6n8/biascorrectdownscale-bk6n8-858077599/out.zarr'
+            },
+            'bias_corrected': {
+                ssp: f(manifest, f'{var_token}{ssp_token}{gcm_token}(?=.*rechunk-biascorrected)')['path'],
+                'historical': 'az://biascorrected-stage/CMIP/NOAA-GFDL/GFDL-ESM4/historical/r1i1p1f1/day/tasmax/gr1/v20210920214427.zarr'
+            },
+            'ERA-5': f(manifest, f'{var_token}{ssp_token}{gcm_token}(?=.*biascorrect)(?=.*preprocess-reference)')['path']
+        },
+        'fine': {
+            'bias_corrected': {
+                ssp: f(manifest, f'{var_token}{ssp_token}{gcm_token}(?=.*preprocess-biascorrected)(?=.*regrid)(?=.*prime-regrid-zarr)')['path'],
+                'historical': 'az://scratch/biascorrectdownscale-bk6n8/biascorrectdownscale-bk6n8-1362934973/regridded.zarr'
+            },
+            'downscaled': {
+                ssp: f(manifest, f'{var_token}{ssp_token}{gcm_token}(?=.*prime-qplad-output-zarr)')['path'],
+                'historical': 'az//downscaled-stage/CMIP/NOAA-GFDL/GFDL-ESM4/historical/r1i1p1f1/day/tasmax/gr1/v20210920214427.zarr'
+            },
+            'ERA-5_fine': f(manifest, f'{var_token}{ssp_token}{gcm_token}(?=.*create-fine-reference)(?=.*move-chunks-to-space)')['path'],
+            'ERA-5_coarse': f(manifest, f'{var_token}{ssp_token}{gcm_token}(?=.*create-coarse-reference)(?=.*move-chunks-to-space)')['path']
+        }
+    }
+
+    return data_dict
+
+def get_output_path(manifest, regex):
     """
     lists status.nodes in an argo manifest, and grabs intermediary output files paths using the node tree represented by
     status.nodes[*].name. Keeps only nodes of type 'Pod' and phase 'succeeded'.
@@ -196,7 +247,6 @@ def get_output_paths(manifest, regex):
         path : str, the path to the intermediary output file
         nodeId: the id of the manifest node that outputted this file
     """
-
     out_zarr_path = None
     nodeId = None
     i = 0
@@ -217,3 +267,26 @@ def get_output_paths(manifest, regex):
         raise Exception('I could not identify any node in the manifest')
 
     return ({'path': out_zarr_path, 'nodeId': nodeId})
+
+def get_manifest(workflow_uid, auth_token, argo_url='https://argo.cildc6.org/api/v1', workflow_location='workflows', namespace='default'):
+    """
+    make an http request to retrieve a workflow manifest from an argo server
+
+    Parameters
+    ----------
+    workflow_uid: str
+        unique workflow identifier
+    auth_token: str
+        argo server authentication
+    argo_url: str
+        url of argo server
+    workflow_location: str
+        probably only 'workflows' or 'archived_workflows'
+    namespace: str
+        argo namespace
+    Returns
+    -------
+    dict
+        representation of the workflow manifest in dict format parsed form json file
+    """
+    return requests.get(url=f'{argo_url}/{workflow_location}/{namespace}/' + workflow_uid, headers={'Authorization': auth_token}).json()
