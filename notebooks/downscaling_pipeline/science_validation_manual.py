@@ -197,34 +197,37 @@ def collect_paths(manifest, gcm='GFDL-ESM4', ssp='ssp370', var='tasmax'):
     dict
     """
 
+    non_historical_token = '(?=.*\(0:historical:{)'
+    historical_token = '(?=.*\(1:historical:{)'
     var_token  = f'(?=.*"variable_id":"{var}")'
     ssp_token = f'(?=.*"experiment_id":"{ssp}")'
     gcm_token = f'(?=.*"source_id":"{gcm}")'
     f = get_output_path
 
+    # not looping for this because of the ERA idiosyncratic case
     data_dict = {
         'coarse': {
             'cmip6': {
-                ssp: f(manifest, f'{var_token}{ssp_token}{gcm_token}(?=.*biascorrect)(?=.*preprocess-simulation)')['path'],
-                'historical': 'scratch/biascorrectdownscale-bk6n8/biascorrectdownscale-bk6n8-858077599/out.zarr'
+                ssp: f(manifest, f'{non_historical_token}{var_token}{ssp_token}{gcm_token}(?=.*biascorrect)(?=.*preprocess-simulation)')['path'],
+                'historical': f(manifest, f'{historical_token}{var_token}{ssp_token}{gcm_token}(?=.*biascorrect)(?=.*preprocess-simulation)')['path']#'scratch/biascorrectdownscale-bk6n8/biascorrectdownscale-bk6n8-858077599/out.zarr'
             },
             'bias_corrected': {
-                ssp: f(manifest, f'{var_token}{ssp_token}{gcm_token}(?=.*rechunk-biascorrected)')['path'],
-                'historical': 'az://biascorrected-stage/CMIP/NOAA-GFDL/GFDL-ESM4/historical/r1i1p1f1/day/tasmax/gr1/v20210920214427.zarr'
+                ssp: f(manifest, f'{non_historical_token}{var_token}{ssp_token}{gcm_token}(?=.*rechunk-biascorrected)')['path'],
+                'historical': f(manifest, f'{historical_token}{var_token}{ssp_token}{gcm_token}(?=.*rechunk-biascorrected)')['path']#'az://biascorrected-stage/CMIP/NOAA-GFDL/GFDL-ESM4/historical/r1i1p1f1/day/tasmax/gr1/v20210920214427.zarr'
             },
-            'ERA-5': f(manifest, f'{var_token}{ssp_token}{gcm_token}(?=.*biascorrect)(?=.*preprocess-reference)')['path']
+            'ERA-5': f(manifest, f'{historical_token}{var_token}{ssp_token}{gcm_token}(?=.*biascorrect)(?=.*preprocess-reference)')['path']
         },
         'fine': {
             'bias_corrected': {
-                ssp: f(manifest, f'{var_token}{ssp_token}{gcm_token}(?=.*preprocess-biascorrected)(?=.*regrid)(?=.*prime-regrid-zarr)')['path'],
-                'historical': 'az://scratch/biascorrectdownscale-bk6n8/biascorrectdownscale-bk6n8-1362934973/regridded.zarr'
+                ssp: f(manifest, f'{non_historical_token}{var_token}{ssp_token}{gcm_token}(?=.*preprocess-biascorrected)(?=.*regrid)(?=.*prime-regrid-zarr)')['path'],
+                'historical': f(manifest, f'{historical_token}{var_token}{ssp_token}{gcm_token}(?=.*preprocess-biascorrected)(?=.*regrid)(?=.*prime-regrid-zarr)')['path']#'az://scratch/biascorrectdownscale-bk6n8/biascorrectdownscale-bk6n8-1362934973/regridded.zarr'
             },
             'downscaled': {
-                ssp: f(manifest, f'{var_token}{ssp_token}{gcm_token}(?=.*prime-qplad-output-zarr)')['path'],
-                'historical': 'az//downscaled-stage/CMIP/NOAA-GFDL/GFDL-ESM4/historical/r1i1p1f1/day/tasmax/gr1/v20210920214427.zarr'
+                ssp: f(manifest, f'{non_historical_token}{var_token}{ssp_token}{gcm_token}(?=.*prime-qplad-output-zarr)')['path'],
+                'historical': f(manifest, f'{historical_token}{var_token}{ssp_token}{gcm_token}(?=.*prime-qplad-output-zarr)')['path']#'az//downscaled-stage/CMIP/NOAA-GFDL/GFDL-ESM4/historical/r1i1p1f1/day/tasmax/gr1/v20210920214427.zarr'
             },
-            'ERA-5_fine': f(manifest, f'{var_token}{ssp_token}{gcm_token}(?=.*create-fine-reference)(?=.*move-chunks-to-space)')['path'],
-            'ERA-5_coarse': f(manifest, f'{var_token}{ssp_token}{gcm_token}(?=.*create-coarse-reference)(?=.*move-chunks-to-space)')['path']
+            'ERA-5_fine': f(manifest, f'{historical_token}{var_token}{ssp_token}{gcm_token}(?=.*create-fine-reference)(?=.*move-chunks-to-space)')['path'],
+            'ERA-5_coarse': f(manifest, f'{historical_token}{var_token}{ssp_token}{gcm_token}(?=.*create-coarse-reference)(?=.*move-chunks-to-space)')['path']
         }
     }
 
@@ -256,7 +259,8 @@ def get_output_path(manifest, regex):
         if this_node['type'] == 'Pod' and this_node['phase'] == 'Succeeded' and re.search(regex, this_node['name']):
             i = i + 1
             if i > 1:
-                raise Exception('I could not identify a unique node in the manifest. Id of the first match : ' + nodeId)
+                raise Exception('I could not identify a unique node in the manifest for regex : ' + regex + '\n' +
+                                '. Id of the first match : ' + nodeId + '\n' + 'Id of second match : ' + this_node['id'])
             nodeId = this_node['id']
             if 'outputs' in this_node and 'parameters' in this_node['outputs']:
                 for param in this_node['outputs']['parameters']:
