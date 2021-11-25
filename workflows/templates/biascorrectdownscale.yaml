@@ -385,6 +385,8 @@ spec:
                   value: "{{ inputs.parameters.qdm-kind }}"
                 - name: out-zarr
                   value: "{{ tasks.get-output-downscaled-url.outputs.parameters.out-url }}"
+                - name: correct-wetday-frequency
+                  value: "{{ inputs.parameters.correct-wetday-frequency }}"
           - name: validate-downscaled
             depends: qplad
             templateRef:
