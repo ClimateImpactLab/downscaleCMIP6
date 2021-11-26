@@ -10,7 +10,15 @@ import gcsfs
 import re
 import requests
 
-def plot_diagnostic_climo_periods(ds_future, ssp, years, variable, metric, data_type, units, ds_hist=None, vmin=240, vmax=320, transform = ccrs.PlateCarree()):    
+def xr_conditional_count(ds, threshold=95, convert= lambda x : (x - 32) * 5 / 9 + 273.15):
+    """apply conditional count within year to an xarray.Dataset with time dim an object containing year attribute"""
+    if convert is not None :
+        threshold = convert(threshold)
+    ds = ds.where(ds > threshold)
+    return ds.groupby(ds.time.dt.year).count().rename({'year':'time'})
+
+
+def plot_diagnostic_climo_periods(ds_future, ssp, years, variable, metric, data_type, units, ds_hist=None, vmin=240, vmax=320, transform = ccrs.PlateCarree(), xr_func=lambda x : x):
     """
     plot mean, max, min tasmax, dtr, precip for CMIP6, bias corrected and downscaled data 
     """
@@ -24,7 +32,9 @@ def plot_diagnostic_climo_periods(ds_future, ssp, years, variable, metric, data_
             da = ds_hist[variable].sel(time=slice(years[key]['start_yr'], years[key]['end_yr']))
         else:
             da = ds_future[variable].sel(time=slice(years[key]['start_yr'], years[key]['end_yr']))
-    
+
+        da = xr_func(da) # some user defined transformation preserving the time dimension
+
         if metric == 'mean': 
             data = da.mean(dim='time').load()
         elif metric == 'max':
@@ -118,7 +128,7 @@ def plot_gmst_diagnostic(ds_fut_cmip6, ds_fut_bc, variable='tasmax',
     plt.title('Global Mean {} {}'.format(variable, ssp))
 
 def plot_bias_correction_downscale_differences(ds_future_bc, ds_future_ds, plot_type, data_type, variable, units, years, robust=True, ds_hist_bc=None, ds_hist_ds=None,
-                                               ssp='370', time_period='2080_2100'):
+                                               ssp='370', time_period='2080_2100', xr_func=lambda x : x):
     """
     plot differences between bias corrected historical and future, downscaled historical and future, or bias corrected and downscaled. 
     produces two subplots, one for historical and one for the specified future time period 
@@ -129,11 +139,20 @@ def plot_bias_correction_downscale_differences(ds_future_bc, ds_future_ds, plot_
 
     if plot_type == 'change_from_historical':
         if data_type == 'bias_corrected':
-            diff1 = ds_hist_bc[variable]
-            diff2 = ds_future_bc[variable] - ds_hist_bc[variable]
+            ds_hist = ds_hist_bc
+            ds_future = ds_future_bc
         elif data_type == 'downscaled':
-            diff1 = ds_hist_ds[variable]
-            diff2 = ds_future_ds[variable] - ds_hist_ds[variable]
+            ds_hist = ds_hist_ds
+            ds_future = ds_future_ds
+        ds_hist = ds_hist[variable].sel(time=slice(years['hist']['start_yr'], years['hist']['end_yr']))
+        ds_future = ds_future[variable].sel(time=slice(years[time_period]['start_yr'], years[time_period]['end_yr']))
+
+        ds_hist = xr_func(ds_hist)
+        ds_future = xr_func(ds_future)
+
+        diff1 = ds_hist.mean('time').load()
+        diff2 = ds_future.mean('time').load() - ds_hist.mean('time').load()
+
         suptitle = "{} change from historical: {}".format(ssp, data_type)
         cmap = cm.viridis
     elif plot_type == 'downscaled_minus_biascorrected':
@@ -147,7 +166,10 @@ def plot_bias_correction_downscale_differences(ds_future_bc, ds_future_ds, plot_
             
         da_future_ds = ds_future_ds[variable].sel(time=slice(years[time_period]['start_yr'], years[time_period]['end_yr']))
         da_future_bc = ds_future_bc[variable].sel(time=slice(years[time_period]['start_yr'], years[time_period]['end_yr']))
-        
+
+        da_future_ds = xr_func(da_future_ds)
+        da_future_bc = xr_func(da_future_bc)
+
         da_future_ds_mean = da_future_ds.mean('time').load()
         da_future_bc_mean = da_future_bc.mean('time').load()
         diff2 = da_future_ds_mean - da_future_bc_mean
