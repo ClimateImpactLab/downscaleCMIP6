@@ -129,11 +129,17 @@ def plot_bias_correction_downscale_differences(ds_future_bc, ds_future_ds, plot_
 
     if plot_type == 'change_from_historical':
         if data_type == 'bias_corrected':
-            diff1 = ds_hist_bc[variable]
-            diff2 = ds_future_bc[variable] - ds_hist_bc[variable]
+            ds_hist = ds_hist_bc
+            ds_future = ds_future_bc
         elif data_type == 'downscaled':
-            diff1 = ds_hist_ds[variable]
-            diff2 = ds_future_ds[variable] - ds_hist_ds[variable]
+            ds_hist = ds_hist_ds
+            ds_future = ds_future_ds
+        ds_hist = ds_hist[variable].sel(time=slice(years['hist']['start_yr'], years['hist']['end_yr']))
+        ds_future = ds_future[variable].sel(time=slice(years[time_period]['start_yr'], years[time_period]['end_yr']))
+
+        diff1 = ds_hist.mean('time').load()
+        diff2 = ds_future.mean('time').load() - ds_hist.mean('time').load()
+
         suptitle = "{} change from historical: {}".format(ssp, data_type)
         cmap = cm.viridis
     elif plot_type == 'downscaled_minus_biascorrected':
