@@ -10,7 +10,7 @@ import gcsfs
 import re
 import requests
 
-def xr_conditional_count(ds, threshold=95, convert= lambda x : x(x - 32) * 5 / 9 + 273.15):
+def xr_conditional_count(ds, threshold=95, convert= lambda x : (x - 32) * 5 / 9 + 273.15):
     """apply conditional count within year to an xarray.Dataset with time dim an object containing year attribute"""
     if convert is not None :
         threshold = convert(threshold)
