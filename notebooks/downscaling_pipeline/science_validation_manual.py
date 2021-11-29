@@ -9,6 +9,8 @@ from matplotlib import cm
 import gcsfs
 import re
 import requests
+! pip install xclim 
+import xclim as xc
 
 def xr_conditional_count(ds, threshold=95, convert= lambda x : (x - 32) * 5 / 9 + 273.15):
     """apply conditional count within year to an xarray.Dataset with time dim an object containing year attribute"""
@@ -17,10 +19,10 @@ def xr_conditional_count(ds, threshold=95, convert= lambda x : (x - 32) * 5 / 9 
     ds = ds.where(ds > threshold)
     return ds.groupby(ds.time.dt.year).count().rename({'year':'time'})
 
-def xc_maximum_consecutive_dry_days(ds, thresh=0.0005)
+def xc_maximum_consecutive_dry_days(ds, thresh=0.0005):
     return xc.indicators.atmos.maximum_consecutive_dry_days(ds, thresh=thresh, freq='YS')
 
-def xc_RX5day(ds)
+def xc_RX5day(ds):
     return xc.indicators.icclim.RX5day(ds, freq='YS')
 
 def plot_diagnostic_climo_periods(ds_future, ssp, years, variable, metric, data_type, units, ds_hist=None, vmin=240, vmax=320, transform = ccrs.PlateCarree(), xr_func=None):
