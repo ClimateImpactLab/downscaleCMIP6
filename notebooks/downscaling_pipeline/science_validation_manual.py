@@ -17,8 +17,13 @@ def xr_conditional_count(ds, threshold=95, convert= lambda x : (x - 32) * 5 / 9 
     ds = ds.where(ds > threshold)
     return ds.groupby(ds.time.dt.year).count().rename({'year':'time'})
 
+def xc_maximum_consecutive_dry_days(ds, thresh=0.0005)
+    return xc.indicators.atmos.maximum_consecutive_dry_days(ds, thresh=thresh, freq='YS')
 
-def plot_diagnostic_climo_periods(ds_future, ssp, years, variable, metric, data_type, units, ds_hist=None, vmin=240, vmax=320, transform = ccrs.PlateCarree(), xr_func=lambda x : x):
+def xc_RX5day(ds)
+    return xc.indicators.icclim.RX5day(ds, freq='YS')
+
+def plot_diagnostic_climo_periods(ds_future, ssp, years, variable, metric, data_type, units, ds_hist=None, vmin=240, vmax=320, transform = ccrs.PlateCarree(), xr_func=None):
     """
     plot mean, max, min tasmax, dtr, precip for CMIP6, bias corrected and downscaled data 
     """
@@ -33,7 +38,8 @@ def plot_diagnostic_climo_periods(ds_future, ssp, years, variable, metric, data_
         else:
             da = ds_future[variable].sel(time=slice(years[key]['start_yr'], years[key]['end_yr']))
 
-        da = xr_func(da) # some user defined transformation preserving the time dimension
+        if xr_func is not None:
+            da = xr_func(da) # some user defined transformation preserving the time dimension
 
         if metric == 'mean': 
             data = da.mean(dim='time').load()
@@ -67,7 +73,7 @@ def plot_diagnostic_climo_periods(ds_future, ssp, years, variable, metric, data_
     cbar_ax = fig.add_axes([0.2, 0.2, 0.6, 0.06])
 
     # Draw the colorbar
-    cbar_title = '{} ({})'.format(variable, units[variable])
+    cbar_title = '{} ({})'.format(variable, units)
     cbar=fig.colorbar(im, cax=cbar_ax, label=cbar_title, orientation='horizontal')
     
 def _compute_gmst(da, lat_name='lat', lon_name='lon'):
@@ -127,13 +133,13 @@ def plot_gmst_diagnostic(ds_fut_cmip6, ds_fut_bc, variable='tasmax',
     plt.legend()
     plt.title('Global Mean {} {}'.format(variable, ssp))
 
-def plot_bias_correction_downscale_differences(ds_future_bc, ds_future_ds, plot_type, data_type, variable, units, years, robust=True, ds_hist_bc=None, ds_hist_ds=None,
-                                               ssp='370', time_period='2080_2100', xr_func=lambda x : x):
+def plot_bias_correction_downscale_differences(ds_future_bc, ds_future_ds, ds_future_cmip, plot_type, data_type, variable, units, years, robust=True, ds_hist_bc=None, ds_hist_ds=None, ds_hist_cmip=None,
+                                               ssp='370', time_period='2080_2100', xr_func=None):
     """
-    plot differences between bias corrected historical and future, downscaled historical and future, or bias corrected and downscaled. 
+    plot differences between cmip6 historical and future, bias corrected historical and future, downscaled historical and future, or bias corrected and downscaled. 
     produces two subplots, one for historical and one for the specified future time period 
-    plot_type options: downscaled_minus_biascorrected, change_from_historical (takes bias corrected or downscaled)
-    data_type options: bias_corrected, downscaled
+    plot_type options: downscaled_minus_biascorrected, change_from_historical (latter takes bias corrected or downscaled or cmip6)
+    data_type options: bias_corrected, downscaled, cmip6
     """
     fig, axes = plt.subplots(1, 2, figsize=(25, 4), subplot_kw={'projection': ccrs.PlateCarree()})
 
@@ -144,11 +150,15 @@ def plot_bias_correction_downscale_differences(ds_future_bc, ds_future_ds, plot_
         elif data_type == 'downscaled':
             ds_hist = ds_hist_ds
             ds_future = ds_future_ds
+        elif data_type == 'cmip6':
+            ds_hist = ds_hist_cmip
+            ds_future = ds_future_cmip 
         ds_hist = ds_hist[variable].sel(time=slice(years['hist']['start_yr'], years['hist']['end_yr']))
         ds_future = ds_future[variable].sel(time=slice(years[time_period]['start_yr'], years[time_period]['end_yr']))
 
-        ds_hist = xr_func(ds_hist)
-        ds_future = xr_func(ds_future)
+        if xr_func is not None:
+            ds_hist = xr_func(ds_hist)
+            ds_future = xr_func(ds_future)
 
         diff1 = ds_hist.mean('time').load()
         diff2 = ds_future.mean('time').load() - ds_hist.mean('time').load()
@@ -161,14 +171,19 @@ def plot_bias_correction_downscale_differences(ds_future_bc, ds_future_ds, plot_
             da_hist_ds = ds_hist_ds[variable].sel(time=slice(years['hist']['start_yr'], years[time_period]['end_yr']))
             da_hist_bc = ds_hist_bc[variable].sel(time=slice(years['hist']['start_yr'], years[time_period]['end_yr']))
             
-            diff1 = da_hist_ds - da_hist_bc
+            if xr_func is not None:
+                da_hist_ds = xr_func(da_hist_ds)
+                da_hist_bc = xr_func(da_hist_bc)
+
+            diff1 = da_hist_ds - da_hist_bc                
             diff1 = diff1.load()
             
         da_future_ds = ds_future_ds[variable].sel(time=slice(years[time_period]['start_yr'], years[time_period]['end_yr']))
         da_future_bc = ds_future_bc[variable].sel(time=slice(years[time_period]['start_yr'], years[time_period]['end_yr']))
 
-        da_future_ds = xr_func(da_future_ds)
-        da_future_bc = xr_func(da_future_bc)
+        if xr_func is not None:
+            da_future_ds = xr_func(da_future_ds)
+            da_future_bc = xr_func(da_future_bc)
 
         da_future_ds_mean = da_future_ds.mean('time').load()
         da_future_bc_mean = da_future_bc.mean('time').load()
@@ -176,7 +191,7 @@ def plot_bias_correction_downscale_differences(ds_future_bc, ds_future_ds, plot_
         suptitle = "{} downscaled minus bias corrected".format(ssp)
         cmap = cm.bwr
 
-    cbar_label = "{} ({})".format(variable, units[variable])
+    cbar_label = "{} ({})".format(variable, units)
     if ds_hist_bc is not None:
         diff1.plot(ax=axes[0], cmap=cmap, transform=ccrs.PlateCarree(), robust=robust, cbar_kwargs={'label': cbar_label})
     diff2.plot(ax=axes[1], cmap=cmap, transform=ccrs.PlateCarree(), robust=robust, cbar_kwargs={'label': cbar_label})
@@ -219,8 +234,8 @@ def collect_paths(manifest, gcm='GFDL-ESM4', ssp='ssp370', var='tasmax'):
     dict
     """
 
-    non_historical_token = '(?=.*\(0:historical:{)'
-    historical_token = '(?=.*\(1:historical:{)'
+    non_historical_token = '(?=.*,target:ssp,)'
+    historical_token = '(?=.*,target:historical,)'
     var_token  = f'(?=.*"variable_id":"{var}")'
     ssp_token = f'(?=.*"experiment_id":"{ssp}")'
     gcm_token = f'(?=.*"source_id":"{gcm}")'
