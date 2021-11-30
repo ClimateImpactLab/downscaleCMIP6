@@ -9,7 +9,6 @@ from matplotlib import cm
 import gcsfs
 import re
 import requests
-! pip install xclim 
 import xclim as xc
 
 def xr_conditional_count(ds, threshold=95, convert=lambda x : (x - 32) * 5 / 9 + 273.15):
