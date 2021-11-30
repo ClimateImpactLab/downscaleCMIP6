@@ -188,6 +188,16 @@ spec:
                   value: "1950"
                 - name: to-time
                   value: "2014"
+          - name: crop-ssp-time
+            template: timeslicezarr
+            arguments:
+              parameters:
+                - name: in-zarr
+                  value: "{{ steps.get-input-raw-ssp-url.outputs.parameters.out-url }}"
+                - name: from-time
+                  value: "2015"
+                - name: to-time
+                  value: "2110"
         - - name: standardize-historical-run
             template: standardize-cmip6
             arguments:
@@ -199,7 +209,7 @@ spec:
             arguments:
               parameters:
                 - name: in-zarr
-                  value: "{{ steps.get-input-raw-ssp-url.outputs.parameters.out-url }}"
+                  value: "{{ steps.crop-ssp-time.outputs.parameters.out-zarr }}"
         - - name: slice-training
             template: timeslicezarr
             arguments:
