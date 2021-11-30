@@ -235,7 +235,7 @@ def collect_paths(manifest, gcm='GFDL-ESM4', ssp='ssp370', var='tasmax'):
     dict
     """
 
-    non_historical_token = '(?=.*,target:ssp,)'
+    future_token = '(?=.*,target:ssp,)'
     historical_token = '(?=.*,target:historical,)'
     var_token  = f'(?=.*"variable_id":"{var}")'
     ssp_token = f'(?=.*"experiment_id":"{ssp}")'
@@ -246,23 +246,23 @@ def collect_paths(manifest, gcm='GFDL-ESM4', ssp='ssp370', var='tasmax'):
     data_dict = {
         'coarse': {
             'cmip6': {
-                ssp: f(manifest, f'{non_historical_token}{var_token}{ssp_token}{gcm_token}(?=.*biascorrect)(?=.*preprocess-simulation)')['path'],
-                'historical': f(manifest, f'{historical_token}{var_token}{ssp_token}{gcm_token}(?=.*biascorrect)(?=.*preprocess-simulation)')['path']#'scratch/biascorrectdownscale-bk6n8/biascorrectdownscale-bk6n8-858077599/out.zarr'
+                ssp: f(manifest, f'{future_token}{var_token}{ssp_token}{gcm_token}(?=.*biascorrect)(?=.*preprocess-simulation)')['path'],
+                'historical': f(manifest, f'{historical_token}{var_token}{ssp_token}{gcm_token}(?=.*biascorrect)(?=.*preprocess-simulation)')['path']
             },
             'bias_corrected': {
-                ssp: f(manifest, f'{non_historical_token}{var_token}{ssp_token}{gcm_token}(?=.*rechunk-biascorrected)')['path'],
-                'historical': f(manifest, f'{historical_token}{var_token}{ssp_token}{gcm_token}(?=.*rechunk-biascorrected)')['path']#'az://biascorrected-stage/CMIP/NOAA-GFDL/GFDL-ESM4/historical/r1i1p1f1/day/tasmax/gr1/v20210920214427.zarr'
+                ssp: f(manifest, f'{future_token}{var_token}{ssp_token}{gcm_token}(?=.*rechunk-biascorrected)')['path'],
+                'historical': f(manifest, f'{historical_token}{var_token}{ssp_token}{gcm_token}(?=.*rechunk-biascorrected)')['path']
             },
             'ERA-5': f(manifest, f'{historical_token}{var_token}{ssp_token}{gcm_token}(?=.*biascorrect)(?=.*preprocess-reference)')['path']
         },
         'fine': {
             'bias_corrected': {
-                ssp: f(manifest, f'{non_historical_token}{var_token}{ssp_token}{gcm_token}(?=.*preprocess-biascorrected)(?=.*regrid)(?=.*prime-regrid-zarr)')['path'],
-                'historical': f(manifest, f'{historical_token}{var_token}{ssp_token}{gcm_token}(?=.*preprocess-biascorrected)(?=.*regrid)(?=.*prime-regrid-zarr)')['path']#'az://scratch/biascorrectdownscale-bk6n8/biascorrectdownscale-bk6n8-1362934973/regridded.zarr'
+                ssp: f(manifest, f'{future_token}{var_token}{ssp_token}{gcm_token}(?=.*preprocess-biascorrected)(?=.*regrid)(?=.*prime-regrid-zarr)')['path'],
+                'historical': f(manifest, f'{historical_token}{var_token}{ssp_token}{gcm_token}(?=.*preprocess-biascorrected)(?=.*regrid)(?=.*prime-regrid-zarr)')['path']
             },
             'downscaled': {
-                ssp: f(manifest, f'{non_historical_token}{var_token}{ssp_token}{gcm_token}(?=.*prime-qplad-output-zarr)')['path'],
-                'historical': f(manifest, f'{historical_token}{var_token}{ssp_token}{gcm_token}(?=.*prime-qplad-output-zarr)')['path']#'az//downscaled-stage/CMIP/NOAA-GFDL/GFDL-ESM4/historical/r1i1p1f1/day/tasmax/gr1/v20210920214427.zarr'
+                ssp: f(manifest, f'{future_token}{var_token}{ssp_token}{gcm_token}(?=.*prime-qplad-output-zarr)')['path'],
+                'historical': f(manifest, f'{historical_token}{var_token}{ssp_token}{gcm_token}(?=.*prime-qplad-output-zarr)')['path']
             },
             'ERA-5_fine': f(manifest, f'{historical_token}{var_token}{ssp_token}{gcm_token}(?=.*create-fine-reference)(?=.*move-chunks-to-space)')['path'],
             'ERA-5_coarse': f(manifest, f'{historical_token}{var_token}{ssp_token}{gcm_token}(?=.*create-coarse-reference)(?=.*move-chunks-to-space)')['path']
