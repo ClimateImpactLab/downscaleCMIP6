@@ -33,8 +33,6 @@ spec:
         value: "false"
       - name: first-year
         value: 2015
-      - name: last-year
-        value: 2100
   templates:
 
     - name: main
@@ -50,7 +48,6 @@ spec:
           - name: correct-wetday-frequency
           - name: qdm-kind
           - name: first-year
-          - name: last-year
       outputs:
         parameters:
           - name: out-zarr
@@ -96,11 +93,19 @@ spec:
                   value: "{{ inputs.parameters.domainfile1x1 }}"
                 - name: correct-wetday-frequency
                   value: "{{ inputs.parameters.correct-wetday-frequency }}"
+          - name: calc-qdm-last-year
+            depends: preprocess-simulation
+            template: calc-qdm-last-year
+            arguments:
+              parameters:
+                - name: in-zarr
+                  value: "{{ tasks.preprocess-simulation.outputs.parameters.out-zarr }}"
           - name: qdm
             depends: >-
               preprocess-reference
               && preprocess-training
               && preprocess-simulation
+              && calc-qdm-last-year
             template: qdm
             arguments:
               parameters:
@@ -119,7 +124,7 @@ spec:
                 - name: first-year
                   value: "{{ inputs.parameters.first-year }}"
                 - name: last-year
-                  value: "{{ inputs.parameters.last-year }}"
+                  value: "{{ tasks.calc-qdm-last-year.outputs.parameters.last-year }}"
 
 
     - name: preprocess
@@ -208,6 +213,56 @@ spec:
           emptyDir:
             sizeLimit: 40Gi
       activeDeadlineSeconds: 1200
+      retryStrategy:
+        limit: 4
+        retryPolicy: "Always"
+        backoff:
+          duration: 30s
+          factor: 2
+
+
+    - name: calc-qdm-last-year
+      inputs:
+        parameters:
+          - name: in-zarr
+          - name: time-variable-name
+            value: "time"
+      outputs:
+        parameters:
+          - name: last-year
+            valueFrom:
+              path: "/tmp/lastyear.txt"
+      script:
+        image: us-central1-docker.pkg.dev/downscalecmip6/private/dodola:0.10.0
+        command: [ python ]
+        source: |
+          import dodola.services
+          import dodola.repository
+
+          input_zarr = "{{ inputs.parameters.in-zarr }}"
+          time_variable = "{{ inputs.parameters.time-variable-name }}"
+
+          print(f"Reading {input_zarr}")
+          ds = dodola.repository.read(input_zarr)
+
+          max_year = ds[time_variable].max().item().year
+          print(f"Found {max_year=}")  # DEBUG
+
+          out_lastyear = 2099
+          if max_year >= 2100:
+              out_lastyear = 2100
+
+          print(f"Using {out_lastyear=}")
+          with open("/tmp/lastyear.txt", mode="w") as fl:
+              fl.write(str(out_lastyear))
+        resources:
+          requests:
+            memory: 2Gi
+            cpu: "500m"
+          limits:
+            memory: 2Gi
+            cpu: "1000m"
+      activeDeadlineSeconds: 900
       retryStrategy:
         limit: 4
         retryPolicy: "Always"
