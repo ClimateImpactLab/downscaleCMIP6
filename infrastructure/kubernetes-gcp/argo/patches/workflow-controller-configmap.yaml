@@ -21,9 +21,9 @@ data:
         runAsUser: 8737  #; Work as non-root user.
       activeDeadlineSeconds: 28800  #; Workflows must finish in 8 hours.
       ttlStrategy:
-        secondsAfterCompletion: 1296000   #; Workflows delete after 15 days.
+        secondsAfterCompletion: 86400   #; Workflows delete after 1 day.
       podGC:
-        strategy: OnPodSuccess
+        strategy: OnPodCompletion
       serviceAccountName: workflows-default
       tolerations:
       - key: dedicated
