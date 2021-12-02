@@ -23,11 +23,5 @@ jobs: |
       "variable_id": "tasmin",
       "historical": { "activity_id": "CMIP", "experiment_id": "historical", "table_id": "day", "variable_id": "tasmin", "source_id": "ACCESS-ESM1-5", "institution_id": "CSIRO", "member_id": "r1i1p1f1", "grid_label": "gn", "version": "20191115" },
       "ssp": { "activity_id": "ScenarioMIP", "experiment_id": "ssp126", "table_id": "day", "variable_id": "tasmin", "source_id": "ACCESS-ESM1-5", "institution_id": "CSIRO", "member_id": "r1i1p1f1", "grid_label": "gn", "version": "20191115" }
-    },
-    {
-      "target": "ssp",
-      "variable_id": "tasmin",
-      "historical": { "activity_id": "CMIP", "experiment_id": "historical", "table_id": "day", "variable_id": "tasmin", "source_id": "ACCESS-ESM1-5", "institution_id": "CSIRO", "member_id": "r1i1p1f1", "grid_label": "gn", "version": "20191115" },
-      "ssp": { "activity_id": "ScenarioMIP", "experiment_id": "ssp585", "table_id": "day", "variable_id": "tasmin", "source_id": "ACCESS-ESM1-5", "institution_id": "CSIRO", "member_id": "r1i1p1f1", "grid_label": "gn", "version": "20191115" }
     }
   ]
