@@ -2,7 +2,7 @@
 downscaleCMIP6
 ==============
 
-This repo contains argo workflows which produce the bias corrected and downscaled daily 1/4-degree CMIP6 tasmin, tasmax, and pr data for the Rhodium/Climate Impact Lab Global Downscaled Projections for Climate Impacts Research (R/CIL GDPCIR) project.
+This repo contains infrastructure setup, argo workflows, and validation notebooks which together produce the bias corrected and downscaled daily 1/4-degree CMIP6 tasmin, tasmax, and pr data for the Rhodium/Climate Impact Lab Global Downscaled Projections for Climate Impacts Research (R/CIL GDPCIR) project.
 
 See also:
 
