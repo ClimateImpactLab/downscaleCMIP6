@@ -6,5 +6,5 @@ This repo contains argo workflows which produce the bias corrected and downscale
 
 See also:
 
-* https://github.com/ClimateImpactLab/dodola: python package containing the full project implementation called by the argo workflows in this repository
-* https://github.com/ClimateImpactLab/xclim: downscaling engine called by dodola for the Quantile Delta Mapping (QDM) and the Quantile Preserving Localized Analogs Downscaling (QPLAD) steps.
+* `ClimateImpactLab/dodola <https://github.com/ClimateImpactLab/dodola>`_: python package containing the full project implementation called by the argo workflows in this repository
+* `ClimateImpactLab/xclim <https://github.com/ClimateImpactLab/xclim>`_: Climate Impact Lab fork of the downscaling engine `Ouranosinc/xclim <https://github.com/Ouranosinc/xclim>`_ called by dodola for the Quantile Delta Mapping (QDM) and the Quantile Preserving Localized Analogs Downscaling (QPLAD) steps.
