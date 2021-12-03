@@ -23,5 +23,11 @@ jobs: |
       "variable_id": "pr",
       "historical": { "activity_id": "CMIP", "experiment_id": "historical", "table_id": "day", "variable_id": "pr", "source_id": "GFDL-ESM4", "institution_id": "NOAA-GFDL", "member_id": "r1i1p1f1", "grid_label": "gr1", "version": "20190726" },
       "ssp": { "activity_id": "ScenarioMIP", "experiment_id": "ssp126", "table_id": "day", "variable_id": "pr", "source_id": "GFDL-ESM4", "institution_id": "NOAA-GFDL", "member_id": "r1i1p1f1", "grid_label": "gr1", "version": "20180701" }
+    },
+    {
+      "target": "ssp",
+      "variable_id": "pr",
+      "historical": { "activity_id": "CMIP", "experiment_id": "historical", "table_id": "day", "variable_id": "pr", "source_id": "GFDL-ESM4", "institution_id": "NOAA-GFDL", "member_id": "r1i1p1f1", "grid_label": "gr1", "version": "20190726" },
+      "ssp": { "activity_id": "ScenarioMIP", "experiment_id": "ssp585", "table_id": "day", "variable_id": "pr", "source_id": "GFDL-ESM4", "institution_id": "NOAA-GFDL", "member_id": "r1i1p1f1", "grid_label": "gr1", "version": "20180701" }
     }
   ]
