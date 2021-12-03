@@ -4,7 +4,7 @@ jobs: |
       "target": "historical",
       "variable_id": "tasmin",
       "historical": { "activity_id": "CMIP", "experiment_id": "historical", "table_id": "day", "variable_id": "tasmin", "source_id": "GFDL-CM4", "institution_id": "NOAA-GFDL", "member_id": "r1i1p1f1", "grid_label": "gr1", "version": "20180701" },
-      "ssp": { "activity_id": "ScenarioMIP", "experiment_id": "ssp370", "table_id": "day", "variable_id": "tasmin", "source_id": "GFDL-CM4", "institution_id": "NOAA-GFDL", "member_id": "r1i1p1f1", "grid_label": "gr1", "version": "20180701" }
+      "ssp": { "activity_id": "ScenarioMIP", "experiment_id": "ssp245", "table_id": "day", "variable_id": "tasmin", "source_id": "GFDL-CM4", "institution_id": "NOAA-GFDL", "member_id": "r1i1p1f1", "grid_label": "gr1", "version": "20180701" }
     },
     {
       "target": "ssp",
