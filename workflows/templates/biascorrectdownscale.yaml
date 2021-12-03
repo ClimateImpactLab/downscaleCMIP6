@@ -47,6 +47,8 @@ spec:
         value: "false"
       - name: qdm-kind
         value: "additive"
+      - name: apply-dtr-minimum-threshold
+        value: "false"
   templates:
 
 
@@ -58,6 +60,7 @@ spec:
           - name: regrid-method
           - name: correct-wetday-frequency  # "true" or "false" STRING!
           - name: qdm-kind  # additive or multiplicative
+          - name: apply-dtr-minimum-threshold
       steps:
         - - name: variable-id-switch
             template: variable-id-switch
@@ -69,6 +72,8 @@ spec:
                   value: "{{ inputs.parameters.regrid-method }}"
                 - name: correct-wetday-frequency
                   value: "{{ inputs.parameters.correct-wetday-frequency }}"
+                - name: apply-dtr-minimum-threshold
+                  value: "{{ inputs.parameters.apply-dtr-minimum-threshold }}"
                 - name: qdm-kind
                   value: "{{ inputs.parameters.qdm-kind }}"
             withParam: "{{ inputs.parameters.jobs }}"
@@ -80,6 +85,7 @@ spec:
           - name: job
           - name: regrid-method
           - name: correct-wetday-frequency
+          - name: apply-dtr-minimum-threshold
           - name: qdm-kind
           - name: variable-id
             value: "{{=jsonpath(inputs.parameters.job, '$.variable_id') }}"
@@ -98,6 +104,8 @@ spec:
                   value: "{{ inputs.parameters.regrid-method }}"
                 - name: correct-wetday-frequency
                   value: "{{ inputs.parameters.correct-wetday-frequency }}"
+                - name: apply-dtr-minimum-threshold
+                  value: "{{ inputs.parameters.apply-dtr-minimum-threshold }}"
                 - name: qdm-kind
                   value: "{{ inputs.parameters.qdm-kind }}"
             when: "{{ inputs.parameters.variable-id }} != 'dtr'"
@@ -145,6 +153,8 @@ spec:
                   value: "{{ inputs.parameters.regrid-method }}"
                 - name: correct-wetday-frequency
                   value: "{{ inputs.parameters.correct-wetday-frequency }}"
+                - name: apply-dtr-minimum-threshold
+                  value: "{{ inputs.parameters.apply-dtr-minimum-threshold }}"
                 - name: qdm-kind
                   value: "{{ inputs.parameters.qdm-kind }}"
             when: "{{ inputs.parameters.variable-id }} == 'dtr'"
@@ -160,6 +170,7 @@ spec:
           - name: regrid-method
           - name: qdm-kind
           - name: correct-wetday-frequency
+          - name: apply-dtr-minimum-threshold
           - name: domainfile1x1
             value: "gs://support-c23ff1a3/domain.1x1.zarr"
           - name: domainfile0p25x0p25
@@ -179,6 +190,8 @@ spec:
                   value: "{{ inputs.parameters.qdm-kind }}"
                 - name: correct-wetday-frequency
                   value: "{{ inputs.parameters.correct-wetday-frequency }}"
+                - name: apply-dtr-minimum-threshold
+                  value: "{{ inputs.parameters.apply-dtr-minimum-threshold }}"
                 - name: first-year
                   value: 1950
                 - name: domainfile1x1
@@ -200,6 +213,8 @@ spec:
                   value: "{{ inputs.parameters.qdm-kind }}"
                 - name: correct-wetday-frequency
                   value: "{{ inputs.parameters.correct-wetday-frequency }}"
+                - name: apply-dtr-minimum-threshold
+                  value: "{{ inputs.parameters.apply-dtr-minimum-threshold }}"                
                 - name: first-year
                   value: 2015
                 - name: domainfile1x1
@@ -217,6 +232,7 @@ spec:
           - name: regrid-method
           - name: qdm-kind
           - name: correct-wetday-frequency
+          - name: apply-dtr-minimum-threshold
           - name: first-year
           - name: domainfile1x1
           - name: domainfile0p25x0p25
@@ -363,6 +379,8 @@ spec:
                   value: "{{ inputs.parameters.domainfile1x1 }}"
                 - name: correct-wetday-frequency
                   value: "{{ inputs.parameters.correct-wetday-frequency }}"
+                - name: apply-dtr-minimum-threshold
+                  value: "{{ inputs.parameters.apply-dtr-minimum-threshold }}"                
                 - name: qdm-kind
                   value: "{{ inputs.parameters.qdm-kind }}"
                 - name: first-year
