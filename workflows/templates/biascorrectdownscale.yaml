@@ -450,7 +450,7 @@ spec:
             templateRef:
               name: qplad
               template: preprocess-biascorrected
-            depends: rechunk-biascorrected
+            depends: rechunk-biascorrected && validate-biascorrected
             arguments:
               parameters:
                 - name: in-zarr
