@@ -158,15 +158,7 @@ spec:
           logger = logging.getLogger(__name__)
 
           input_zarr = "{{ inputs.parameters.in-zarr }}"
-
-          # This is only applied to CMIP6 DTR.
           apply_minimum_threshold = "{{ inputs.parameters.apply-dtr-minimum-threshold }}".lower() == "true"
-          if apply_minimum_threshold:
-              logger.info("Applying DTR minimum threshold")
-              min_thresholded_zarr = "/workspace/min_thresholded.zarr"
-              dodola.services.correct_small_dtr(input_zarr, min_thresholded_zarr)
-              input_zarr = min_thresholded_zarr
-
           correct_wetday_frequency = "{{ inputs.parameters.correct-wetday-frequency }}".lower() == "true"
           if correct_wetday_frequency:
               logger.info("Applying wet-day frequency correction")
@@ -208,12 +200,27 @@ spec:
               out="/workspace/regridded.zarr"
           )
 
+          # If we're ending with minimum_threshold we need to be sure
+          # the next rechunk step outputs to local disk rather than
+          # the final output zarr URL.
+          if apply_minimum_threshold:
+            rechunked_zarr = "/workspace/timeseries_chunks.zarr"
+          else:
+            rechunked_zarr = "{{ inputs.parameters.out-zarr }}"
+
           # QDM steps require time to be contiguous in memory.
           dodola.services.rechunk(
               "/workspace/regridded.zarr",
               target_chunks = {"time": -1, "lat": 10, "lon": 10},
-              out="{{ inputs.parameters.out-zarr }}"
+              out=rechunked_zarr
           )
+
+          # This minimum threshold is only applied to CMIP6 DTR.
+          if apply_minimum_threshold:
+              dodola.services.correct_small_dtr(
+                  rechunked_zarr, 
+                  "{{ inputs.parameters.out-zarr }}"
+              )
         resources:
           requests:
             memory: 16Gi
