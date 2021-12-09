@@ -61,3 +61,5 @@ spec:
                   value: "true"
                 - name: qdm-kind
                   value: "multiplicative"
+                - name: apply-dtr-minimum-threshold
+                  value: "false"

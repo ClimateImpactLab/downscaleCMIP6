@@ -31,6 +31,8 @@ spec:
         value: "gs://support-c23ff1a3/domain.1x1.zarr"
       - name: correct-wetday-frequency
         value: "false"
+      - name: apply-dtr-minimum-threshold
+        value: "false"
       - name: first-year
         value: 2015
       - name: last-year
@@ -48,6 +50,7 @@ spec:
           - name: regrid-method
           - name: domainfile1x1
           - name: correct-wetday-frequency
+          - name: apply-dtr-minimum-threshold
           - name: qdm-kind
           - name: first-year
           - name: last-year
@@ -72,6 +75,8 @@ spec:
                   value: "false"
                 - name: add-cyclic
                   value: "false"
+                - name: apply-dtr-minimum-threshold
+                  value: "false"
           - name: preprocess-training
             template: preprocess
             arguments:
@@ -84,6 +89,8 @@ spec:
                   value: "{{ inputs.parameters.domainfile1x1 }}"
                 - name: correct-wetday-frequency
                   value: "{{ inputs.parameters.correct-wetday-frequency }}"
+                - name: apply-dtr-minimum-threshold
+                  value: "{{ inputs.parameters.apply-dtr-minimum-threshold }}"
           - name: preprocess-simulation
             template: preprocess
             arguments:
@@ -96,6 +103,8 @@ spec:
                   value: "{{ inputs.parameters.domainfile1x1 }}"
                 - name: correct-wetday-frequency
                   value: "{{ inputs.parameters.correct-wetday-frequency }}"
+                - name: apply-dtr-minimum-threshold
+                  value: "{{ inputs.parameters.apply-dtr-minimum-threshold }}"
           - name: qdm
             depends: >-
               preprocess-reference
@@ -131,6 +140,7 @@ spec:
           - name: regrid-method
           - name: domain-file
           - name: correct-wetday-frequency
+          - name: apply-dtr-minimum-threshold
           - name: add-cyclic
             value: "lon"
       outputs:
@@ -138,19 +148,20 @@ spec:
           - name: out-zarr
             value: "{{ inputs.parameters.out-zarr }}"
       script:
-        image: us-central1-docker.pkg.dev/downscalecmip6/private/dodola:0.10.0
+        image: us-central1-docker.pkg.dev/downscalecmip6/private/dodola:0.12.0
         command: [ python ]
         source: |
           import logging
           import dodola.services
 
-          logger = logging.getLogger(__name__)
           logging.basicConfig(level=logging.INFO)
+          logger = logging.getLogger(__name__)
 
           input_zarr = "{{ inputs.parameters.in-zarr }}"
-
+          apply_minimum_threshold = "{{ inputs.parameters.apply-dtr-minimum-threshold }}".lower() == "true"
           correct_wetday_frequency = "{{ inputs.parameters.correct-wetday-frequency }}".lower() == "true"
           if correct_wetday_frequency:
+              logger.info("Applying wet-day frequency correction")
               wdf_corrected_zarr = "/workspace/wdf_corrected.zarr"
               dodola.services.correct_wet_day_frequency(
                   input_zarr,
@@ -162,6 +173,8 @@ spec:
           # Prevents regridding artifacts along international dateline.
           add_cyclic = "{{ inputs.parameters.add-cyclic }}".lower()
           if add_cyclic != "false":
+              logger.info("Adding cyclic wraparound pixels")
+
               import dodola.repository as storage
               from dodola.core import _add_cyclic
 
@@ -187,12 +200,27 @@ spec:
               out="/workspace/regridded.zarr"
           )
 
+          # If we're ending with minimum_threshold we need to be sure
+          # the next rechunk step outputs to local disk rather than
+          # the final output zarr URL.
+          if apply_minimum_threshold:
+            rechunked_zarr = "/workspace/timeseries_chunks.zarr"
+          else:
+            rechunked_zarr = "{{ inputs.parameters.out-zarr }}"
+
           # QDM steps require time to be contiguous in memory.
           dodola.services.rechunk(
               "/workspace/regridded.zarr",
               target_chunks = {"time": -1, "lat": 10, "lon": 10},
-              out="{{ inputs.parameters.out-zarr }}"
+              out=rechunked_zarr
           )
+
+          # This minimum threshold is only applied to CMIP6 DTR.
+          if apply_minimum_threshold:
+              dodola.services.correct_small_dtr(
+                  rechunked_zarr, 
+                  "{{ inputs.parameters.out-zarr }}"
+              )
         resources:
           requests:
             memory: 16Gi
