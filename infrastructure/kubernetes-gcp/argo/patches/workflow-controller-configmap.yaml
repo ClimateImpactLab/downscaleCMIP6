@@ -53,7 +53,7 @@ data:
         memory: 1Gi
 
   artifactRepository: |
-    archiveLogs: true
+    archiveLogs: false
     gcs:
       bucket: scratch-170cd6ec
       keyFormat: "{{workflow.uid}}/{{pod.name}}"
