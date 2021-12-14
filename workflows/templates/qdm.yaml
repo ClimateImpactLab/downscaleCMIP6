@@ -204,9 +204,9 @@ spec:
           # the next rechunk step outputs to local disk rather than
           # the final output zarr URL.
           if apply_minimum_threshold:
-            rechunked_zarr = "/workspace/timeseries_chunks.zarr"
+              rechunked_zarr = "/tmp/workspace/timeseries_chunks.zarr"
           else:
-            rechunked_zarr = "{{ inputs.parameters.out-zarr }}"
+              rechunked_zarr = "{{ inputs.parameters.out-zarr }}"
 
           # QDM steps require time to be contiguous in memory.
           dodola.services.rechunk(
