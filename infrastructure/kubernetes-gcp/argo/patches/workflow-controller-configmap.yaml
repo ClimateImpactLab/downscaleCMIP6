@@ -31,6 +31,15 @@ data:
         operator: "Equal"
         value: "worker"
         effect: "NoSchedule"
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+                - key: iam.gke.io/gke-metadata-server-enabled
+                  operator: In
+                  values:
+                    - "true"
 
   containerRuntimeExecutor: emissary
   containerRuntimeExecutors: |
