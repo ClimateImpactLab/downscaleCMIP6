@@ -14,6 +14,7 @@ resources:
   - e2e-pr-jobs.yaml
   - e2e-tasmax-jobs.yaml
   - qdm.yaml
+  - qdm-preprocess.yaml
   - qualitycontrol-check-cmip6.yaml
   - rechunk.yaml
   - regrid.yaml
