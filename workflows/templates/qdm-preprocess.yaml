@@ -1,7 +1,7 @@
 apiVersion: argoproj.io/v1alpha1
 kind: WorkflowTemplate
 metadata:
-  generateName: qdm-preprocess
+  name: qdm-preprocess
   annotations:
     workflows.argoproj.io/description: >-
       Preprocessing steps before Quantile Delta Mapping bias correction for reanalysis and CMIP6 GCM Zarr Stores.
