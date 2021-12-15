@@ -22,7 +22,7 @@ data:
       parallelism: 300
       activeDeadlineSeconds: 28800  #; Workflows must finish in 8 hours.
       ttlStrategy:
-        secondsAfterCompletion: 86400   #; Workflows delete after 1 day.
+        secondsAfterCompletion: 604800   #; Workflows delete after 7 days.
       podGC:
         strategy: OnPodCompletion
       serviceAccountName: workflows-default
