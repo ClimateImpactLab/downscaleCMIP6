@@ -25,6 +25,9 @@ resource "google_sql_database_instance" "argo" {
   settings {
     tier              = "db-f1-micro"
     availability_type = "ZONAL"
+    backup_configuration {
+      enabled = true
+    }
     ip_configuration {
       ipv4_enabled    = false
       private_network = var.sql_vpc_id
