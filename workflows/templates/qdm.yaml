@@ -62,7 +62,9 @@ spec:
       dag:
         tasks:
           - name: preprocess-reference
-            template: preprocess
+            templateRef:
+              name: qdm-preprocess
+              template: preprocess
             arguments:
               parameters:
                 - name: in-zarr
@@ -78,7 +80,9 @@ spec:
                 - name: apply-dtr-minimum-threshold
                   value: "false"
           - name: preprocess-training
-            template: preprocess
+            templateRef:
+              name: qdm-preprocess
+              template: preprocess
             arguments:
               parameters:
                 - name: in-zarr
@@ -92,7 +96,9 @@ spec:
                 - name: apply-dtr-minimum-threshold
                   value: "{{ inputs.parameters.apply-dtr-minimum-threshold }}"
           - name: preprocess-simulation
-            template: preprocess
+            templateRef:
+              name: qdm-preprocess
+              template: preprocess
             arguments:
               parameters:
                 - name: in-zarr
@@ -129,119 +135,6 @@ spec:
                   value: "{{ inputs.parameters.first-year }}"
                 - name: last-year
                   value: "{{ inputs.parameters.last-year }}"
-
-
-    - name: preprocess
-      inputs:
-        parameters:
-          - name: in-zarr
-          - name: out-zarr
-            value: "gs://scratch-170cd6ec/{{ workflow.uid }}/{{ pod.name }}/preprocessed.zarr"
-          - name: regrid-method
-          - name: domain-file
-          - name: correct-wetday-frequency
-          - name: apply-dtr-minimum-threshold
-          - name: add-cyclic
-            value: "lon"
-      outputs:
-        parameters:
-          - name: out-zarr
-            value: "{{ inputs.parameters.out-zarr }}"
-      script:
-        image: us-central1-docker.pkg.dev/downscalecmip6/private/dodola:0.12.0
-        command: [ python ]
-        source: |
-          import logging
-          import dodola.services
-
-          logging.basicConfig(level=logging.INFO)
-          logger = logging.getLogger(__name__)
-
-          input_zarr = "{{ inputs.parameters.in-zarr }}"
-          apply_minimum_threshold = "{{ inputs.parameters.apply-dtr-minimum-threshold }}".lower() == "true"
-          correct_wetday_frequency = "{{ inputs.parameters.correct-wetday-frequency }}".lower() == "true"
-          if correct_wetday_frequency:
-              logger.info("Applying wet-day frequency correction")
-              wdf_corrected_zarr = "/workspace/wdf_corrected.zarr"
-              dodola.services.correct_wet_day_frequency(
-                  input_zarr,
-                  process="pre",
-                  out=wdf_corrected_zarr
-              )
-              input_zarr = wdf_corrected_zarr
-
-          # Prevents regridding artifacts along international dateline.
-          add_cyclic = "{{ inputs.parameters.add-cyclic }}".lower()
-          if add_cyclic != "false":
-              logger.info("Adding cyclic wraparound pixels")
-
-              import dodola.repository as storage
-              from dodola.core import _add_cyclic
-
-              cyclic_added_zarr = "/workspace/cyclic_added.zarr"
-              storage.write(
-                  cyclic_added_zarr,
-                  _add_cyclic(storage.read(input_zarr), dim=add_cyclic)
-              )
-              input_zarr = cyclic_added_zarr
-
-          # Regridding requires lat/lon to be contiguous.
-          dodola.services.rechunk(
-              input_zarr,
-              target_chunks = {"time": 365, "lat": -1, "lon": -1},
-              out="/workspace/annual_chunks.zarr"
-          )
-
-          dodola.services.regrid(
-              "/workspace/annual_chunks.zarr",
-              method="{{ inputs.parameters.regrid-method }}",
-              domain_file="{{ inputs.parameters.domain-file }}",
-              astype="float32",
-              out="/workspace/regridded.zarr"
-          )
-
-          # If we're ending with minimum_threshold we need to be sure
-          # the next rechunk step outputs to local disk rather than
-          # the final output zarr URL.
-          if apply_minimum_threshold:
-              rechunked_zarr = "/tmp/workspace/timeseries_chunks.zarr"
-          else:
-              rechunked_zarr = "{{ inputs.parameters.out-zarr }}"
-
-          # QDM steps require time to be contiguous in memory.
-          dodola.services.rechunk(
-              "/workspace/regridded.zarr",
-              target_chunks = {"time": -1, "lat": 10, "lon": 10},
-              out=rechunked_zarr
-          )
-
-          # This minimum threshold is only applied to CMIP6 DTR.
-          if apply_minimum_threshold:
-              dodola.services.correct_small_dtr(
-                  rechunked_zarr, 
-                  "{{ inputs.parameters.out-zarr }}"
-              )
-        resources:
-          requests:
-            memory: 16Gi
-            cpu: "1000m"
-          limits:
-            memory: 18Gi
-            cpu: "2000m"
-        volumeMounts:
-          - mountPath: /workspace
-            name: workspace
-      volumes:
-        - name: workspace
-          emptyDir:
-            sizeLimit: 40Gi
-      activeDeadlineSeconds: 1200
-      retryStrategy:
-        limit: 4
-        retryPolicy: "Always"
-        backoff:
-          duration: 30s
-          factor: 2
 
 
       # Quantile Delta Mapping bias correction, output to staging.
