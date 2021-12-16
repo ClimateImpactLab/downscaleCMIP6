@@ -6,6 +6,7 @@ resources:
   - argo-cildc6-org.yaml
   - argo-server-ingress.yaml
   - sso-client-externalsecret.yaml
+  - workflow-controller-monitor.yaml
 
 patchesStrategicMerge:
   - patches/workflow-controller-configmap.yaml

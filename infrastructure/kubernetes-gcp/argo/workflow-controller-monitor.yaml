@@ -1,0 +1,13 @@
+apiVersion: monitoring.gke.io/v1alpha1
+kind: PodMonitor
+metadata:
+  name: workflow-controller-monitor
+  namespace: argo
+spec:
+  selector:
+    matchLabels:
+      app: workflow-controller
+      app.kubernetes.io/instance: argo
+  podMetricsEndpoints:
+    - port: metrics
+      path: /metrics
