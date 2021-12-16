@@ -119,6 +119,8 @@ spec:
             ds = ds.rename({"tmin": "tasmin"})
         if "precip" in ds.variables:
             ds = ds.rename({"precip": "pr"})
+        if "tp" in ds.variables:
+            ds = ds.rename({"tp": "pr"})
         ds = ds.rename({"latitude": "lat", "longitude": "lon"})
 
         ds = ds.drop_vars("dayofyear", errors="ignore")
