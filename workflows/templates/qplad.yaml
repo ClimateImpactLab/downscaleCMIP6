@@ -140,7 +140,7 @@ spec:
                 - name: domain-file
                   value: "{{ inputs.parameters.domain-file }}"
                 - name: add-cyclic-lon
-                  value: "true"
+                  value: "{{=inputs.parameters['regrid-method'] == 'bilinear' ? 'true' : 'false'}}"
                 - name: add-lat-buffer
                   value: "true"
         - - name: move-chunks-to-space
@@ -211,7 +211,7 @@ spec:
                 - name: domain-file
                   value: "{{ inputs.parameters.domainfile0p25x0p25 }}"
                 - name: add-cyclic-lon
-                  value: "true"
+                  value: "{{=inputs.parameters['regrid-method'] == 'bilinear' ? 'true' : 'false'}}"
                 - name: add-lat-buffer
                   value: "true"
         - - name: move-chunks-to-space
@@ -270,7 +270,7 @@ spec:
                 - name: domain-file
                   value: "{{ inputs.parameters.domain-file }}"
                 - name: add-cyclic-lon
-                  value: "true"
+                  value: "{{=inputs.parameters['regrid-method'] == 'bilinear' ? 'true' : 'false'}}"
                 - name: add-lat-buffer
                   value: "true"
 
