@@ -40,7 +40,7 @@ spec:
           - name: data
           - name: time
       script:
-        image: us-central1-docker.pkg.dev/downscalecmip6/private/dodola:dev
+        image: us-central1-docker.pkg.dev/downscalecmip6/private/dodola:0.13.0
         command: [python]
         source: |
           import dask
@@ -73,7 +73,7 @@ spec:
               if v == "tasmin" or v == "tasmax":
                   _test_temp_range(d, v)
               if v == "dtr":
-                  _test_dtr_range(d, v)
+                  _test_dtr_range(d, v, data_type)
               if v == "dtr" or v == "pr":
                  _test_negative_values(d, v)
               if v == "pr":
