@@ -43,6 +43,9 @@ spec:
         image: us-central1-docker.pkg.dev/downscalecmip6/private/dodola:0.13.0
         command: [python]
         source: |
+          # Running this as a script rather than a dodola command as workaround to 
+          # https://github.com/ClimateImpactLab/dodola/issues/126
+          
           import dask
           import numpy as np
           from dodola.core import (_test_for_nans, _test_variable_names, _test_timesteps, _test_temp_range, _test_dtr_range, _test_negative_values, _test_maximum_precip)
