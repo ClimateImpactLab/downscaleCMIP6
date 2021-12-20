@@ -154,7 +154,7 @@ spec:
           - name: out-zarr
             value: "{{ inputs.parameters.out-zarr }}"
       script:
-        image: us-central1-docker.pkg.dev/downscalecmip6/private/dodola:0.12.0
+        image: us-central1-docker.pkg.dev/downscalecmip6/private/dodola:dev
         command: [ python ]
         source: |
           import logging
@@ -165,7 +165,6 @@ spec:
 
           input_zarr = "{{ inputs.parameters.in-zarr }}"
 
-          wdf_corrected_zarr = "/workspace/wdf_corrected.zarr"
           dodola.services.correct_wet_day_frequency(
               "{{ inputs.parameters.in-zarr }}",
               process="pre",
