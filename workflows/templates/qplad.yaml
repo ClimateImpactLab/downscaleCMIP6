@@ -99,6 +99,8 @@ spec:
                   value: "{{ inputs.parameters.qdm-kind }}"
                 - name: out-zarr
                   value: "{{ inputs.parameters.out-zarr }}"
+                - name: correct-wetday-frequency
+                  value: "{{ inputs.parameters.correct-wetday-frequency }}"
 
 
     - name: create-fine-reference
@@ -396,7 +398,7 @@ spec:
                 - name: out-zarr
                   value: "{{ inputs.parameters.out-zarr }}"
                 - name: correct-wetday-frequency
-                  value: "{{ inputs.parameters.correct-wetday-frequency}}"
+                  value: "{{ inputs.parameters.correct-wetday-frequency }}"
               artifacts:
                 - name: global-attrs-json
                   from: "{{ inputs.artifacts.global-attrs-json }}"
