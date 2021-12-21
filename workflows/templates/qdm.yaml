@@ -74,7 +74,7 @@ spec:
                 - name: domain-file
                   value: "{{ inputs.parameters.domainfile1x1 }}"
                 - name: correct-wetday-frequency
-                  value: "false"
+                  value: "{{ inputs.parameters.correct-wetday-frequency }}"
                 - name: add-cyclic
                   value: "false"
                 - name: apply-dtr-minimum-threshold
