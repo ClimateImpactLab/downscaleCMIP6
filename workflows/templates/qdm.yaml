@@ -31,6 +31,8 @@ spec:
         value: "gs://support-c23ff1a3/domain.1x1.zarr"
       - name: correct-wetday-frequency
         value: "false"
+      - name: apply-dtr-minimum-threshold
+        value: "false"
       - name: first-year
         value: 2015
       - name: last-year
@@ -48,6 +50,7 @@ spec:
           - name: regrid-method
           - name: domainfile1x1
           - name: correct-wetday-frequency
+          - name: apply-dtr-minimum-threshold
           - name: qdm-kind
           - name: first-year
           - name: last-year
@@ -59,7 +62,9 @@ spec:
       dag:
         tasks:
           - name: preprocess-reference
-            template: preprocess
+            templateRef:
+              name: qdm-preprocess
+              template: preprocess
             arguments:
               parameters:
                 - name: in-zarr
@@ -72,8 +77,12 @@ spec:
                   value: "false"
                 - name: add-cyclic
                   value: "false"
+                - name: apply-dtr-minimum-threshold
+                  value: "false"
           - name: preprocess-training
-            template: preprocess
+            templateRef:
+              name: qdm-preprocess
+              template: preprocess
             arguments:
               parameters:
                 - name: in-zarr
@@ -84,8 +93,12 @@ spec:
                   value: "{{ inputs.parameters.domainfile1x1 }}"
                 - name: correct-wetday-frequency
                   value: "{{ inputs.parameters.correct-wetday-frequency }}"
+                - name: apply-dtr-minimum-threshold
+                  value: "{{ inputs.parameters.apply-dtr-minimum-threshold }}"
           - name: preprocess-simulation
-            template: preprocess
+            templateRef:
+              name: qdm-preprocess
+              template: preprocess
             arguments:
               parameters:
                 - name: in-zarr
@@ -96,6 +109,8 @@ spec:
                   value: "{{ inputs.parameters.domainfile1x1 }}"
                 - name: correct-wetday-frequency
                   value: "{{ inputs.parameters.correct-wetday-frequency }}"
+                - name: apply-dtr-minimum-threshold
+                  value: "{{ inputs.parameters.apply-dtr-minimum-threshold }}"
           - name: qdm
             depends: >-
               preprocess-reference
@@ -120,97 +135,6 @@ spec:
                   value: "{{ inputs.parameters.first-year }}"
                 - name: last-year
                   value: "{{ inputs.parameters.last-year }}"
-
-
-    - name: preprocess
-      inputs:
-        parameters:
-          - name: in-zarr
-          - name: out-zarr
-            value: "gs://scratch-170cd6ec/{{ workflow.uid }}/{{ pod.name }}/preprocessed.zarr"
-          - name: regrid-method
-          - name: domain-file
-          - name: correct-wetday-frequency
-          - name: add-cyclic
-            value: "lon"
-      outputs:
-        parameters:
-          - name: out-zarr
-            value: "{{ inputs.parameters.out-zarr }}"
-      script:
-        image: us-central1-docker.pkg.dev/downscalecmip6/private/dodola:0.8.0
-        command: [ python ]
-        source: |
-          import logging
-          import dodola.services
-
-          logger = logging.getLogger(__name__)
-          logging.basicConfig(level=logging.INFO)
-
-          input_zarr = "{{ inputs.parameters.in-zarr }}"
-
-          correct_wetday_frequency = "{{ inputs.parameters.correct-wetday-frequency }}".lower() == "true"
-          if correct_wetday_frequency:
-              wdf_corrected_zarr = "/workspace/wdf_corrected.zarr"
-              dodola.services.correct_wet_day_frequency(
-                  input_zarr,
-                  process="pre",
-                  out=wdf_corrected_zarr
-              )
-              input_zarr = wdf_corrected_zarr
-
-          # Prevents regridding artifacts along international dateline.
-          add_cyclic = "{{ inputs.parameters.add-cyclic }}".lower()
-          if add_cyclic != "false":
-              import dodola.repository as storage
-              from dodola.core import _add_cyclic
-
-              cyclic_added_zarr = "/workspace/cyclic_added.zarr"
-              storage.write(
-                  cyclic_added_zarr,
-                  _add_cyclic(storage.read(input_zarr), dim=add_cyclic)
-              )
-              input_zarr = cyclic_added_zarr
-
-          # Regridding requires lat/lon to be contiguous.
-          dodola.services.rechunk(
-              input_zarr,
-              target_chunks = {"time": 365, "lat": -1, "lon": -1},
-              out="/workspace/annual_chunks.zarr"
-          )
-
-          dodola.services.regrid(
-              "/workspace/annual_chunks.zarr",
-              method="{{ inputs.parameters.regrid-method }}",
-              domain_file="{{ inputs.parameters.domain-file }}",
-              astype="float32",
-              out="/workspace/regridded.zarr"
-          )
-
-          # QDM steps require time to be contiguous in memory.
-          dodola.services.rechunk(
-              "/workspace/regridded.zarr",
-              target_chunks = {"time": -1, "lat": 10, "lon": 10},
-              out="{{ inputs.parameters.out-zarr }}"
-          )
-        resources:
-          requests:
-            memory: 16Gi
-            cpu: "1000m"
-          limits:
-            memory: 18Gi
-            cpu: "2000m"
-        volumeMounts:
-          - mountPath: /workspace
-            name: workspace
-      volumes:
-        - name: workspace
-          emptyDir:
-            sizeLimit: 20Gi
-      activeDeadlineSeconds: 1200
-      retryStrategy:
-        limit: 2
-        retryPolicy: "Always"
 
 
       # Quantile Delta Mapping bias correction, output to staging.
@@ -379,7 +303,7 @@ spec:
           - name: out-zarr
             value: "{{ inputs.parameters.out-zarr }}"
       container:
-        image: us-central1-docker.pkg.dev/downscalecmip6/private/dodola:0.9.0
+        image: us-central1-docker.pkg.dev/downscalecmip6/private/dodola:0.10.0
         command: [ dodola ]
         args:
           - "prime-qdm-output-zarrstore"
@@ -418,7 +342,7 @@ spec:
           - name: out-zarr
             value: "{{ inputs.parameters.out-zarr }}"
       container:
-        image: us-central1-docker.pkg.dev/downscalecmip6/private/dodola:0.9.0
+        image: us-central1-docker.pkg.dev/downscalecmip6/private/dodola:0.10.0
         command: [ "dodola" ]
         args:
           - "train-qdm"
@@ -464,7 +388,7 @@ spec:
           - name: out-zarr
             value: "{{ inputs.parameters.out-zarr }}"
       container:
-        image: us-central1-docker.pkg.dev/downscalecmip6/private/dodola:0.9.0
+        image: us-central1-docker.pkg.dev/downscalecmip6/private/dodola:0.10.0
         command: [ dodola ]
         args:
           - "apply-qdm"

@@ -79,4 +79,5 @@ spec:
                   value: "false"
                 - name: qdm-kind
                   value: "additive"
-
+                - name: apply-dtr-minimum-threshold
+                  value: "false"

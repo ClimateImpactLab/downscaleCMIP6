@@ -17,17 +17,5 @@ jobs: |
       "variable_id": "tasmax",
       "historical": { "activity_id": "CMIP", "experiment_id": "historical", "table_id": "day", "variable_id": "tasmax", "source_id": "MRI-ESM2-0", "institution_id": "MRI", "member_id": "r1i1p1f1", "grid_label": "gn", "version": "20190603" },
       "ssp": { "activity_id": "ScenarioMIP", "experiment_id": "ssp245", "table_id": "day", "variable_id": "tasmax", "source_id": "MRI-ESM2-0", "institution_id": "MRI", "member_id": "r1i1p1f1", "grid_label": "gn", "version": "20190603" }
-    },
-    {
-      "target": "ssp",
-      "variable_id": "tasmax",
-      "historical": { "activity_id": "CMIP", "experiment_id": "historical", "table_id": "day", "variable_id": "tasmax", "source_id": "MRI-ESM2-0", "institution_id": "MRI", "member_id": "r1i1p1f1", "grid_label": "gn", "version": "20190603" },
-      "ssp": { "activity_id": "ScenarioMIP", "experiment_id": "ssp126", "table_id": "day", "variable_id": "tasmax", "source_id": "MRI-ESM2-0", "institution_id": "MRI", "member_id": "r1i1p1f1", "grid_label": "gn", "version": "20191108" }
-    },
-    {
-      "target": "ssp",
-      "variable_id": "tasmax",
-      "historical": { "activity_id": "CMIP", "experiment_id": "historical", "table_id": "day", "variable_id": "tasmax", "source_id": "MRI-ESM2-0", "institution_id": "MRI", "member_id": "r1i1p1f1", "grid_label": "gn", "version": "20190603" },
-      "ssp": { "activity_id": "ScenarioMIP", "experiment_id": "ssp585", "table_id": "day", "variable_id": "tasmax", "source_id": "MRI-ESM2-0", "institution_id": "MRI", "member_id": "r1i1p1f1", "grid_label": "gn", "version": "20191108" }
     }
   ]

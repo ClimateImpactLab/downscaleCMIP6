@@ -8,14 +8,7 @@ data:
   # Intended for cluster installs that are multi-tenancy environments, to prevent too many workflows in one
   # namespace impacting others.
   # >= v3.2
-  namespaceParallelism: "600"
-
-  # Globally limits the rate at which pods are created.
-  # This is intended to mitigate flooding of the Kubernetes API server by workflows with a large amount of
-  # parallel nodes.
-  resourceRateLimit: |
-    limit: 10
-    burst: 1
+  namespaceParallelism: "3"
 
   workflowDefaults: |
     metadata:
@@ -26,17 +19,27 @@ data:
       securityContext:
         runAsNonRoot: true
         runAsUser: 8737  #; Work as non-root user.
+      parallelism: 300
       activeDeadlineSeconds: 28800  #; Workflows must finish in 8 hours.
       ttlStrategy:
-        secondsAfterCompletion: 1296000   #; Workflows delete after 15 days.
+        secondsAfterCompletion: 604800   #; Workflows delete after 7 days.
       podGC:
-        strategy: OnPodSuccess
+        strategy: OnPodCompletion
       serviceAccountName: workflows-default
       tolerations:
       - key: dedicated
         operator: "Equal"
         value: "worker"
         effect: "NoSchedule"
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+                - key: iam.gke.io/gke-metadata-server-enabled
+                  operator: In
+                  values:
+                    - "true"
 
   containerRuntimeExecutor: emissary
   containerRuntimeExecutors: |
@@ -120,12 +123,12 @@ data:
       enabled: false
 
   links: |
-    - name: Workflow Logs
+    - name: GCP Workflow Logs
       scope: workflow
       url: https://console.cloud.google.com/logs/query;query=resource.type%3D%22k8s_container%22%0Aresource.labels.project_id%3D%22downscalecmip6%22%0Aresource.labels.namespace_name%3D%22${metadata.namespace}%22%0Alabels.%22k8s-pod%2Fworkflows_argoproj_io%2Fworkflow%22%3D%22${metadata.name}%22;timeRange=${status.startedAt}%2F${status.finishedAt}?project=downscalecmip6
-    - name: Pod Logs
+    - name: GCP Pod Logs
       scope: pod
       url: https://console.cloud.google.com/logs/query;query=resource.type%3D%22k8s_container%22%0Aresource.labels.project_id%3D%22downscalecmip6%22%0Aresource.labels.namespace_name%3D%22${metadata.namespace}%22%0Aresource.labels.pod_name%3D%22${metadata.name}%22;timeRange=${status.startedAt}%2F${status.finishedAt}?project=downscalecmip6
-    - name: Pod Logs
+    - name: GCP Pod Logs
       scope: pod-logs
       url: https://console.cloud.google.com/logs/query;query=resource.type%3D%22k8s_container%22%0Aresource.labels.project_id%3D%22downscalecmip6%22%0Aresource.labels.namespace_name%3D%22${metadata.namespace}%22%0Aresource.labels.pod_name%3D%22${metadata.name}%22;timeRange=${status.startedAt}%2F${status.finishedAt}?project=downscalecmip6

@@ -1,0 +1,65 @@
+apiVersion: argoproj.io/v1alpha1
+kind: WorkflowTemplate
+metadata:
+  name: e2e-pr-jobs
+  annotations:
+    workflows.argoproj.io/description: >-
+      Download, clean, bias correct, and downscale a list of CMIP6 precipitation (pr) data.
+    workflows.argoproj.io/tags: e2e,jobs,cmip6,dc6,pr
+    workflows.argoproj.io/version: '>= 3.1.0'
+  labels:
+    component: e2e
+spec:
+  entrypoint: e2e-pr-jobs
+  arguments:
+    parameters:
+      - name: jobs
+        value: |
+          [
+            {
+              "target": "ssp",
+              "variable_id": "pr",
+              "historical": { "activity_id": "CMIP", "experiment_id": "historical", "table_id": "day", "variable_id": "pr", "source_id": "GFDL-CM4", "institution_id": "NOAA-GFDL", "member_id": "r1i1p1f1", "grid_label": "gr1", "version": "20180701" },
+              "ssp": { "activity_id": "ScenarioMIP", "experiment_id": "ssp245", "table_id": "day", "variable_id": "pr", "source_id": "GFDL-CM4", "institution_id": "NOAA-GFDL", "member_id": "r1i1p1f1", "grid_label": "gr1", "version": "20180701" }
+            }
+          ]
+  templates:
+
+
+    - name: e2e-pr-jobs
+      inputs:
+        parameters:
+          - name: jobs
+      steps:
+        - - name: download
+            templateRef:
+              name: download-cmip6
+              template: with-jobs
+            arguments:
+              parameters:
+                - name: jobs
+                  value: "{{ inputs.parameters.jobs }}"
+        - - name: clean
+            templateRef:
+              name: clean-cmip6
+              template: with-jobs
+            arguments:
+              parameters:
+                - name: jobs
+                  value: "{{ inputs.parameters.jobs }}"
+        - - name: biascorrectdownscale
+            templateRef:
+              name: biascorrectdownscale
+              template: with-jobs
+            arguments:
+              parameters:
+                - name: jobs
+                  value: "{{ inputs.parameters.jobs }}"
+                - name: regrid-method
+                  value: "conservative"
+                - name: correct-wetday-frequency
+                  value: "true"
+                - name: qdm-kind
+                  value: "multiplicative"
+                - name: apply-dtr-minimum-threshold
+                  value: "false"

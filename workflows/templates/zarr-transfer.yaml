@@ -7,7 +7,7 @@ metadata:
       Transfers a Zarr Store between cloud storage.
 
       Zarr Store locations are specified with fsspec-style URLs.
-    workflows.argoproj.io/tags: zarr,gcp,az
+    workflows.argoproj.io/tags: zarr,gcp
     workflows.argoproj.io/version: '>= 3.1.0'
   labels:
     component: utils
@@ -26,29 +26,8 @@ spec:
         parameters:
           - name: from-zarr
           - name: to-zarr
-      volumes:
-        - name: gcpkey
-          secret:
-            secretName: gcp-cil-scratch-sa
       script:
         image: us-central1-docker.pkg.dev/downscalecmip6/private/dodola:0.8.0
-        volumeMounts:
-          - name: gcpkey
-            mountPath: "/mnt/gcp-sa"
-            readOnly: true
-        env:
-          - name: AZURE_STORAGE_ACCOUNT_NAME
-            valueFrom:
-              secretKeyRef:
-                name: workerstoragecreds-secret
-                key: azurestorageaccount
-          - name: AZURE_STORAGE_ACCOUNT_KEY
-            valueFrom:
-              secretKeyRef:
-                name: workerstoragecreds-secret
-                key: azurestoragekey
-          - name: GOOGLE_APPLICATION_CREDENTIALS
-            value: "/mnt/gcp-sa/key.json"
         command: [ python ]
         source: |
           import dodola.repository

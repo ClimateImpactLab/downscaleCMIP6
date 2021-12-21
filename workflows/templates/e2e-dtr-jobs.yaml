@@ -1,0 +1,87 @@
+apiVersion: argoproj.io/v1alpha1
+kind: WorkflowTemplate
+metadata:
+  name: e2e-dtr-jobs
+  annotations:
+    workflows.argoproj.io/description: >-
+      Download, clean, biascorrect, and downscale a list of CMIP6 diurnal temperature range (dtr) data.
+    workflows.argoproj.io/tags: e2e,jobs,cmip6,dc6,dtr
+    workflows.argoproj.io/version: '>= 3.1.0'
+  labels:
+    component: e2e
+spec:
+  entrypoint: e2e-dtr-jobs
+  arguments:
+    parameters:
+      - name: jobs
+        value: |
+          [
+            {
+              "variable_id": "dtr",
+              "target": "ssp",
+              "tasmax": {
+                "target": "ssp",
+                "variable_id": "tasmax",
+                "historical": {"activity_id": "CMIP","experiment_id": "historical","table_id": "day","variable_id": "tasmax","source_id": "GFDL-ESM4","institution_id": "NOAA-GFDL","member_id": "r1i1p1f1","grid_label": "gr1","version": "20190726"},
+                "ssp": {"activity_id": "ScenarioMIP","experiment_id": "ssp370","table_id": "day","variable_id": "tasmax","source_id": "GFDL-ESM4","institution_id": "NOAA-GFDL","member_id": "r1i1p1f1","grid_label": "gr1","version": "20180701"}
+              },
+              "tasmin": {
+                "target": "ssp",
+                "variable_id": "tasmin",
+                "historical": {"activity_id": "CMIP","experiment_id": "historical","table_id": "day","variable_id": "tasmin","source_id": "GFDL-ESM4","institution_id": "NOAA-GFDL","member_id": "r1i1p1f1","grid_label": "gr1","version": "20190726"},
+                "ssp": {"activity_id": "ScenarioMIP", "experiment_id": "ssp370", "table_id": "day", "variable_id": "tasmin", "source_id": "GFDL-ESM4", "institution_id": "NOAA-GFDL", "member_id": "r1i1p1f1", "grid_label": "gr1", "version": "20180701"}
+              }
+            }
+          ]
+  templates:
+
+
+    - name: e2e-dtr-jobs
+      inputs:
+        parameters:
+          - name: jobs
+      steps:
+        # DTR is a derived variable, so this downloads CMIP6 inputs required
+        # to compute DTR.
+        - - name: download
+            templateRef:
+              name: download-cmip6
+              template: with-jobs
+            arguments:
+              parameters:
+                - name: jobs
+                  value: "{{ inputs.parameters.jobs }}"
+        # Like the download step, this is just cleaning the CMIP6 inputs
+        # required to compute DTR.
+        - - name: clean
+            templateRef:
+              name: clean-cmip6
+              template: with-jobs
+            arguments:
+              parameters:
+                - name: jobs
+                  value: "{{ inputs.parameters.jobs }}"
+        - - name: compute-dtr
+            templateRef:
+              name: compute-dtr
+              template: compute-dtr-jobs
+            arguments:
+              parameters:
+                - name: jobs
+                  value: "{{ inputs.parameters.jobs }}"
+        - - name: biascorrectdownscale
+            templateRef:
+              name: biascorrectdownscale
+              template: with-jobs
+            arguments:
+              parameters:
+                - name: jobs
+                  value: "{{ inputs.parameters.jobs }}"
+                - name: regrid-method
+                  value: "bilinear"
+                - name: correct-wetday-frequency
+                  value: "false"
+                - name: qdm-kind
+                  value: "multiplicative"
+                - name: apply-dtr-minimum-threshold
+                  value: "true"

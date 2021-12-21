@@ -127,7 +127,7 @@ spec:
           limits:
             memory: 2Gi
             cpu: "1000m"
-      activeDeadlineSeconds: 1200
+      activeDeadlineSeconds: 1800
       retryStrategy:
         limit: 2
         retryPolicy: "Always"

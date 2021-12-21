@@ -145,7 +145,7 @@ spec:
                 - name: domain-file
                   value: "{{ inputs.parameters.domain-file }}"
                 - name: add-cyclic-lon
-                  value: "true"
+                  value: "{{=inputs.parameters['regrid-method'] == 'bilinear' ? 'true' : 'false'}}"
                 - name: add-lat-buffer
                   value: "true"
         - - name: move-chunks-to-space
@@ -216,7 +216,7 @@ spec:
                 - name: domain-file
                   value: "{{ inputs.parameters.domainfile0p25x0p25 }}"
                 - name: add-cyclic-lon
-                  value: "true"
+                  value: "{{=inputs.parameters['regrid-method'] == 'bilinear' ? 'true' : 'false'}}"
                 - name: add-lat-buffer
                   value: "true"
         - - name: move-chunks-to-space
@@ -275,7 +275,7 @@ spec:
                 - name: domain-file
                   value: "{{ inputs.parameters.domain-file }}"
                 - name: add-cyclic-lon
-                  value: "true"
+                  value: "{{=inputs.parameters['regrid-method'] == 'bilinear' ? 'true' : 'false'}}"
                 - name: add-lat-buffer
                   value: "true"
 
@@ -427,7 +427,7 @@ spec:
           - name: out-zarr
             value: "{{ inputs.parameters.out-zarr }}"
       container:
-        image: us-central1-docker.pkg.dev/downscalecmip6/private/dodola:0.9.0
+        image: us-central1-docker.pkg.dev/downscalecmip6/private/dodola:0.10.0
         command: [ dodola ]
         args:
           - "train-qplad"
@@ -471,7 +471,7 @@ spec:
           - name: global-attrs-json
             path: /tmp/global_attrs.json
       container:
-        image: us-central1-docker.pkg.dev/downscalecmip6/private/dodola:0.9.0
+        image: us-central1-docker.pkg.dev/downscalecmip6/private/dodola:0.10.0
         command: [ dodola ]
         args:
           - "apply-qplad"
@@ -515,7 +515,7 @@ spec:
           - name: out-zarr
             value: "{{ inputs.parameters.out-zarr }}"
       container:
-        image: us-central1-docker.pkg.dev/downscalecmip6/private/dodola:0.9.0
+        image: us-central1-docker.pkg.dev/downscalecmip6/private/dodola:0.10.0
         command: [ dodola ]
         args:
           - "prime-qplad-output-zarrstore"

@@ -51,14 +51,57 @@ spec:
       inputs:
         parameters:
           - name: jobs
+          - name: overwrite
+            value: "false"
       steps:
         - - name: divide
+            template: variable-id-switch
+            arguments:
+              parameters:
+                - name: job
+                  value: "{{ item }}"
+                - name: overwrite
+                  value: "{{ inputs.parameters.overwrite }}"
+            withParam: "{{ inputs.parameters.jobs }}"
+
+    - name: variable-id-switch
+      inputs:
+        parameters:
+          - name: job
+          - name: overwrite
+            value: "false"
+          - name: variable-id
+            value: "{{=jsonpath(inputs.parameters.job, '$.variable_id') }}"
+      steps:
+        - - name: with-simple-specification
             template: with-specification
             arguments:
               parameters:
                 - name: simulations
-                  value: "[{{ item.ssp }}, {{ item.historical }}]"
-            withParam: "{{ inputs.parameters.jobs }}"
+                  value: >-
+                    {{=toJson([
+                        jsonpath(inputs.parameters.job, '$.ssp'),
+                        jsonpath(inputs.parameters.job, '$.historical')
+                    ])}}
+                - name: overwrite
+                  value: "{{ inputs.parameters.overwrite }}"
+            when: "{{ inputs.parameters.variable-id }} != 'dtr'"
+          - name: with-dtr-specification
+            template: with-specification
+            arguments:
+              parameters:
+                - name: simulations
+                  # Pool together all input CMIP6 tasmin and tasmax specs, historical and SSPs.
+                  value: >-
+                    {{=toJson([
+                        jsonpath(inputs.parameters.job, '$.tasmin.historical'),
+                        jsonpath(inputs.parameters.job, '$.tasmin.ssp'),
+                        jsonpath(inputs.parameters.job, '$.tasmax.historical'),
+                        jsonpath(inputs.parameters.job, '$.tasmax.ssp')
+                    ])}}
+                - name: overwrite
+                  value: "{{ inputs.parameters.overwrite }}"
+            when: "{{ inputs.parameters.variable-id }} == 'dtr'"
 
 
       # Break each specification into its components.
@@ -66,6 +109,7 @@ spec:
       inputs:
         parameters:
           - name: simulations
+          - name: overwrite
       steps:
         - - name: process
             template: download-cmip6
@@ -89,6 +133,8 @@ spec:
                   value: "{{item.grid_label}}"
                 - name: version
                   value: "{{item.version}}"
+                - name: overwrite
+                  value: "{{ inputs.parameters.overwrite }}"
             withParam: "{{ inputs.parameters.simulations }}"
 
 
@@ -104,6 +150,7 @@ spec:
           - name: member-id
           - name: grid-label
           - name: version
+          - name: overwrite
       outputs:
         parameters:
           - name: out-zarr
@@ -160,6 +207,8 @@ spec:
                   value: "{{inputs.parameters.version}}"
                 - name: out-url
                   value: "{{ steps.get-destination-url.outputs.parameters.out-url }}"
+                - name: overwrite
+                  value: "{{ inputs.parameters.overwrite }}"
 
 
     - name: download-gcm
@@ -176,7 +225,6 @@ spec:
           - name: version
           - name: out-url
           - name: overwrite
-            value: "{{workflow.parameters.overwrite}}"
       outputs:
         parameters:
           - name: out-zarr
@@ -212,10 +260,14 @@ spec:
           import zarr
 
           outpath = os.environ.get("OUTPATH")
-          overwrite = "{{ inputs.parameters.overwrite }}".lower() == "true"
+
+          overwrite_arg = "{{ inputs.parameters.overwrite }}".lower()
+          if overwrite_arg not in ["true", "false"]:
+              raise ValueError(f"Argument for `overwrite` must be 'true' or 'false', got {overwrite_arg}")
+          overwrite = overwrite_arg == "true"
 
           print("Searching catalog")
-          col = intake.open_esm_datastore("https://storage.googleapis.com/cmip6/pangeo-cmip6.json")
+          col = intake.open_esm_datastore("https://storage.googleapis.com/cmip6/pangeo-cmip6-noQC.json")
           cat = col.search(
               activity_id=os.environ.get("ACTIVITY_ID"),
               experiment_id=os.environ.get("EXPERIMENT_ID"),

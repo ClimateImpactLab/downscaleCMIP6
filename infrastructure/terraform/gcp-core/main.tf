@@ -118,7 +118,22 @@ resource "google_storage_bucket_iam_member" "argoworker_buckets_iammember" {
   member = "serviceAccount:${google_service_account.workflows_default.email}"
   role   = "roles/storage.admin"
 }
-
+resource "google_storage_bucket_iam_member" "argoworker_buckets_viewer_iammember" {
+  for_each = toset(
+    [
+      module.datalake_storage.raw_bucket_name,
+      module.datalake_storage.clean_bucket_name,
+      module.datalake_storage.biascorrected_bucket_name,
+      module.datalake_storage.downscaled_bucket_name,
+      module.datalake_storage.qualitycontrol_bucket_name,
+      module.datalake_storage.scratch_bucket_name,
+      module.datalake_storage.support_bucket_name
+    ]
+  )
+  bucket = each.key
+  member = "serviceAccount:${google_service_account.workflows_default.email}"
+  role   = "roles/storage.objectViewer"
+}
 
 # Service account for Argo Workflows server on Kubernetes.
 # We need this so argo-server can read log from bucket storage.

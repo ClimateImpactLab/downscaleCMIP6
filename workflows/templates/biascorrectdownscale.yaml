@@ -47,6 +47,8 @@ spec:
         value: "false"
       - name: qdm-kind
         value: "additive"
+      - name: apply-dtr-minimum-threshold
+        value: "false"
   templates:
 
 
@@ -58,24 +60,104 @@ spec:
           - name: regrid-method
           - name: correct-wetday-frequency  # "true" or "false" STRING!
           - name: qdm-kind  # additive or multiplicative
+          - name: apply-dtr-minimum-threshold
       steps:
-        - - name: parameterize
-            template: parameterize
+        - - name: variable-id-switch
+            template: variable-id-switch
             arguments:
               parameters:
-                - name: target
-                  value: "{{ item.target }}"
-                - name: historical
-                  value: "{{ item.historical }}"
-                - name: ssp
-                  value: "{{ item.ssp }}"
+                - name: job
+                  value: "{{ item }}"
                 - name: regrid-method
                   value: "{{ inputs.parameters.regrid-method }}"
                 - name: correct-wetday-frequency
                   value: "{{ inputs.parameters.correct-wetday-frequency }}"
+                - name: apply-dtr-minimum-threshold
+                  value: "{{ inputs.parameters.apply-dtr-minimum-threshold }}"
                 - name: qdm-kind
                   value: "{{ inputs.parameters.qdm-kind }}"
             withParam: "{{ inputs.parameters.jobs }}"
+
+    # We need different behavior for different variable_ids...
+    - name: variable-id-switch
+      inputs:
+        parameters:
+          - name: job
+          - name: regrid-method
+          - name: correct-wetday-frequency
+          - name: apply-dtr-minimum-threshold
+          - name: qdm-kind
+          - name: variable-id
+            value: "{{=jsonpath(inputs.parameters.job, '$.variable_id') }}"
+      steps:
+        - - name: parameterize-simple-job
+            template: parameterize
+            arguments:
+              parameters:
+                - name: target
+                  value: "{{=jsonpath(inputs.parameters.job, '$.target')}}"
+                - name: historical
+                  value: "{{=toJson(jsonpath(inputs.parameters.job, '$.historical'))}}"
+                - name: ssp
+                  value: "{{=toJson(jsonpath(inputs.parameters.job, '$.ssp'))}}"
+                - name: regrid-method
+                  value: "{{ inputs.parameters.regrid-method }}"
+                - name: correct-wetday-frequency
+                  value: "{{ inputs.parameters.correct-wetday-frequency }}"
+                - name: apply-dtr-minimum-threshold
+                  value: "{{ inputs.parameters.apply-dtr-minimum-threshold }}"
+                - name: qdm-kind
+                  value: "{{ inputs.parameters.qdm-kind }}"
+            when: "{{ inputs.parameters.variable-id }} != 'dtr'"
+
+            # DTR has specs for tasmax and tasmin. dtr is cleaned and stored
+            # using metadata from its tasmin CMIP6 input. Use tasmin specs but
+            # switch variable_id to "dtr".
+          - name: parameterize-dtr-job
+            template: parameterize
+            arguments:
+              parameters:
+                - name: target
+                  value: "{{=jsonpath(inputs.parameters.job, '$.target')}}"
+                - name: historical
+                  value: >-
+                    {{=toJson(
+                      {
+                        "variable_id": "dtr",
+                        "activity_id": jsonpath(inputs.parameters.job, '$.tasmin.historical.activity_id'),
+                        "experiment_id": jsonpath(inputs.parameters.job, '$.tasmin.historical.experiment_id'),
+                        "table_id": jsonpath(inputs.parameters.job, '$.tasmin.historical.table_id'),
+                        "source_id": jsonpath(inputs.parameters.job, '$.tasmin.historical.source_id'),
+                        "institution_id": jsonpath(inputs.parameters.job, '$.tasmin.historical.institution_id'),
+                        "member_id": jsonpath(inputs.parameters.job, '$.tasmin.historical.member_id'),
+                        "grid_label": jsonpath(inputs.parameters.job, '$.tasmin.historical.grid_label'),
+                        "version": jsonpath(inputs.parameters.job, '$.tasmin.historical.version')
+                      }
+                    )}}
+                - name: ssp
+                  value: >-
+                    {{=toJson(
+                      {
+                        "variable_id": "dtr",
+                        "activity_id": jsonpath(inputs.parameters.job, '$.tasmin.ssp.activity_id'),
+                        "experiment_id": jsonpath(inputs.parameters.job, '$.tasmin.ssp.experiment_id'),
+                        "table_id": jsonpath(inputs.parameters.job, '$.tasmin.ssp.table_id'),
+                        "source_id": jsonpath(inputs.parameters.job, '$.tasmin.ssp.source_id'),
+                        "institution_id": jsonpath(inputs.parameters.job, '$.tasmin.ssp.institution_id'),
+                        "member_id": jsonpath(inputs.parameters.job, '$.tasmin.ssp.member_id'),
+                        "grid_label": jsonpath(inputs.parameters.job, '$.tasmin.ssp.grid_label'),
+                        "version": jsonpath(inputs.parameters.job, '$.tasmin.ssp.version')
+                      }
+                    )}}
+                - name: regrid-method
+                  value: "{{ inputs.parameters.regrid-method }}"
+                - name: correct-wetday-frequency
+                  value: "{{ inputs.parameters.correct-wetday-frequency }}"
+                - name: apply-dtr-minimum-threshold
+                  value: "{{ inputs.parameters.apply-dtr-minimum-threshold }}"
+                - name: qdm-kind
+                  value: "{{ inputs.parameters.qdm-kind }}"
+            when: "{{ inputs.parameters.variable-id }} == 'dtr'"
 
 
       # Start work for target simulation, with target-specific configs.
@@ -88,6 +170,7 @@ spec:
           - name: regrid-method
           - name: qdm-kind
           - name: correct-wetday-frequency
+          - name: apply-dtr-minimum-threshold
           - name: domainfile1x1
             value: "gs://support-c23ff1a3/domain.1x1.zarr"
           - name: domainfile0p25x0p25
@@ -107,10 +190,10 @@ spec:
                   value: "{{ inputs.parameters.qdm-kind }}"
                 - name: correct-wetday-frequency
                   value: "{{ inputs.parameters.correct-wetday-frequency }}"
+                - name: apply-dtr-minimum-threshold
+                  value: "{{ inputs.parameters.apply-dtr-minimum-threshold }}"
                 - name: first-year
                   value: 1950
-                - name: last-year
-                  value: 2014
                 - name: domainfile1x1
                   value: "{{ inputs.parameters.domainfile1x1 }}"
                 - name: domainfile0p25x0p25
@@ -130,10 +213,10 @@ spec:
                   value: "{{ inputs.parameters.qdm-kind }}"
                 - name: correct-wetday-frequency
                   value: "{{ inputs.parameters.correct-wetday-frequency }}"
+                - name: apply-dtr-minimum-threshold
+                  value: "{{ inputs.parameters.apply-dtr-minimum-threshold }}"                
                 - name: first-year
                   value: 2015
-                - name: last-year
-                  value: 2100
                 - name: domainfile1x1
                   value: "{{ inputs.parameters.domainfile1x1 }}"
                 - name: domainfile0p25x0p25
@@ -149,8 +232,8 @@ spec:
           - name: regrid-method
           - name: qdm-kind
           - name: correct-wetday-frequency
+          - name: apply-dtr-minimum-threshold
           - name: first-year
-          - name: last-year
           - name: domainfile1x1
           - name: domainfile0p25x0p25
           - name: reference-zarr
@@ -263,11 +346,21 @@ spec:
                   value: "{{workflow.creationTimestamp.Y}}{{workflow.creationTimestamp.m}}{{workflow.creationTimestamp.d}}{{workflow.creationTimestamp.H}}{{workflow.creationTimestamp.M}}{{workflow.creationTimestamp.S}}"
                 - name: base-url
                   value: "gs://downscaled-288ec5ac/stage"
+          - name: get-biascorrected-last-year
+            template: get-biascorrected-last-year
+            depends: get-input-clean-simulation-url
+            arguments:
+              parameters:
+                - name: in-zarr
+                  value: "{{ tasks.get-input-clean-simulation-url.outputs.parameters.out-url }}"
           - name: biascorrect
             templateRef:
               name: qdm
               template: main
-            depends: "get-input-clean-simulation-url && get-input-clean-training-url"
+            depends: >-
+              get-input-clean-simulation-url
+              && get-input-clean-training-url
+              && get-biascorrected-last-year
             arguments:
               parameters:
                 - name: variable-id
@@ -286,12 +379,14 @@ spec:
                   value: "{{ inputs.parameters.domainfile1x1 }}"
                 - name: correct-wetday-frequency
                   value: "{{ inputs.parameters.correct-wetday-frequency }}"
+                - name: apply-dtr-minimum-threshold
+                  value: "{{ inputs.parameters.apply-dtr-minimum-threshold }}"                
                 - name: qdm-kind
                   value: "{{ inputs.parameters.qdm-kind }}"
                 - name: first-year
                   value: "{{ inputs.parameters.first-year }}"
                 - name: last-year
-                  value: "{{ inputs.parameters.last-year }}"
+                  value: "{{ tasks.get-biascorrected-last-year.outputs.parameters.last-year }}"
           - name: rechunk-biascorrected
             depends: "get-output-biascorrected-url && biascorrect"
             templateRef:
@@ -355,7 +450,7 @@ spec:
             templateRef:
               name: qplad
               template: preprocess-biascorrected
-            depends: rechunk-biascorrected
+            depends: rechunk-biascorrected && validate-biascorrected
             arguments:
               parameters:
                 - name: in-zarr
@@ -403,3 +498,61 @@ spec:
                 - name: time
                   value: >-
                     {{=jsonpath(inputs.parameters.simulation, '$.experiment_id') == 'historical' ? 'historical' : 'future'}}
+
+
+      # This template helps to dynamically find the last year for bias-corrected 
+      # output based on the years available in the input simulation.
+      # Different experiments have different end dates and we don't want to
+      # make up data where it didn't already exist.
+    - name: get-biascorrected-last-year
+      inputs:
+        parameters:
+          - name: in-zarr
+          - name: time-variable-name
+            value: "time"
+      outputs:
+        parameters:
+          - name: last-year
+            valueFrom:
+              path: "/tmp/lastyear.txt"
+      script:
+        image: us-central1-docker.pkg.dev/downscalecmip6/private/dodola:0.10.0
+        command: [ python ]
+        source: |
+          import dodola.repository
+
+          input_zarr = "{{ inputs.parameters.in-zarr }}"
+          time_variable = "{{ inputs.parameters.time-variable-name }}"
+
+          print(f"Reading {input_zarr}")
+          ds = dodola.repository.read(input_zarr)
+
+          # Getting the full date is useful for debugging.
+          max_date = ds[time_variable].max().item()
+          print(f"Found {max_date=}")
+
+          max_year = max_date.year
+          out_lastyear = 2014   # For historical simulations.
+          # For ssp* experiment simulations:
+          if max_year == 2099:
+              out_lastyear = 2099
+          elif max_year >= 2100:
+              out_lastyear = 2100
+
+          print(f"Using {out_lastyear=}")
+          with open("/tmp/lastyear.txt", mode="w") as fl:
+              fl.write(str(out_lastyear))
+        resources:
+          requests:
+            memory: 1Gi
+            cpu: "100m"
+          limits:
+            memory: 2Gi
+            cpu: "1000m"
+      activeDeadlineSeconds: 900
+      retryStrategy:
+        limit: 4
+        retryPolicy: "Always"
+        backoff:
+          duration: 30s
+          factor: 2

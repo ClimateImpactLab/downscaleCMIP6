@@ -40,9 +40,12 @@ spec:
           - name: data
           - name: time
       script:
-        image: us-central1-docker.pkg.dev/downscalecmip6/private/dodola:0.8.0
+        image: us-central1-docker.pkg.dev/downscalecmip6/private/dodola:dev
         command: [python]
         source: |
+          # Running this as a script rather than a dodola command as workaround to 
+          # https://github.com/ClimateImpactLab/dodola/issues/126
+          
           import dask
           import numpy as np
           from dodola.core import (_test_for_nans, _test_variable_names, _test_timesteps, _test_temp_range, _test_dtr_range, _test_negative_values, _test_maximum_precip)
@@ -73,7 +76,7 @@ spec:
               if v == "tasmin" or v == "tasmax":
                   _test_temp_range(d, v)
               if v == "dtr":
-                  _test_dtr_range(d, v)
+                  _test_dtr_range(d, v, data_type)
               if v == "dtr" or v == "pr":
                  _test_negative_values(d, v)
               if v == "pr":
@@ -97,3 +100,9 @@ spec:
             memory: 8Gi
             cpu: "2000m"
       activeDeadlineSeconds: 3600
+      retryStrategy:
+        limit: 4
+        retryPolicy: "Always"
+        backoff:
+          duration: 5s
+          factor: 2

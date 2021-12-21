@@ -50,18 +50,45 @@ spec:
         parameters:
           - name: jobs
       steps:
-        - - name: process-job
+        - - name: variable-id-switch
+            template: variable-id-switch
+            arguments:
+              parameters:
+                - name: job
+                  value: "{{ item }}"
+            withParam: "{{ inputs.parameters.jobs }}"
+
+
+    - name: variable-id-switch
+      inputs:
+        parameters:
+          - name: job
+          - name: variable-id
+            value: "{{=jsonpath(inputs.parameters.job, '$.variable_id') }}"
+      steps:
+        - - name: process-simple-job
             template: process-job
             arguments:
               parameters:
                 - name: target
-                  value: "{{ item.target }}"
+                  value: "{{=jsonpath(inputs.parameters.job, '$.target')}}"
                 - name: historical
-                  value: "{{ item.historical }}"
+                  value:  "{{=toJson(jsonpath(inputs.parameters.job, '$.historical'))}}"
                 - name: ssp
-                  value: "{{ item.ssp }}"
-            withParam: "{{ inputs.parameters.jobs }}"
-
+                  value:  "{{=toJson(jsonpath(inputs.parameters.job, '$.ssp'))}}"
+            when: "{{ inputs.parameters.variable-id }} != 'dtr'"
+          - name: process-dtr-dependencies
+            template: with-jobs
+            arguments:
+              parameters:
+                - name: jobs
+                  # Run the list CMIP6 tasmin and tasmax inputs we need to compute DTR.
+                  value: >-
+                    {{=toJson([
+                        jsonpath(inputs.parameters.job, '$.tasmin'),
+                        jsonpath(inputs.parameters.job, '$.tasmax')
+                    ])}}
+            when: "{{ inputs.parameters.variable-id }} == 'dtr'"
 
       # Do common tasks for cleaning/standardizing the job data, then break
       # into target-specific tasks.
@@ -161,6 +188,16 @@ spec:
                   value: "1950"
                 - name: to-time
                   value: "2014"
+          - name: crop-ssp-time
+            template: timeslicezarr
+            arguments:
+              parameters:
+                - name: in-zarr
+                  value: "{{ steps.get-input-raw-ssp-url.outputs.parameters.out-url }}"
+                - name: from-time
+                  value: "2015"
+                - name: to-time
+                  value: "2110"
         - - name: standardize-historical-run
             template: standardize-cmip6
             arguments:
@@ -172,7 +209,7 @@ spec:
             arguments:
               parameters:
                 - name: in-zarr
-                  value: "{{ steps.get-input-raw-ssp-url.outputs.parameters.out-url }}"
+                  value: "{{ steps.crop-ssp-time.outputs.parameters.out-zarr }}"
         - - name: slice-training
             template: timeslicezarr
             arguments:

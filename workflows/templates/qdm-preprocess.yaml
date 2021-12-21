@@ -1,0 +1,300 @@
+apiVersion: argoproj.io/v1alpha1
+kind: WorkflowTemplate
+metadata:
+  name: qdm-preprocess
+  annotations:
+    workflows.argoproj.io/description: >-
+      Preprocessing steps before Quantile Delta Mapping bias correction for reanalysis and CMIP6 GCM Zarr Stores.
+
+      This workflow applies wet-day-frequency correction, a minimum threshold for small variable values, and regrids
+      cleaned CMIP6 and ERA-5 renalsysis data to a standard grid. The output also chunked to be contiguous across the
+      "time" dimension in preparation for bias-correction via Quantile Delta Mapping (QDM).
+    workflows.argoproj.io/tags: zarr,biascorrect,cmip6,qdm,dc6,preprocess,regrid,rechunk
+    workflows.argoproj.io/version: '>= 3.1.0'
+  labels:
+    component: biascorrect
+spec:
+  entrypoint: preprocess
+  arguments:
+    parameters:
+      - name: in-zarr
+        value: "gs://clean-b1dbca25/cmip6/ScenarioMIP/NOAA-GFDL/GFDL-ESM4/ssp370/r1i1p1f1/day/tasmax/gr1/v20180701.zarr"
+      - name: regrid-method
+        value: "bilinear"
+      - name: domain-file
+        value: "gs://support-c23ff1a3/domain.1x1.zarr"
+      - name: correct-wetday-frequency
+        value: "false"
+      - name: apply-dtr-minimum-threshold
+        value: "false"
+  templates:
+
+
+    - name: preprocess
+      inputs:
+        parameters:
+          - name: in-zarr
+          - name: regrid-method
+          - name: domain-file
+          - name: correct-wetday-frequency
+            value: "false"
+          - name: apply-dtr-minimum-threshold
+            value: "false"
+          - name: add-cyclic
+            value: "{{=inputs.parameters['regrid-method'] == 'bilinear' ? 'lon' : 'false'}}"
+      outputs:
+        parameters:
+          - name: out-zarr
+            valueFrom:
+              # Last rechunked is final output unless applied DTR minimum threshold...
+              expression: "inputs.parameters['apply-dtr-minimum-threshold'] == 'true' ? tasks['apply-minimum-threshold'].outputs.parameters['out-zarr'] : tasks['move-chunks-to-space'].outputs.parameters['out-zarr']"
+      dag:
+        tasks:
+          - name: check-to-correct-wetday-frequency
+            template: check-to-correct-wetday-frequency
+            arguments:
+              parameters:
+                - name: in-zarr
+                  value: "{{ inputs.parameters.in-zarr }}"
+                - name: correct-wetday-frequency
+                  value: "{{ inputs.parameters.correct-wetday-frequency }}"
+          - name: check-to-add-cyclic-pixels
+            depends: check-to-correct-wetday-frequency
+            template: check-to-add-cyclic-pixels
+            arguments:
+              parameters:
+                - name: in-zarr
+                  value: "{{ tasks.check-to-correct-wetday-frequency.outputs.parameters.out-zarr }}"
+                - name: add-cyclic
+                  value: "{{ inputs.parameters.add-cyclic }}"
+          - name: move-chunks-to-time
+            depends: check-to-add-cyclic-pixels
+            templateRef:
+              name: rechunk
+              template: rechunk
+            arguments:
+              parameters:
+                - name: in-zarr
+                  value: "{{ tasks.check-to-add-cyclic-pixels.outputs.parameters.out-zarr }}"
+                - name: time-chunk
+                  value: "365"
+                - name: lat-chunk
+                  value: -1
+                - name: lon-chunk
+                  value: -1
+          - name: regrid
+            depends: move-chunks-to-time
+            templateRef:
+              name: regrid
+              template: regrid
+            arguments:
+              parameters:
+                - name: in-zarr
+                  value: "{{ tasks.move-chunks-to-time.outputs.parameters.out-zarr }}"
+                - name: regrid-method
+                  value: "{{ inputs.parameters.regrid-method }}"
+                - name: domain-file
+                  value: "{{ inputs.parameters.domain-file }}"
+          - name: move-chunks-to-space
+            depends: regrid
+            templateRef:
+              name: rechunk
+              template: rechunk
+            arguments:
+              parameters:
+                - name: in-zarr
+                  value: "{{ tasks.regrid.outputs.parameters.out-zarr }}"
+                - name: time-chunk
+                  value: -1
+                - name: lat-chunk
+                  value: 10
+                - name: lon-chunk
+                  value: 10
+          - name: apply-minimum-threshold
+            depends: move-chunks-to-space
+            template: apply-minimum-threshold
+            arguments:
+              parameters:
+                - name: in-zarr
+                  value: "{{ tasks.move-chunks-to-space.outputs.parameters.out-zarr }}"
+            when: "{{inputs.parameters.apply-dtr-minimum-threshold}} == true"
+
+
+    - name: check-to-correct-wetday-frequency
+      inputs:
+        parameters:
+          - name: in-zarr
+          - name: correct-wetday-frequency
+            value: "false"
+      dag:
+        tasks:
+          - name: correct-wetday-frequency
+            template: correct-wetday-frequency
+            arguments:
+              parameters:
+                - name: in-zarr
+                  value: "{{ inputs.parameters.in-zarr }}"
+            when: "{{inputs.parameters.correct-wetday-frequency}} == true"
+      outputs:
+        parameters:
+          - name: out-zarr
+            valueFrom:
+              expression: "inputs.parameters['correct-wetday-frequency'] == 'true' ? tasks['correct-wetday-frequency'].outputs.parameters['out-zarr'] : inputs.parameters['in-zarr']"
+
+
+      # Wet-day freqency correction for downscaling precipitation
+    - name: correct-wetday-frequency
+      inputs:
+        parameters:
+          - name: in-zarr
+          - name: out-zarr
+            value: "gs://scratch-170cd6ec/{{ workflow.uid }}/{{ pod.name }}/wdf-corrected.zarr"
+      outputs:
+        parameters:
+          - name: out-zarr
+            value: "{{ inputs.parameters.out-zarr }}"
+      script:
+        image: us-central1-docker.pkg.dev/downscalecmip6/private/dodola:dev
+        command: [ python ]
+        source: |
+          import logging
+          import dodola.services
+
+          logging.basicConfig(level=logging.INFO)
+          logger = logging.getLogger(__name__)
+
+          input_zarr = "{{ inputs.parameters.in-zarr }}"
+
+          dodola.services.correct_wet_day_frequency(
+              "{{ inputs.parameters.in-zarr }}",
+              process="pre",
+              out="{{ inputs.parameters.out-zarr }}"
+          )
+        resources:
+          requests:
+            memory: 16Gi
+            cpu: "1000m"
+          limits:
+            memory: 18Gi
+            cpu: "2000m"
+      activeDeadlineSeconds: 1200
+      retryStrategy:
+        limit: 4
+        retryPolicy: "Always"
+        backoff:
+          duration: 30s
+          factor: 2
+
+
+    - name: check-to-add-cyclic-pixels
+      inputs:
+        parameters:
+          - name: in-zarr
+          - name: add-cyclic
+            value: "false"
+      dag:
+        tasks:
+          - name: add-cyclic
+            template: add-cyclic
+            arguments:
+              parameters:
+                - name: in-zarr
+                  value: "{{ inputs.parameters.in-zarr }}"
+                - name: add-cyclic
+                  value: "{{ inputs.parameters.add-cyclic }}"
+            when: "{{inputs.parameters.add-cyclic}} != false"
+      outputs:
+        parameters:
+          - name: out-zarr
+            valueFrom:
+              expression: "inputs.parameters['add-cyclic'] != 'false' ? tasks['add-cyclic'].outputs.parameters['out-zarr'] : inputs.parameters['in-zarr']"
+
+
+      # Prevents weird artifacts in datasets near international dateline with 
+      # bilinear regridding.
+    - name: add-cyclic
+      inputs:
+        parameters:
+          - name: in-zarr
+          - name: out-zarr
+            value: "gs://scratch-170cd6ec/{{ workflow.uid }}/{{ pod.name }}/cyclic-added.zarr"
+          - name: add-cyclic
+            value: "lon"
+      outputs:
+        parameters:
+          - name: out-zarr
+            value: "{{ inputs.parameters.out-zarr }}"
+      script:
+        image: us-central1-docker.pkg.dev/downscalecmip6/private/dodola:0.12.0
+        command: [ python ]
+        source: |
+          import logging
+          import dodola.repository as storage
+          from dodola.core import _add_cyclic
+
+          logging.basicConfig(level=logging.INFO)
+          logger = logging.getLogger(__name__)
+          
+          logger.info("Adding cyclic wraparound pixels")
+          storage.write(
+              "{{ inputs.parameters.out-zarr }}",
+              _add_cyclic(
+                  storage.read("{{ inputs.parameters.in-zarr }}"), 
+                  dim="{{ inputs.parameters.add-cyclic }}".lower()
+              )
+          )
+        resources:
+          requests:
+            memory: 16Gi
+            cpu: "1000m"
+          limits:
+            memory: 18Gi
+            cpu: "2000m"
+      activeDeadlineSeconds: 1200
+      retryStrategy:
+        limit: 4
+        retryPolicy: "Always"
+        backoff:
+          duration: 30s
+          factor: 2
+
+
+      # Used to correct extremely small DTR values.
+    - name: apply-minimum-threshold
+      inputs:
+        parameters:
+          - name: in-zarr
+          - name: out-zarr
+            value: "gs://scratch-170cd6ec/{{ workflow.uid }}/{{ pod.name }}/thresholded.zarr"
+      outputs:
+        parameters:
+          - name: out-zarr
+            value: "{{ inputs.parameters.out-zarr }}"
+      script:
+        image: us-central1-docker.pkg.dev/downscalecmip6/private/dodola:0.12.0
+        command: [ python ]
+        source: |
+          import logging
+          import dodola.services
+
+          logging.basicConfig(level=logging.INFO)
+          logger = logging.getLogger(__name__)
+
+          dodola.services.correct_small_dtr(
+              "{{ inputs.parameters.in-zarr }}", 
+              "{{ inputs.parameters.out-zarr }}"
+          )
+        resources:
+          requests:
+            memory: 16Gi
+            cpu: "1000m"
+          limits:
+            memory: 18Gi
+            cpu: "2000m"
+      activeDeadlineSeconds: 1200
+      retryStrategy:
+        limit: 4
+        retryPolicy: "Always"
+        backoff:
+          duration: 30s
+          factor: 2
