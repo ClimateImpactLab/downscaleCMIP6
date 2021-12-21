@@ -29,6 +29,8 @@ spec:
         value: "gs://support-c23ff1a3/domain.1x1.zarr"
       - name: domainfile0p25x0p25
         value: "gs://support-c23ff1a3/domain.0p25x0p25.zarr"
+      - name: correct-wetday-frequency
+        value: "false"
   templates:
 
     - name: main
@@ -42,6 +44,7 @@ spec:
           - name: qdm-kind
           - name: domainfile1x1
           - name: domainfile0p25x0p25
+          - name: correct-wetday-frequency
       outputs:
         parameters:
           - name: out-zarr
