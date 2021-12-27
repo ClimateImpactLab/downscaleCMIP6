@@ -1,10 +1,13 @@
 apiVersion: argoproj.io/v1alpha1
-kind: Workflow
+kind: WorkflowTemplate
 metadata:
-  generateName: biascorrectdownscale-dev-
+  name: biascorrectdownscale
   labels:
     component: biascorrectdownscale
 spec:
+  workflowMetadata:
+    labels:
+      component: biascorrectdownscale
   entrypoint: with-jobs
   arguments:
     parameters:
@@ -350,8 +353,8 @@ spec:
               parameters:
                 - name: in-zarr
                   value: "{{ tasks.get-input-clean-simulation-url.outputs.parameters.out-url }}"
-          - name: apply-floor-pre-biascorrected
-            template: apply-floor-pre-biascorrected
+          - name: apply-dtr-floor-pre-biascorrected
+            template: apply-dtr-floor-pre-biascorrected
             depends: >-
               get-input-clean-simulation-url
               && get-input-clean-training-url
@@ -366,7 +369,7 @@ spec:
             templateRef:
               name: qdm
               template: main
-            depends: apply-floor-pre-biascorrected
+            depends: apply-dtr-floor-pre-biascorrected
             arguments:
               parameters:
                 - name: variable-id
@@ -374,9 +377,9 @@ spec:
                 - name: reference-zarr
                   value: "{{ inputs.parameters.reference-zarr }}"
                 - name: training-zarr
-                  value: "{{ tasks.apply-floor-pre-biascorrected.outputs.parameters.out-zarr-training }}"
+                  value: "{{ tasks.apply-dtr-floor-pre-biascorrected.outputs.parameters.out-zarr-training }}"
                 - name: simulation-zarr
-                  value: "{{ tasks.apply-floor-pre-biascorrected.outputs.parameters.out-zarr-simulation }}"
+                  value: "{{ tasks.apply-dtr-floor-pre-biascorrected.outputs.parameters.out-zarr-simulation }}"
                 - name: out-zarr
                   value: "gs://scratch-170cd6ec/{{ workflow.uid }}/{{ pod.name }}/qdm-adjusted.zarr"
                 - name: regrid-method
@@ -410,15 +413,24 @@ spec:
                   value: 10
                 - name: lon-chunk
                   value: 180
-          - name: validate-biascorrected
+          - name: apply-non-polar-dtr-ceiling-on-biascorrected
+            template: apply-non-polar-dtr-ceiling
             depends: rechunk-biascorrected
+            arguments:
+              parameters:
+                - name: in-zarr
+                  value: "{{ tasks.rechunk-biascorrected.outputs.parameters.out-zarr }}"
+                - name: out-zarr
+                  value: "{{ tasks.rechunk-biascorrected.outputs.parameters.out-zarr }}" # writing to input file !
+          - name: validate-biascorrected
+            depends: apply-non-polar-dtr-ceiling-on-biascorrected
             templateRef:
               name: qualitycontrol-check-cmip6
               template: qualitycontrol-check-cmip6
             arguments:
               parameters:
                 - name: in-zarr
-                  value: "{{ tasks.rechunk-biascorrected.outputs.parameters.out-zarr }}"
+                  value: "{{ tasks.apply-non-polar-dtr-ceiling-on-biascorrected.outputs.parameters.out-zarr }}"
                 - name: variable
                   value: "{{=jsonpath(inputs.parameters.simulation, '$.variable_id')}}"
                 - name: data
@@ -486,15 +498,24 @@ spec:
                   value: "{{ inputs.parameters.qdm-kind }}"
                 - name: out-zarr
                   value: "{{ tasks.get-output-downscaled-url.outputs.parameters.out-url }}"
-          - name: validate-downscaled
+          - name: apply-non-polar-dtr-ceiling-on-downscaled
+            template: apply-non-polar-dtr-ceiling
             depends: qplad
+            arguments:
+              parameters:
+                - name: in-zarr
+                  value: "{{ tasks.qplad.outputs.parameters.out-zarr }}"
+                - name: out-zarr
+                  value: "{{ tasks.qplad.outputs.parameters.out-zarr }}" # modifies input file !
+          - name: validate-downscaled
+            depends: apply-non-polar-dtr-ceiling-on-downscaled
             templateRef:
               name: qualitycontrol-check-cmip6
               template: qualitycontrol-check-cmip6
             arguments:
               parameters:
                 - name: in-zarr
-                  value: "{{ tasks.qplad.outputs.parameters.out-zarr }}"
+                  value: "{{ tasks.apply-non-polar-dtr-ceiling-on-downscaled.outputs.parameters.out-zarr }}"
                 - name: variable
                   value: "{{=jsonpath(inputs.parameters.simulation, '$.variable_id')}}"
                 - name: data
@@ -561,7 +582,7 @@ spec:
           duration: 30s
           factor: 2
 
-    - name: apply-floor-pre-biascorrected
+    - name: apply-dtr-floor-pre-biascorrected
       inputs:
         parameters:
           - name: in-zarr-training
@@ -604,6 +625,47 @@ spec:
             memory: 18Gi
             cpu: "2000m"
       activeDeadlineSeconds: 2400
+      retryStrategy:
+        limit: 4
+        retryPolicy: "Always"
+        backoff:
+          duration: 30s
+          factor: 2
+
+
+    - name: apply-non-polar-dtr-ceiling
+      inputs:
+        parameters:
+          - name: in-zarr
+          - name: out-zarr
+            value: "gs://scratch-170cd6ec/{{ workflow.uid }}/{{ pod.name }}/with_non_polar_dtr_ceiling.zarr"
+      outputs:
+        parameters:
+          - name: out-zarr
+            value: "{{ inputs.parameters.out-zarr }}"
+      script:
+        image: us-central1-docker.pkg.dev/downscalecmip6/private/dodola:dev
+        command: [ python ]
+        source: |
+          import logging
+          import dodola.services
+
+          logging.basicConfig(level=logging.INFO)
+          logger = logging.getLogger(__name__)
+
+          dodola.services.apply_non_polar_dtr_ceiling(
+              "{{ inputs.parameters.in-zarr }}",
+              "{{ inputs.parameters.out-zarr }}"
+          )
+
+        resources:
+          requests:
+            memory: 16Gi
+            cpu: "1000m"
+          limits:
+            memory: 18Gi
+            cpu: "2000m"
+      activeDeadlineSeconds: 1200
       retryStrategy:
         limit: 4
         retryPolicy: "Always"
