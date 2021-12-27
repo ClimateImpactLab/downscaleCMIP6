@@ -1,13 +1,10 @@
 apiVersion: argoproj.io/v1alpha1
-kind: WorkflowTemplate
+kind: Workflow
 metadata:
-  name: biascorrectdownscale
+  generateName: biascorrectdownscale-dev-
   labels:
     component: biascorrectdownscale
 spec:
-  workflowMetadata:
-    labels:
-      component: biascorrectdownscale
   entrypoint: with-jobs
   arguments:
     parameters:
@@ -214,7 +211,7 @@ spec:
                 - name: correct-wetday-frequency
                   value: "{{ inputs.parameters.correct-wetday-frequency }}"
                 - name: apply-dtr-minimum-threshold
-                  value: "{{ inputs.parameters.apply-dtr-minimum-threshold }}"                
+                  value: "{{ inputs.parameters.apply-dtr-minimum-threshold }}"
                 - name: first-year
                   value: 2015
                 - name: domainfile1x1
@@ -353,14 +350,23 @@ spec:
               parameters:
                 - name: in-zarr
                   value: "{{ tasks.get-input-clean-simulation-url.outputs.parameters.out-url }}"
-          - name: biascorrect
-            templateRef:
-              name: qdm
-              template: main
+          - name: apply-floor-pre-biascorrected
+            template: apply-floor-pre-biascorrected
             depends: >-
               get-input-clean-simulation-url
               && get-input-clean-training-url
               && get-biascorrected-last-year
+            arguments:
+              parameters:
+                - name: in-zarr-training
+                  value: "{{ tasks.get-input-clean-training-url.outputs.parameters.out-url }}"
+                - name: in-zarr-simulation
+                  value: "{{ tasks.get-input-clean-simulation-url.outputs.parameters.out-url }}"
+          - name: biascorrect
+            templateRef:
+              name: qdm
+              template: main
+            depends: apply-floor-pre-biascorrected
             arguments:
               parameters:
                 - name: variable-id
@@ -368,9 +374,9 @@ spec:
                 - name: reference-zarr
                   value: "{{ inputs.parameters.reference-zarr }}"
                 - name: training-zarr
-                  value: "{{ tasks.get-input-clean-training-url.outputs.parameters.out-url }}"
+                  value: "{{ tasks.apply-floor-pre-biascorrected.outputs.parameters.out-zarr-training }}"
                 - name: simulation-zarr
-                  value: "{{ tasks.get-input-clean-simulation-url.outputs.parameters.out-url }}"
+                  value: "{{ tasks.apply-floor-pre-biascorrected.outputs.parameters.out-zarr-simulation }}"
                 - name: out-zarr
                   value: "gs://scratch-170cd6ec/{{ workflow.uid }}/{{ pod.name }}/qdm-adjusted.zarr"
                 - name: regrid-method
@@ -380,7 +386,7 @@ spec:
                 - name: correct-wetday-frequency
                   value: "{{ inputs.parameters.correct-wetday-frequency }}"
                 - name: apply-dtr-minimum-threshold
-                  value: "{{ inputs.parameters.apply-dtr-minimum-threshold }}"                
+                  value: "{{ inputs.parameters.apply-dtr-minimum-threshold }}"
                 - name: qdm-kind
                   value: "{{ inputs.parameters.qdm-kind }}"
                 - name: first-year
@@ -498,7 +504,7 @@ spec:
                     {{=jsonpath(inputs.parameters.simulation, '$.experiment_id') == 'historical' ? 'historical' : 'future'}}
 
 
-      # This template helps to dynamically find the last year for bias-corrected 
+      # This template helps to dynamically find the last year for bias-corrected
       # output based on the years available in the input simulation.
       # Different experiments have different end dates and we don't want to
       # make up data where it didn't already exist.
@@ -548,6 +554,56 @@ spec:
             memory: 2Gi
             cpu: "1000m"
       activeDeadlineSeconds: 900
+      retryStrategy:
+        limit: 4
+        retryPolicy: "Always"
+        backoff:
+          duration: 30s
+          factor: 2
+
+    - name: apply-floor-pre-biascorrected
+      inputs:
+        parameters:
+          - name: in-zarr-training
+          - name: in-zarr-simulation
+          - name: out-zarr-training
+            value: "gs://scratch-170cd6ec/{{ workflow.uid }}/{{ pod.name }}/training-with-floor.zarr"
+          - name: out-zarr-simulation
+            value: "gs://scratch-170cd6ec/{{ workflow.uid }}/{{ pod.name }}/simulation-with-floor.zarr"
+      outputs:
+        parameters:
+          - name: out-zarr-training
+            value: "{{ inputs.parameters.out-zarr-training }}"
+          - name: out-zarr-simulation
+            value: "{{ inputs.parameters.out-zarr-simulation }}"
+      script:
+        image: us-central1-docker.pkg.dev/downscalecmip6/private/dodola:dev
+        command: [ python ]
+        source: |
+          import logging
+          import dodola.services
+
+          logging.basicConfig(level=logging.INFO)
+          logger = logging.getLogger(__name__)
+
+          dodola.services.apply_dtr_floor(
+              "{{ inputs.parameters.in-zarr-training }}",
+              "{{ inputs.parameters.out-zarr-training }}"
+          )
+
+          dodola.services.apply_dtr_floor(
+              "{{ inputs.parameters.in-zarr-simulation }}",
+              "{{ inputs.parameters.out-zarr-simulation }}"
+          )
+
+        resources:
+          requests:
+            memory: 16Gi
+            cpu: "1000m"
+          limits:
+            memory: 18Gi
+            cpu: "2000m"
+      activeDeadlineSeconds: 2400
       retryStrategy:
         limit: 4
         retryPolicy: "Always"
