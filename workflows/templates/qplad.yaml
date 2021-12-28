@@ -29,6 +29,8 @@ spec:
         value: "gs://support-c23ff1a3/domain.1x1.zarr"
       - name: domainfile0p25x0p25
         value: "gs://support-c23ff1a3/domain.0p25x0p25.zarr"
+      - name: correct-wetday-frequency
+        value: "false"
   templates:
 
     - name: main
@@ -42,6 +44,7 @@ spec:
           - name: qdm-kind
           - name: domainfile1x1
           - name: domainfile0p25x0p25
+          - name: correct-wetday-frequency
       outputs:
         parameters:
           - name: out-zarr
@@ -99,6 +102,8 @@ spec:
                   value: "{{ inputs.parameters.qdm-kind }}"
                 - name: out-zarr
                   value: "{{ inputs.parameters.out-zarr }}"
+                - name: correct-wetday-frequency
+                  value: "{{ inputs.parameters.correct-wetday-frequency }}"
 
 
     - name: create-fine-reference
@@ -284,6 +289,7 @@ spec:
           - name: variable-id
           - name: qdm-kind
           - name: out-zarr
+          - name: correct-wetday-frequency
       outputs:
         parameters:
           - name: out-zarr
@@ -329,6 +335,8 @@ spec:
                   value: "{{ inputs.parameters.qdm-kind }}"
                 - name: out-zarr
                   value: "{{ steps.prime-qplad-output-zarr.outputs.parameters.out-zarr }}"
+                - name: correct-wetday-frequency
+                  value: "{{ inputs.parameters.correct-wetday-frequency }}"
                   # Looping over 2 degree latitude bands...
                 - name: lat-slice-min
                   value: "{{=asInt(item) * 2 }}"
@@ -354,6 +362,7 @@ spec:
           - name: lat-slice-min
           - name: lat-slice-max
           - name: out-zarr
+          - name: correct-wetday-frequency
         artifacts:
           - name: global-attrs-json
       steps:
@@ -391,6 +400,8 @@ spec:
                   value: "{{ inputs.parameters.lat-slice-max }}"
                 - name: out-zarr
                   value: "{{ inputs.parameters.out-zarr }}"
+                - name: correct-wetday-frequency
+                  value: "{{ inputs.parameters.correct-wetday-frequency }}"
               artifacts:
                 - name: global-attrs-json
                   from: "{{ inputs.artifacts.global-attrs-json }}"
@@ -453,6 +464,7 @@ spec:
           - name: variable
           - name: lat-slice-min
           - name: lat-slice-max
+          - name: correct-wetday-frequency
           - name: out-zarr
             value: "gs://scratch-170cd6ec/{{ workflow.uid }}/{{ pod.name }}/qplad_adjusted.zarr"
         artifacts:
@@ -470,6 +482,7 @@ spec:
           - "--iselslice=lat={{ inputs.parameters.lat-slice-min }},{{ inputs.parameters.lat-slice-max }}"
           - "--out-zarr-region=lat={{ inputs.parameters.lat-slice-min }},{{ inputs.parameters.lat-slice-max }}"
           - "--root-attrs-json-file=/tmp/global_attrs.json"
+          - "--wet-day-post-correction={{ inputs.parameters.correct-wetday-frequency }}"
         resources:
           requests:
             memory: 38Gi
@@ -502,7 +515,7 @@ spec:
           - name: out-zarr
             value: "{{ inputs.parameters.out-zarr }}"
       container:
-        image: us-central1-docker.pkg.dev/downscalecmip6/private/dodola:0.10.0
+        image: us-central1-docker.pkg.dev/downscalecmip6/private/dodola:0.13.0
         command: [ dodola ]
         args:
           - "prime-qplad-output-zarrstore"
