@@ -595,31 +595,18 @@ spec:
         parameters:
           - name: in-zarr
           - name: out-zarr
-            value: "gs://scratch-170cd6ec/{{ workflow.uid }}/{{ pod.name }}/with-floor.zarr"
+            value: "gs://scratch-170cd6ec/{{ workflow.uid }}/{{ pod.name }}/with-dtr-floor.zarr"
       outputs:
         parameters:
           - name: out-zarr
             value: "{{ inputs.parameters.out-zarr }}"
-      script:
+      container:
         image: us-central1-docker.pkg.dev/downscalecmip6/private/dodola:dev
-        command: [ python ]
-        source: |
-          import logging
-          import dodola.services
-
-          logging.basicConfig(level=logging.INFO)
-          logger = logging.getLogger(__name__)
-
-          dodola.services.apply_dtr_floor(
-              "{{ inputs.parameters.in-zarr-training }}",
-              "{{ inputs.parameters.out-zarr-training }}"
-          )
-
-          dodola.services.apply_dtr_floor(
-              "{{ inputs.parameters.in-zarr-simulation }}",
-              "{{ inputs.parameters.out-zarr-simulation }}"
-          )
-
+        command: [ dodola ]
+        args:
+          - "apply-dtr-floor"
+          - "{{ inputs.parameters.in-zarr }}"
+          - "--out={{ inputs.parameters.out-zarr }}"
         resources:
           requests:
             memory: 16Gi
@@ -627,7 +614,7 @@ spec:
           limits:
             memory: 18Gi
             cpu: "2000m"
-      activeDeadlineSeconds: 2400
+      activeDeadlineSeconds: 1200
       retryStrategy:
         limit: 4
         retryPolicy: "Always"
@@ -635,32 +622,23 @@ spec:
           duration: 30s
           factor: 2
 
-
     - name: apply-non-polar-dtr-ceiling
       inputs:
         parameters:
           - name: in-zarr
           - name: out-zarr
-            value: "gs://scratch-170cd6ec/{{ workflow.uid }}/{{ pod.name }}/with_non_polar_dtr_ceiling.zarr"
+            value: "gs://scratch-170cd6ec/{{ workflow.uid }}/{{ pod.name }}/with-non-polar-dtr-ceiling.zarr"
       outputs:
         parameters:
           - name: out-zarr
             value: "{{ inputs.parameters.out-zarr }}"
-      script:
+      container:
         image: us-central1-docker.pkg.dev/downscalecmip6/private/dodola:dev
-        command: [ python ]
-        source: |
-          import logging
-          import dodola.services
-
-          logging.basicConfig(level=logging.INFO)
-          logger = logging.getLogger(__name__)
-
-          dodola.services.apply_non_polar_dtr_ceiling(
-              "{{ inputs.parameters.in-zarr }}",
-              "{{ inputs.parameters.out-zarr }}"
-          )
-
+        command: [ dodola ]
+        args:
+          - "apply-non-polar-dtr-ceiling"
+          - "{{ inputs.parameters.in-zarr }}"
+          - "--out={{ inputs.parameters.out-zarr }}"
         resources:
           requests:
             memory: 16Gi
