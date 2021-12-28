@@ -376,7 +376,10 @@ spec:
               name: qdm
               template: main
             depends: >-
-              apply-dtr-floor-pre-biascorrected-training
+              get-input-clean-training-url
+              && get-input-clean-simulation-url
+              && get-biascorrected-last-year
+              && apply-dtr-floor-pre-biascorrected-training
               && apply-dtr-floor-pre-biascorrected-simulation
             arguments:
               parameters:
@@ -429,7 +432,7 @@ spec:
                 - name: in-zarr
                   value: "{{ tasks.rechunk-biascorrected.outputs.parameters.out-zarr }}"
                 - name: out-zarr
-                  value: "{{ tasks.rechunk-biascorrected.outputs.parameters.out-zarr }}" # writing to input file !
+                  value: "gs://scratch-170cd6ec/{{ workflow.uid }}/{{ pod.name }}/with-non-polar-dtr-ceiling.zarr"
           - name: validate-biascorrected
             depends: apply-non-polar-dtr-ceiling-on-biascorrected
             templateRef:
@@ -476,11 +479,11 @@ spec:
             templateRef:
               name: qplad
               template: preprocess-biascorrected
-            depends: rechunk-biascorrected && validate-biascorrected
+            depends: apply-non-polar-dtr-ceiling-on-biascorrected && validate-biascorrected
             arguments:
               parameters:
                 - name: in-zarr
-                  value: "{{ tasks.rechunk-biascorrected.outputs.parameters.out-zarr }}"
+                  value: "{{ tasks.apply-non-polar-dtr-ceiling-on-biascorrected.outputs.parameters.out-zarr }}"
                 - name: domain-file
                   value: "{{ inputs.parameters.domainfile0p25x0p25 }}"
           - name: qplad
@@ -514,7 +517,7 @@ spec:
                 - name: in-zarr
                   value: "{{ tasks.qplad.outputs.parameters.out-zarr }}"
                 - name: out-zarr
-                  value: "{{ tasks.qplad.outputs.parameters.out-zarr }}" # modifies input file !
+                  value: "gs://scratch-170cd6ec/{{ workflow.uid }}/{{ pod.name }}/with-non-polar-dtr-ceiling.zarr"
           - name: validate-downscaled
             depends: apply-non-polar-dtr-ceiling-on-downscaled
             templateRef:
