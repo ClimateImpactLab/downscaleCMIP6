@@ -3,6 +3,7 @@ kind: Kustomization
 resources:
   - qplad.yaml
   - biascorrectdownscale.yaml
+  - biascorrectdownscale-precipitation.yaml
   - catalog.yaml
   - clean-cmip6.yaml
   - clean-era5.yaml
