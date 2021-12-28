@@ -385,6 +385,8 @@ spec:
                   value: "{{ inputs.parameters.qdm-kind }}"
                 - name: out-zarr
                   value: "gs://scratch-170cd6ec/{{ workflow.uid }}/{{ pod.name }}/qplad-adjusted.zarr"
+                - name: correct-wetday-frequency
+                  value: "{{ inputs.parameters.correct-wetday-frequency }}"
           - name: cap-max-downscaled-precip
             template: cap-max-precipitation
             depends: qplad && get-output-downscaled-url
