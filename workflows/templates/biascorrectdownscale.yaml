@@ -353,23 +353,31 @@ spec:
               parameters:
                 - name: in-zarr
                   value: "{{ tasks.get-input-clean-simulation-url.outputs.parameters.out-url }}"
-          - name: apply-dtr-floor-pre-biascorrected
-            template: apply-dtr-floor-pre-biascorrected
-            depends: >-
-              get-input-clean-simulation-url
-              && get-input-clean-training-url
-              && get-biascorrected-last-year
+          - name: apply-dtr-floor-pre-biascorrected-training
+            template: apply-dtr-floor
+            depends: get-input-clean-training-url
             arguments:
               parameters:
-                - name: in-zarr-training
+                - name: in-zarr
                   value: "{{ tasks.get-input-clean-training-url.outputs.parameters.out-url }}"
-                - name: in-zarr-simulation
+                - name: out-zarr
+                  value: "gs://scratch-170cd6ec/{{ workflow.uid }}/{{ pod.name }}/with-floor-training.zarr"
+          - name: apply-dtr-floor-pre-biascorrected-simulation
+            template: apply-dtr-floor
+            depends: get-input-clean-simulation-url
+            arguments:
+              parameters:
+                - name: in-zarr
                   value: "{{ tasks.get-input-clean-simulation-url.outputs.parameters.out-url }}"
+                - name: out-zarr
+                  value: "gs://scratch-170cd6ec/{{ workflow.uid }}/{{ pod.name }}/with-floor-simulation.zarr"
           - name: biascorrect
             templateRef:
               name: qdm
               template: main
-            depends: apply-dtr-floor-pre-biascorrected
+            depends: >-
+              apply-dtr-floor-pre-biascorrected-training
+              && apply-dtr-floor-pre-biascorrected-simulation
             arguments:
               parameters:
                 - name: variable-id
@@ -377,9 +385,9 @@ spec:
                 - name: reference-zarr
                   value: "{{ inputs.parameters.reference-zarr }}"
                 - name: training-zarr
-                  value: "{{ tasks.apply-dtr-floor-pre-biascorrected.outputs.parameters.out-zarr-training }}"
+                  value: "{{ tasks.apply-dtr-floor-pre-biascorrected-training.outputs.parameters.out-zarr }}"
                 - name: simulation-zarr
-                  value: "{{ tasks.apply-dtr-floor-pre-biascorrected.outputs.parameters.out-zarr-simulation }}"
+                  value: "{{ tasks.apply-dtr-floor-pre-biascorrected-simulation.outputs.parameters.out-zarr }}"
                 - name: out-zarr
                   value: "gs://scratch-170cd6ec/{{ workflow.uid }}/{{ pod.name }}/qdm-adjusted.zarr"
                 - name: regrid-method
@@ -582,21 +590,16 @@ spec:
           duration: 30s
           factor: 2
 
-    - name: apply-dtr-floor-pre-biascorrected
+    - name: apply-dtr-floor
       inputs:
         parameters:
-          - name: in-zarr-training
-          - name: in-zarr-simulation
-          - name: out-zarr-training
-            value: "gs://scratch-170cd6ec/{{ workflow.uid }}/{{ pod.name }}/training-with-floor.zarr"
-          - name: out-zarr-simulation
-            value: "gs://scratch-170cd6ec/{{ workflow.uid }}/{{ pod.name }}/simulation-with-floor.zarr"
+          - name: in-zarr
+          - name: out-zarr
+            value: "gs://scratch-170cd6ec/{{ workflow.uid }}/{{ pod.name }}/with-floor.zarr"
       outputs:
         parameters:
-          - name: out-zarr-training
-            value: "{{ inputs.parameters.out-zarr-training }}"
-          - name: out-zarr-simulation
-            value: "{{ inputs.parameters.out-zarr-simulation }}"
+          - name: out-zarr
+            value: "{{ inputs.parameters.out-zarr }}"
       script:
         image: us-central1-docker.pkg.dev/downscalecmip6/private/dodola:dev
         command: [ python ]
