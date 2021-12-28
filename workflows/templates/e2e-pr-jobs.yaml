@@ -49,7 +49,7 @@ spec:
                   value: "{{ inputs.parameters.jobs }}"
         - - name: biascorrectdownscale
             templateRef:
-              name: biascorrectdownscale
+              name: biascorrectdownscale-precipitation
               template: with-jobs
             arguments:
               parameters:
