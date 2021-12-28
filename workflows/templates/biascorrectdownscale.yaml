@@ -1,13 +1,13 @@
 apiVersion: argoproj.io/v1alpha1
-kind: WorkflowTemplate
+kind: Workflow
 metadata:
-  name: biascorrectdownscale
+  generateName: biascorrectdownscale-dtr-dev-
   labels:
     component: biascorrectdownscale
 spec:
-  workflowMetadata:
-    labels:
-      component: biascorrectdownscale
+#  workflowMetadata:
+#    labels:
+#      component: biascorrectdownscale
   entrypoint: with-jobs
   arguments:
     parameters:
@@ -46,7 +46,7 @@ spec:
       - name: correct-wetday-frequency
         value: "false"
       - name: qdm-kind
-        value: "additive"
+        value: "multiplicative"
       - name: apply-dtr-minimum-threshold
         value: "false"
   templates:
@@ -607,6 +607,7 @@ spec:
           - "apply-dtr-floor"
           - "{{ inputs.parameters.in-zarr }}"
           - "--out={{ inputs.parameters.out-zarr }}"
+          - "--floor=1.0"
         resources:
           requests:
             memory: 16Gi
@@ -639,6 +640,7 @@ spec:
           - "apply-non-polar-dtr-ceiling"
           - "{{ inputs.parameters.in-zarr }}"
           - "--out={{ inputs.parameters.out-zarr }}"
+          - "--ceiling=70.0"
         resources:
           requests:
             memory: 16Gi
