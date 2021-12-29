@@ -1,13 +1,21 @@
 apiVersion: argoproj.io/v1alpha1
-kind: Workflow
+kind: WorkflowTemplate
 metadata:
-  generateName: biascorrectdownscale-dtr-dev-
+  name: biascorrectdownscale-precipitation
+  annotations:
+    workflows.argoproj.io/description: >-
+      Bias-correction and downscaling CMIP6 GCM output for precipitation.
+      
+      This includes parameters and additional processing step specific the 
+      precipitation workflow.
+    workflows.argoproj.io/tags: biascorrect,downscale,cmip6,aiqpd,dc6,qplad, qdm, pr, precipitation
+    workflows.argoproj.io/version: '>= 3.1.0'
   labels:
     component: biascorrectdownscale
 spec:
-#  workflowMetadata:
-#    labels:
-#      component: biascorrectdownscale
+  workflowMetadata:
+    labels:
+      component: biascorrectdownscale
   entrypoint: with-jobs
   arguments:
     parameters:
@@ -16,39 +24,11 @@ spec:
           [
             {
               "target": "ssp",
-              "variable_id": "tasmax",
-              "historical": {
-                "activity_id": "CMIP",
-                "experiment_id": "historical",
-                "table_id": "day",
-                "variable_id": "tasmax",
-                "source_id": "GFDL-ESM4",
-                "institution_id": "NOAA-GFDL",
-                "member_id": "r1i1p1f1",
-                "grid_label": "gr1",
-                "version": "20190726"
-              },
-              "ssp": {
-                "activity_id": "ScenarioMIP",
-                "experiment_id": "ssp370",
-                "table_id": "day",
-                "variable_id": "tasmax",
-                "source_id": "GFDL-ESM4",
-                "institution_id": "NOAA-GFDL",
-                "member_id": "r1i1p1f1",
-                "grid_label": "gr1",
-                "version": "20180701"
-              }
+              "variable_id": "pr",
+              "historical": { "activity_id": "CMIP", "experiment_id": "historical", "table_id": "day", "variable_id": "pr", "source_id": "EC-Earth3", "institution_id": "EC-Earth-Consortium", "member_id": "r1i1p1f1", "grid_label": "gr", "version": "20200310" },
+              "ssp": { "activity_id": "ScenarioMIP", "experiment_id": "ssp370", "table_id": "day", "variable_id": "pr", "source_id": "EC-Earth3", "institution_id": "EC-Earth-Consortium", "member_id": "r1i1p1f1", "grid_label": "gr", "version": "20200310" }
             }
           ]
-      - name: regrid-method
-        value: "bilinear"
-      - name: correct-wetday-frequency
-        value: "false"
-      - name: qdm-kind
-        value: "multiplicative"
-      - name: apply-dtr-minimum-threshold
-        value: "false"
   templates:
 
 
@@ -58,9 +38,13 @@ spec:
         parameters:
           - name: jobs
           - name: regrid-method
+            value: conservative
           - name: correct-wetday-frequency  # "true" or "false" STRING!
-          - name: qdm-kind  # additive or multiplicative
+            value: "true"
+          - name: qdm-kind
+            value: multiplicative
           - name: apply-dtr-minimum-threshold
+            value: "false"
       steps:
         - - name: variable-id-switch
             template: variable-id-switch
@@ -68,25 +52,14 @@ spec:
               parameters:
                 - name: job
                   value: "{{ item }}"
-                - name: regrid-method
-                  value: "{{ inputs.parameters.regrid-method }}"
-                - name: correct-wetday-frequency
-                  value: "{{ inputs.parameters.correct-wetday-frequency }}"
-                - name: apply-dtr-minimum-threshold
-                  value: "{{ inputs.parameters.apply-dtr-minimum-threshold }}"
-                - name: qdm-kind
-                  value: "{{ inputs.parameters.qdm-kind }}"
             withParam: "{{ inputs.parameters.jobs }}"
 
-    # We need different behavior for different variable_ids...
+
+    # TODO: Don't need this anymore.
     - name: variable-id-switch
       inputs:
         parameters:
           - name: job
-          - name: regrid-method
-          - name: correct-wetday-frequency
-          - name: apply-dtr-minimum-threshold
-          - name: qdm-kind
           - name: variable-id
             value: "{{=jsonpath(inputs.parameters.job, '$.variable_id') }}"
       steps:
@@ -100,64 +73,6 @@ spec:
                   value: "{{=toJson(jsonpath(inputs.parameters.job, '$.historical'))}}"
                 - name: ssp
                   value: "{{=toJson(jsonpath(inputs.parameters.job, '$.ssp'))}}"
-                - name: regrid-method
-                  value: "{{ inputs.parameters.regrid-method }}"
-                - name: correct-wetday-frequency
-                  value: "{{ inputs.parameters.correct-wetday-frequency }}"
-                - name: apply-dtr-minimum-threshold
-                  value: "{{ inputs.parameters.apply-dtr-minimum-threshold }}"
-                - name: qdm-kind
-                  value: "{{ inputs.parameters.qdm-kind }}"
-            when: "{{ inputs.parameters.variable-id }} != 'dtr'"
-
-            # DTR has specs for tasmax and tasmin. dtr is cleaned and stored
-            # using metadata from its tasmin CMIP6 input. Use tasmin specs but
-            # switch variable_id to "dtr".
-          - name: parameterize-dtr-job
-            template: parameterize
-            arguments:
-              parameters:
-                - name: target
-                  value: "{{=jsonpath(inputs.parameters.job, '$.target')}}"
-                - name: historical
-                  value: >-
-                    {{=toJson(
-                      {
-                        "variable_id": "dtr",
-                        "activity_id": jsonpath(inputs.parameters.job, '$.tasmin.historical.activity_id'),
-                        "experiment_id": jsonpath(inputs.parameters.job, '$.tasmin.historical.experiment_id'),
-                        "table_id": jsonpath(inputs.parameters.job, '$.tasmin.historical.table_id'),
-                        "source_id": jsonpath(inputs.parameters.job, '$.tasmin.historical.source_id'),
-                        "institution_id": jsonpath(inputs.parameters.job, '$.tasmin.historical.institution_id'),
-                        "member_id": jsonpath(inputs.parameters.job, '$.tasmin.historical.member_id'),
-                        "grid_label": jsonpath(inputs.parameters.job, '$.tasmin.historical.grid_label'),
-                        "version": jsonpath(inputs.parameters.job, '$.tasmin.historical.version')
-                      }
-                    )}}
-                - name: ssp
-                  value: >-
-                    {{=toJson(
-                      {
-                        "variable_id": "dtr",
-                        "activity_id": jsonpath(inputs.parameters.job, '$.tasmin.ssp.activity_id'),
-                        "experiment_id": jsonpath(inputs.parameters.job, '$.tasmin.ssp.experiment_id'),
-                        "table_id": jsonpath(inputs.parameters.job, '$.tasmin.ssp.table_id'),
-                        "source_id": jsonpath(inputs.parameters.job, '$.tasmin.ssp.source_id'),
-                        "institution_id": jsonpath(inputs.parameters.job, '$.tasmin.ssp.institution_id'),
-                        "member_id": jsonpath(inputs.parameters.job, '$.tasmin.ssp.member_id'),
-                        "grid_label": jsonpath(inputs.parameters.job, '$.tasmin.ssp.grid_label'),
-                        "version": jsonpath(inputs.parameters.job, '$.tasmin.ssp.version')
-                      }
-                    )}}
-                - name: regrid-method
-                  value: "{{ inputs.parameters.regrid-method }}"
-                - name: correct-wetday-frequency
-                  value: "{{ inputs.parameters.correct-wetday-frequency }}"
-                - name: apply-dtr-minimum-threshold
-                  value: "{{ inputs.parameters.apply-dtr-minimum-threshold }}"
-                - name: qdm-kind
-                  value: "{{ inputs.parameters.qdm-kind }}"
-            when: "{{ inputs.parameters.variable-id }} == 'dtr'"
 
 
       # Start work for target simulation, with target-specific configs.
@@ -167,10 +82,6 @@ spec:
           - name: target
           - name: ssp
           - name: historical
-          - name: regrid-method
-          - name: qdm-kind
-          - name: correct-wetday-frequency
-          - name: apply-dtr-minimum-threshold
           - name: domainfile1x1
             value: "gs://support-c23ff1a3/domain.1x1.zarr"
           - name: domainfile0p25x0p25
@@ -184,14 +95,6 @@ spec:
                   value: "{{ inputs.parameters.historical }}"
                 - name: historical
                   value: "{{ inputs.parameters.historical }}"
-                - name: regrid-method
-                  value: "{{ inputs.parameters.regrid-method }}"
-                - name: qdm-kind
-                  value: "{{ inputs.parameters.qdm-kind }}"
-                - name: correct-wetday-frequency
-                  value: "{{ inputs.parameters.correct-wetday-frequency }}"
-                - name: apply-dtr-minimum-threshold
-                  value: "{{ inputs.parameters.apply-dtr-minimum-threshold }}"
                 - name: first-year
                   value: 1950
                 - name: domainfile1x1
@@ -207,14 +110,6 @@ spec:
                   value: "{{ inputs.parameters.ssp }}"
                 - name: historical
                   value: "{{ inputs.parameters.historical }}"
-                - name: regrid-method
-                  value: "{{ inputs.parameters.regrid-method }}"
-                - name: qdm-kind
-                  value: "{{ inputs.parameters.qdm-kind }}"
-                - name: correct-wetday-frequency
-                  value: "{{ inputs.parameters.correct-wetday-frequency }}"
-                - name: apply-dtr-minimum-threshold
-                  value: "{{ inputs.parameters.apply-dtr-minimum-threshold }}"
                 - name: first-year
                   value: 2015
                 - name: domainfile1x1
@@ -230,12 +125,16 @@ spec:
           - name: simulation
           - name: historical
           - name: regrid-method
-          - name: qdm-kind
-          - name: correct-wetday-frequency
-          - name: apply-dtr-minimum-threshold
+            value: conservative
           - name: first-year
           - name: domainfile1x1
           - name: domainfile0p25x0p25
+          - name: qdm-kind
+            value: multiplicative
+          - name: correct-wetday-frequency
+            value: "true"
+          - name: apply-dtr-minimum-threshold
+            value: "false"
           - name: reference-zarr
             # Use simulation variable_id to get reference URL.
             value: >-
@@ -353,34 +252,14 @@ spec:
               parameters:
                 - name: in-zarr
                   value: "{{ tasks.get-input-clean-simulation-url.outputs.parameters.out-url }}"
-          - name: apply-dtr-floor-pre-biascorrected-training
-            template: apply-dtr-floor
-            depends: get-input-clean-training-url
-            arguments:
-              parameters:
-                - name: in-zarr
-                  value: "{{ tasks.get-input-clean-training-url.outputs.parameters.out-url }}"
-                - name: out-zarr
-                  value: "gs://scratch-170cd6ec/{{ workflow.uid }}/{{ pod.name }}/with-floor-training.zarr"
-          - name: apply-dtr-floor-pre-biascorrected-simulation
-            template: apply-dtr-floor
-            depends: get-input-clean-simulation-url
-            arguments:
-              parameters:
-                - name: in-zarr
-                  value: "{{ tasks.get-input-clean-simulation-url.outputs.parameters.out-url }}"
-                - name: out-zarr
-                  value: "gs://scratch-170cd6ec/{{ workflow.uid }}/{{ pod.name }}/with-floor-simulation.zarr"
           - name: biascorrect
             templateRef:
               name: qdm
               template: main
             depends: >-
-              get-input-clean-training-url
-              && get-input-clean-simulation-url
+              get-input-clean-simulation-url
+              && get-input-clean-training-url
               && get-biascorrected-last-year
-              && apply-dtr-floor-pre-biascorrected-training
-              && apply-dtr-floor-pre-biascorrected-simulation
             arguments:
               parameters:
                 - name: variable-id
@@ -388,9 +267,9 @@ spec:
                 - name: reference-zarr
                   value: "{{ inputs.parameters.reference-zarr }}"
                 - name: training-zarr
-                  value: "{{ tasks.apply-dtr-floor-pre-biascorrected-training.outputs.parameters.out-zarr }}"
+                  value: "{{ tasks.get-input-clean-training-url.outputs.parameters.out-url }}"
                 - name: simulation-zarr
-                  value: "{{ tasks.apply-dtr-floor-pre-biascorrected-simulation.outputs.parameters.out-zarr }}"
+                  value: "{{ tasks.get-input-clean-simulation-url.outputs.parameters.out-url }}"
                 - name: out-zarr
                   value: "gs://scratch-170cd6ec/{{ workflow.uid }}/{{ pod.name }}/qdm-adjusted.zarr"
                 - name: regrid-method
@@ -400,7 +279,7 @@ spec:
                 - name: correct-wetday-frequency
                   value: "{{ inputs.parameters.correct-wetday-frequency }}"
                 - name: apply-dtr-minimum-threshold
-                  value: "{{ inputs.parameters.apply-dtr-minimum-threshold }}"
+                  value: "{{ inputs.parameters.apply-dtr-minimum-threshold }}"                
                 - name: qdm-kind
                   value: "{{ inputs.parameters.qdm-kind }}"
                 - name: first-year
@@ -408,7 +287,7 @@ spec:
                 - name: last-year
                   value: "{{ tasks.get-biascorrected-last-year.outputs.parameters.last-year }}"
           - name: rechunk-biascorrected
-            depends: "get-output-biascorrected-url && biascorrect"
+            depends: biascorrect
             templateRef:
               name: rechunk
               template: rechunk
@@ -416,32 +295,30 @@ spec:
               parameters:
                 - name: in-zarr
                   value: "{{ tasks.biascorrect.outputs.parameters.out-zarr }}"
-                - name: out-zarr
-                  value: "{{ tasks.get-output-biascorrected-url.outputs.parameters.out-url }}"
                 - name: time-chunk
                   value: 73
                 - name: lat-chunk
                   value: 10
                 - name: lon-chunk
                   value: 180
-          - name: apply-non-polar-dtr-ceiling-on-biascorrected
-            template: apply-non-polar-dtr-ceiling
-            depends: rechunk-biascorrected
+          - name: cap-max-biascorrected-precip
+            template: cap-max-precipitation
+            depends: rechunk-biascorrected && get-output-biascorrected-url
             arguments:
               parameters:
                 - name: in-zarr
                   value: "{{ tasks.rechunk-biascorrected.outputs.parameters.out-zarr }}"
                 - name: out-zarr
-                  value: "gs://scratch-170cd6ec/{{ workflow.uid }}/{{ pod.name }}/with-non-polar-dtr-ceiling.zarr"
+                  value: "{{ tasks.get-output-biascorrected-url.outputs.parameters.out-url }}"
           - name: validate-biascorrected
-            depends: apply-non-polar-dtr-ceiling-on-biascorrected
+            depends: cap-max-biascorrected-precip
             templateRef:
               name: qualitycontrol-check-cmip6
               template: qualitycontrol-check-cmip6
             arguments:
               parameters:
                 - name: in-zarr
-                  value: "{{ tasks.apply-non-polar-dtr-ceiling-on-biascorrected.outputs.parameters.out-zarr }}"
+                  value: "{{ tasks.cap-max-biascorrected-precip.outputs.parameters.out-zarr }}"
                 - name: variable
                   value: "{{=jsonpath(inputs.parameters.simulation, '$.variable_id')}}"
                 - name: data
@@ -479,17 +356,16 @@ spec:
             templateRef:
               name: qplad
               template: preprocess-biascorrected
-            depends: apply-non-polar-dtr-ceiling-on-biascorrected && validate-biascorrected
+            depends: rechunk-biascorrected && validate-biascorrected
             arguments:
               parameters:
                 - name: in-zarr
-                  value: "{{ tasks.apply-non-polar-dtr-ceiling-on-biascorrected.outputs.parameters.out-zarr }}"
+                  value: "{{ tasks.rechunk-biascorrected.outputs.parameters.out-zarr }}"
                 - name: domain-file
                   value: "{{ inputs.parameters.domainfile0p25x0p25 }}"
           - name: qplad
             depends: >-
-              get-output-downscaled-url
-              && preprocess-biascorrected
+              preprocess-biascorrected
               && create-coarse-reference
               && create-fine-reference
             templateRef:
@@ -508,26 +384,27 @@ spec:
                 - name: qdm-kind
                   value: "{{ inputs.parameters.qdm-kind }}"
                 - name: out-zarr
-                  value: "{{ tasks.get-output-downscaled-url.outputs.parameters.out-url }}"
+                  value: "gs://scratch-170cd6ec/{{ workflow.uid }}/{{ pod.name }}/qplad-adjusted.zarr"
                 - name: correct-wetday-frequency
                   value: "{{ inputs.parameters.correct-wetday-frequency }}"
-          - name: validate-downscaled
-            depends: qplad
+          - name: cap-max-downscaled-precip
+            template: cap-max-precipitation
+            depends: qplad && get-output-downscaled-url
             arguments:
               parameters:
                 - name: in-zarr
                   value: "{{ tasks.qplad.outputs.parameters.out-zarr }}"
                 - name: out-zarr
-                  value: "gs://scratch-170cd6ec/{{ workflow.uid }}/{{ pod.name }}/with-non-polar-dtr-ceiling.zarr"
+                  value: "{{ tasks.get-output-downscaled-url.outputs.parameters.out-url }}"
           - name: validate-downscaled
-            depends: apply-non-polar-dtr-ceiling-on-downscaled
+            depends: cap-max-downscaled-precip
             templateRef:
               name: qualitycontrol-check-cmip6
               template: qualitycontrol-check-cmip6
             arguments:
               parameters:
                 - name: in-zarr
-                  value: "{{ tasks.apply-non-polar-dtr-ceiling-on-downscaled.outputs.parameters.out-zarr }}"
+                  value: "{{ tasks.cap-max-downscaled-precip.outputs.parameters.out-zarr }}"
                 - name: variable
                   value: "{{=jsonpath(inputs.parameters.simulation, '$.variable_id')}}"
                 - name: data
@@ -537,7 +414,7 @@ spec:
                     {{=jsonpath(inputs.parameters.simulation, '$.experiment_id') == 'historical' ? 'historical' : 'future'}}
 
 
-      # This template helps to dynamically find the last year for bias-corrected
+      # This template helps to dynamically find the last year for bias-corrected 
       # output based on the years available in the input simulation.
       # Different experiments have different end dates and we don't want to
       # make up data where it didn't already exist.
@@ -594,67 +471,35 @@ spec:
           duration: 30s
           factor: 2
 
-    - name: apply-dtr-floor
-      inputs:
-        parameters:
-          - name: in-zarr
-          - name: out-zarr
-            value: "gs://scratch-170cd6ec/{{ workflow.uid }}/{{ pod.name }}/with-dtr-floor.zarr"
-      outputs:
-        parameters:
-          - name: out-zarr
-            value: "{{ inputs.parameters.out-zarr }}"
-      container:
-        image: us-central1-docker.pkg.dev/downscalecmip6/private/dodola:dev
-        command: [ dodola ]
-        args:
-          - "apply-dtr-floor"
-          - "{{ inputs.parameters.in-zarr }}"
-          - "--out={{ inputs.parameters.out-zarr }}"
-          - "--floor=1.0"
-        resources:
-          requests:
-            memory: 16Gi
-            cpu: "1000m"
-          limits:
-            memory: 18Gi
-            cpu: "2000m"
-      activeDeadlineSeconds: 1200
-      retryStrategy:
-        limit: 4
-        retryPolicy: "Always"
-        backoff:
-          duration: 30s
-          factor: 2
 
-    - name: apply-non-polar-dtr-ceiling
+    - name: cap-max-precipitation
       inputs:
         parameters:
           - name: in-zarr
           - name: out-zarr
-            value: "gs://scratch-170cd6ec/{{ workflow.uid }}/{{ pod.name }}/with-non-polar-dtr-ceiling.zarr"
+            value: "gs://scratch-170cd6ec/{{ workflow.uid }}/{{ pod.name }}/capped-precip.zarr"
       outputs:
         parameters:
           - name: out-zarr
             value: "{{ inputs.parameters.out-zarr }}"
       container:
-        image: us-central1-docker.pkg.dev/downscalecmip6/private/dodola:dev
+        image: us-central1-docker.pkg.dev/downscalecmip6/private/dodola:0.15.0
         command: [ dodola ]
         args:
-          - "apply-non-polar-dtr-ceiling"
+          - "adjust-maximum-precipitation"
           - "{{ inputs.parameters.in-zarr }}"
           - "--out={{ inputs.parameters.out-zarr }}"
-          - "--ceiling=70.0"
+          - "--threshold=3000"
         resources:
           requests:
-            memory: 24Gi
-            cpu: "2000m"
+            memory: 2Gi
+            cpu: "100m"
           limits:
-            memory: 32Gi
-            cpu: "4000m"
-      activeDeadlineSeconds: 3600
+            memory: 2Gi
+            cpu: "1000m"
+      activeDeadlineSeconds: 14400
       retryStrategy:
-        limit: 4
+        limit: 2
         retryPolicy: "Always"
         backoff:
           duration: 30s
