@@ -71,7 +71,7 @@ spec:
                   value: "{{ inputs.parameters.jobs }}"
         - - name: biascorrectdownscale
             templateRef:
-              name: biascorrectdownscale
+              name: biascorrectdownscale-dtr
               template: with-jobs
             arguments:
               parameters:
@@ -84,4 +84,4 @@ spec:
                 - name: qdm-kind
                   value: "multiplicative"
                 - name: apply-dtr-minimum-threshold
-                  value: "true"
+                  value: "false"
