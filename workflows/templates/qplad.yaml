@@ -124,6 +124,14 @@ spec:
             valueFrom:
               parameter: "{{ steps.move-chunks-to-space.outputs.parameters.out-zarr }}"
       steps:
+        - - name: check-to-correct-wetday-frequency
+            template: check-to-correct-wetday-frequency
+            arguments:
+              parameters:
+                - name: in-zarr
+                  value: "{{ inputs.parameters.in-zarr }}"
+                - name: correct-wetday-frequency
+                  value: "{{ inputs.parameters.correct-wetday-frequency }}"
         - - name: move-chunks-to-time
             templateRef:
               name: rechunk
@@ -131,7 +139,7 @@ spec:
             arguments:
               parameters:
                 - name: in-zarr
-                  value: "{{ inputs.parameters.in-zarr }}"
+                  value: "{{ steps.check-to-correct-wetday-frequency.outputs.parameters.out-zarr }}"
                 - name: time-chunk
                   value: "73"
                 - name: lat-chunk
@@ -154,14 +162,6 @@ spec:
                   value: "{{=inputs.parameters['regrid-method'] == 'bilinear' ? 'true' : 'false'}}"
                 - name: add-lat-buffer
                   value: "true"
-        - - name: check-to-correct-wetday-frequency
-            template: check-to-correct-wetday-frequency
-            arguments:
-              parameters:
-                - name: in-zarr
-                  value: "{{ steps.regrid.outputs.parameters.out-zarr }}"
-                - name: correct-wetday-frequency
-                  value: "{{ inputs.parameters.correct-wetday-frequency }}"
         - - name: move-chunks-to-space
             templateRef:
               name: rechunk
@@ -169,7 +169,7 @@ spec:
             arguments:
               parameters:
                 - name: in-zarr
-                  value: "{{ steps.check-to-correct-wetday-frequency.outputs.parameters.out-zarr }}"
+                  value: "{{ steps.regrid.outputs.parameters.out-zarr }}"
                 - name: time-chunk
                   value: 365
                 - name: lat-chunk
@@ -193,6 +193,14 @@ spec:
             valueFrom:
               parameter: "{{ steps.move-chunks-to-space.outputs.parameters.out-zarr }}"
       steps:
+        - - name: check-to-correct-wetday-frequency
+            template: check-to-correct-wetday-frequency
+            arguments:
+              parameters:
+                - name: in-zarr
+                  value: "{{ inputs.parameters.in-zarr }}"
+                - name: correct-wetday-frequency
+                  value: "{{ inputs.parameters.correct-wetday-frequency }}"
         - - name: coarse-regrid
             templateRef:
               name: regrid
@@ -200,19 +208,11 @@ spec:
             arguments:
               parameters:
                 - name: in-zarr
-                  value: "{{ inputs.parameters.in-zarr }}"
+                  value: "{{ steps.check-to-correct-wetday-frequency.outputs.parameters.out-zarr }}"
                 - name: regrid-method
                   value: "{{ inputs.parameters.regrid-method }}"
                 - name: domain-file
                   value: "{{ inputs.parameters.domainfile1x1 }}"
-        - - name: check-to-correct-wetday-frequency
-            template: check-to-correct-wetday-frequency
-            arguments:
-              parameters:
-                - name: in-zarr
-                  value: "{{ steps.coarse-regrid.outputs.parameters.out-zarr }}"
-                - name: correct-wetday-frequency
-                  value: "{{ inputs.parameters.correct-wetday-frequency }}"
         - - name: move-chunks-to-time
             templateRef:
               name: rechunk
@@ -220,7 +220,7 @@ spec:
             arguments:
               parameters:
                 - name: in-zarr
-                  value: "{{ steps.check-to-correct-wetday-frequency.outputs.parameters.out-zarr }}"
+                  value: "{{ steps.coarse-regrid.outputs.parameters.out-zarr }}"
                 - name: time-chunk
                   value: "73"
                 - name: lat-chunk
