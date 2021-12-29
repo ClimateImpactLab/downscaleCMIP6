@@ -482,7 +482,7 @@ spec:
           - "--iselslice=lat={{ inputs.parameters.lat-slice-min }},{{ inputs.parameters.lat-slice-max }}"
           - "--out-zarr-region=lat={{ inputs.parameters.lat-slice-min }},{{ inputs.parameters.lat-slice-max }}"
           - "--root-attrs-json-file=/tmp/global_attrs.json"
-          - "--wet-day-post-correction={{ inputs.parameters.correct-wetday-frequency }}"
+          - "--wetday-post-correction={{ inputs.parameters.correct-wetday-frequency }}"
         resources:
           requests:
             memory: 38Gi
