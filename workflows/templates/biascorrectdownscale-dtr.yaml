@@ -56,7 +56,7 @@ spec:
       - name: qdm-kind
         value: "multiplicative"
       - name: apply-dtr-minimum-threshold
-        value: "false"
+        value: "true"
   templates:
 
 
@@ -361,24 +361,6 @@ spec:
               parameters:
                 - name: in-zarr
                   value: "{{ tasks.get-input-clean-simulation-url.outputs.parameters.out-url }}"
-          - name: apply-dtr-floor-pre-biascorrected-training
-            template: apply-dtr-floor
-            depends: get-input-clean-training-url
-            arguments:
-              parameters:
-                - name: in-zarr
-                  value: "{{ tasks.get-input-clean-training-url.outputs.parameters.out-url }}"
-                - name: out-zarr
-                  value: "gs://scratch-170cd6ec/{{ workflow.uid }}/{{ pod.name }}/with-floor-training.zarr"
-          - name: apply-dtr-floor-pre-biascorrected-simulation
-            template: apply-dtr-floor
-            depends: get-input-clean-simulation-url
-            arguments:
-              parameters:
-                - name: in-zarr
-                  value: "{{ tasks.get-input-clean-simulation-url.outputs.parameters.out-url }}"
-                - name: out-zarr
-                  value: "gs://scratch-170cd6ec/{{ workflow.uid }}/{{ pod.name }}/with-floor-simulation.zarr"
           - name: biascorrect
             templateRef:
               name: qdm
@@ -387,8 +369,6 @@ spec:
               get-input-clean-training-url
               && get-input-clean-simulation-url
               && get-biascorrected-last-year
-              && apply-dtr-floor-pre-biascorrected-training
-              && apply-dtr-floor-pre-biascorrected-simulation
             arguments:
               parameters:
                 - name: variable-id
@@ -396,9 +376,9 @@ spec:
                 - name: reference-zarr
                   value: "{{ inputs.parameters.reference-zarr }}"
                 - name: training-zarr
-                  value: "{{ tasks.apply-dtr-floor-pre-biascorrected-training.outputs.parameters.out-zarr }}"
+                  value: "{{ tasks.get-input-clean-training-url.outputs.parameters.out-url }}"
                 - name: simulation-zarr
-                  value: "{{ tasks.apply-dtr-floor-pre-biascorrected-simulation.outputs.parameters.out-zarr }}"
+                  value: "{{ tasks.get-input-clean-simulation-url.outputs.parameters.out-url }}"
                 - name: out-zarr
                   value: "gs://scratch-170cd6ec/{{ workflow.uid }}/{{ pod.name }}/qdm-adjusted.zarr"
                 - name: regrid-method
@@ -469,6 +449,8 @@ spec:
                   value: "{{ inputs.parameters.regrid-method }}"
                 - name: domain-file
                   value: "{{ inputs.parameters.domainfile0p25x0p25 }}"
+                - name: correct-wetday-frequency
+                  value: "{{ inputs.parameters.correct-wetday-frequency }}"
           - name: create-coarse-reference
             templateRef:
               name: qplad
@@ -483,6 +465,8 @@ spec:
                   value: "{{ inputs.parameters.domainfile0p25x0p25 }}"
                 - name: domainfile1x1
                   value: "{{ inputs.parameters.domainfile1x1 }}"
+                - name: correct-wetday-frequency
+                  value: "{{ inputs.parameters.correct-wetday-frequency }}"
           - name: preprocess-biascorrected
             templateRef:
               name: qplad
@@ -516,6 +500,8 @@ spec:
                   value: "{{ inputs.parameters.qdm-kind }}"
                 - name: out-zarr
                   value: "gs://scratch-170cd6ec/{{ workflow.uid }}/{{ pod.name }}/qplad-adjusted.zarr"
+                - name: correct-wetday-frequency
+                  value: "{{ inputs.parameters.correct-wetday-frequency }}"
           - name: apply-non-polar-dtr-ceiling-on-downscaled
             template: apply-non-polar-dtr-ceiling
             depends: >-
@@ -595,39 +581,6 @@ spec:
             memory: 2Gi
             cpu: "1000m"
       activeDeadlineSeconds: 900
-      retryStrategy:
-        limit: 4
-        retryPolicy: "Always"
-        backoff:
-          duration: 30s
-          factor: 2
-
-    - name: apply-dtr-floor
-      inputs:
-        parameters:
-          - name: in-zarr
-          - name: out-zarr
-            value: "gs://scratch-170cd6ec/{{ workflow.uid }}/{{ pod.name }}/with-dtr-floor.zarr"
-      outputs:
-        parameters:
-          - name: out-zarr
-            value: "{{ inputs.parameters.out-zarr }}"
-      container:
-        image: us-central1-docker.pkg.dev/downscalecmip6/private/dodola:dev
-        command: [ dodola ]
-        args:
-          - "apply-dtr-floor"
-          - "{{ inputs.parameters.in-zarr }}"
-          - "--out={{ inputs.parameters.out-zarr }}"
-          - "--floor=1.0"
-        resources:
-          requests:
-            memory: 16Gi
-            cpu: "1000m"
-          limits:
-            memory: 18Gi
-            cpu: "2000m"
-      activeDeadlineSeconds: 1200
       retryStrategy:
         limit: 4
         retryPolicy: "Always"

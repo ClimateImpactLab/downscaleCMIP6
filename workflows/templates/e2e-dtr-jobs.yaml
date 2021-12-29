@@ -84,4 +84,4 @@ spec:
                 - name: qdm-kind
                   value: "multiplicative"
                 - name: apply-dtr-minimum-threshold
-                  value: "false"
+                  value: "true"
