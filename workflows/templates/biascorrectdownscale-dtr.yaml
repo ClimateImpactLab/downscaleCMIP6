@@ -416,7 +416,7 @@ spec:
                 - name: last-year
                   value: "{{ tasks.get-biascorrected-last-year.outputs.parameters.last-year }}"
           - name: rechunk-biascorrected
-            depends: "get-output-biascorrected-url && biascorrect"
+            depends: biascorrect
             templateRef:
               name: rechunk
               template: rechunk
@@ -424,8 +424,6 @@ spec:
               parameters:
                 - name: in-zarr
                   value: "{{ tasks.biascorrect.outputs.parameters.out-zarr }}"
-                - name: out-zarr
-                  value: "{{ tasks.get-output-biascorrected-url.outputs.parameters.out-url }}"
                 - name: time-chunk
                   value: 73
                 - name: lat-chunk
@@ -434,13 +432,15 @@ spec:
                   value: 180
           - name: apply-non-polar-dtr-ceiling-on-biascorrected
             template: apply-non-polar-dtr-ceiling
-            depends: rechunk-biascorrected
+            depends: >-
+              get-output-biascorrected-url
+              && rechunk-biascorrected
             arguments:
               parameters:
                 - name: in-zarr
                   value: "{{ tasks.rechunk-biascorrected.outputs.parameters.out-zarr }}"
                 - name: out-zarr
-                  value: "gs://scratch-170cd6ec/{{ workflow.uid }}/{{ pod.name }}/with-non-polar-dtr-ceiling.zarr"
+                  value: "{{ tasks.get-output-biascorrected-url.outputs.parameters.out-url }}"
           - name: validate-biascorrected
             depends: apply-non-polar-dtr-ceiling-on-biascorrected
             templateRef:
@@ -496,8 +496,7 @@ spec:
                   value: "{{ inputs.parameters.domainfile0p25x0p25 }}"
           - name: qplad
             depends: >-
-              get-output-downscaled-url
-              && preprocess-biascorrected
+              preprocess-biascorrected
               && create-coarse-reference
               && create-fine-reference
             templateRef:
@@ -516,16 +515,18 @@ spec:
                 - name: qdm-kind
                   value: "{{ inputs.parameters.qdm-kind }}"
                 - name: out-zarr
-                  value: "{{ tasks.get-output-downscaled-url.outputs.parameters.out-url }}"
+                  value: "gs://scratch-170cd6ec/{{ workflow.uid }}/{{ pod.name }}/qplad-adjusted.zarr"
           - name: apply-non-polar-dtr-ceiling-on-downscaled
             template: apply-non-polar-dtr-ceiling
-            depends: qplad
+            depends: >-
+              get-output-downscaled-url
+              && qplad
             arguments:
               parameters:
                 - name: in-zarr
                   value: "{{ tasks.qplad.outputs.parameters.out-zarr }}"
                 - name: out-zarr
-                  value: "gs://scratch-170cd6ec/{{ workflow.uid }}/{{ pod.name }}/with-non-polar-dtr-ceiling.zarr"
+                  value: "{{ tasks.get-output-downscaled-url.outputs.parameters.out-url }}"
           - name: validate-downscaled
             depends: apply-non-polar-dtr-ceiling-on-downscaled
             templateRef:
