@@ -338,6 +338,8 @@ spec:
                   value: "{{ inputs.parameters.regrid-method }}"
                 - name: domain-file
                   value: "{{ inputs.parameters.domainfile0p25x0p25 }}"
+                - name: correct-wetday-frequency
+                  value: "{{ inputs.parameters.correct-wetday-frequency }}"
           - name: create-coarse-reference
             templateRef:
               name: qplad
@@ -352,6 +354,8 @@ spec:
                   value: "{{ inputs.parameters.domainfile0p25x0p25 }}"
                 - name: domainfile1x1
                   value: "{{ inputs.parameters.domainfile1x1 }}"
+                - name: correct-wetday-frequency
+                  value: "{{ inputs.parameters.correct-wetday-frequency }}"
           - name: preprocess-biascorrected
             templateRef:
               name: qplad
