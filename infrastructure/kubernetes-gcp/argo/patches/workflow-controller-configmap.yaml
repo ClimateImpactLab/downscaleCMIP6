@@ -8,7 +8,7 @@ data:
   # Intended for cluster installs that are multi-tenancy environments, to prevent too many workflows in one
   # namespace impacting others.
   # >= v3.2
-  namespaceParallelism: "3"
+  namespaceParallelism: "4"
 
   workflowDefaults: |
     metadata:
