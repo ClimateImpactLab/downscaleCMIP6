@@ -451,7 +451,7 @@ spec:
           - name: out-zarr
             value: "{{ inputs.parameters.out-zarr }}"
       container:
-        image: us-central1-docker.pkg.dev/downscalecmip6/private/dodola:0.10.0
+        image: us-central1-docker.pkg.dev/downscalecmip6/private/dodola:0.15.0
         command: [ dodola ]
         args:
           - "train-qplad"
@@ -495,7 +495,7 @@ spec:
           - name: global-attrs-json
             path: /tmp/global_attrs.json
       container:
-        image: us-central1-docker.pkg.dev/downscalecmip6/private/dodola:0.10.0
+        image: us-central1-docker.pkg.dev/downscalecmip6/private/dodola:0.15.0
         command: [ dodola ]
         args:
           - "apply-qplad"
@@ -539,7 +539,7 @@ spec:
           - name: out-zarr
             value: "{{ inputs.parameters.out-zarr }}"
       container:
-        image: us-central1-docker.pkg.dev/downscalecmip6/private/dodola:0.13.0
+        image: us-central1-docker.pkg.dev/downscalecmip6/private/dodola:0.15.0
         command: [ dodola ]
         args:
           - "prime-qplad-output-zarrstore"
