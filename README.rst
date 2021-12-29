@@ -22,7 +22,13 @@ Users are requested to cite this project in derived works. This project does not
 ERA-5
 -----
 
-Additionally, we request you cite the historical dataset used in bias correction and downscaling, ERA-5:
+Additionally, we request you cite the historical dataset used in bias correction and downscaling, ERA-5. See the `ECMWF guide to citing a dataset on the Climate Data Store <https://confluence.ecmwf.int/display/CKB/How+to+acknowledge+and+cite+a+Climate+Data+Store+%28CDS%29+catalogue+entry+and+the+data+published+as+part+of+it>`_:
+
+    Hersbach, H, et al. The ERA5 global reanalysis. Q J R Meteorol Soc.2020; 146: 1999–2049. https://doi.org/10.1002/qj.3803
+
+    Muñoz Sabater, J., (2019): ERA5-Land hourly data from 1981 to present. Copernicus Climate Change Service (C3S) Climate Data Store (CDS). (Accessed on **XXXX**), 10.24381/cds.e2161bac
+
+    Muñoz Sabater, J., (2021): ERA5-Land hourly data from 1950 to 1980. Copernicus Climate Change Service (C3S) Climate Data Store (CDS). (Accessed on **XXXX**), 10.24381/cds.e2161bac
 
 GCM-specific citations & licenses
 ---------------------------------
@@ -53,7 +59,7 @@ License: `data_licenses/ACCESS-ESM1-5.txt <https://raw.githubusercontent.com/Cli
 
 Citation:
 
-  Ziehn, Tilo; Chamberlain, Matthew; Lenton, Andrew; Law, Rachel; Bodman, Roger; Dix, Martin; Wang, Yingping; Dobrohotoff, Peter; Srbinovsky, Jhan; Stevens, Lauren; Vohralik, Peter; Mackallah, Chloe; Sullivan, Arnold; O'Farrell, Siobhan; Druken, Kelsey (2019). CSIRO ACCESS-ESM1.5 model output prepared for CMIP6 ScenarioMIP. Version YYYYMMDD.Earth System Grid Federation. https://doi.org/10.22033/ESGF/CMIP6.2291
+  Ziehn, Tilo; Chamberlain, Matthew; Lenton, Andrew; Law, Rachel; Bodman, Roger; Dix, Martin; Wang, Yingping; Dobrohotoff, Peter; Srbinovsky, Jhan; Stevens, Lauren; Vohralik, Peter; Mackallah, Chloe; Sullivan, Arnold; O'Farrell, Siobhan; Druken, Kelsey (2019). CSIRO ACCESS-ESM1.5 model output prepared for CMIP6 ScenarioMIP. Version 20191115.Earth System Grid Federation. https://doi.org/10.22033/ESGF/CMIP6.2291
 
 ACCESS-CM2
 ~~~~~~~~~~
@@ -62,7 +68,7 @@ License: `data_licenses/ACCESS-CM2.txt <https://raw.githubusercontent.com/Climat
 
 Citation:
 
-  Dix, Martin; Bi, Doahua; Dobrohotoff, Peter; Fiedler, Russell; Harman, Ian; Law, Rachel; Mackallah, Chloe; Marsland, Simon; O'Farrell, Siobhan; Rashid, Harun; Srbinovsky, Jhan; Sullivan, Arnold; Trenham, Claire; Vohralik, Peter; Watterson, Ian; Williams, Gareth; Woodhouse, Matthew; Bodman, Roger; Dias, Fabio Boeira; Domingues, Catia; Hannah, Nicholas; Heerdegen, Aidan; Savita, Abhishek; Wales, Scott; Allen, Chris; Druken, Kelsey; Evans, Ben; Richards, Clare; Ridzwan, Syazwan Mohamed; Roberts, Dale; Smillie, Jon; Snow, Kate; Ward, Marshall; Yang, Rui (2019). CSIRO-ARCCSS ACCESS-CM2 model output prepared for CMIP6 CMIP. Version YYYYMMDD.Earth System Grid Federation. https://doi.org/10.22033/ESGF/CMIP6.2281
+  Dix, Martin; Bi, Doahua; Dobrohotoff, Peter; Fiedler, Russell; Harman, Ian; Law, Rachel; Mackallah, Chloe; Marsland, Simon; O'Farrell, Siobhan; Rashid, Harun; Srbinovsky, Jhan; Sullivan, Arnold; Trenham, Claire; Vohralik, Peter; Watterson, Ian; Williams, Gareth; Woodhouse, Matthew; Bodman, Roger; Dias, Fabio Boeira; Domingues, Catia; Hannah, Nicholas; Heerdegen, Aidan; Savita, Abhishek; Wales, Scott; Allen, Chris; Druken, Kelsey; Evans, Ben; Richards, Clare; Ridzwan, Syazwan Mohamed; Roberts, Dale; Smillie, Jon; Snow, Kate; Ward, Marshall; Yang, Rui (2019). CSIRO-ARCCSS ACCESS-CM2 model output prepared for CMIP6 CMIP. Version 20191108.Earth System Grid Federation. https://doi.org/10.22033/ESGF/CMIP6.2281
 
 INM-CM4-8
 ~~~~~~~~~
@@ -98,7 +104,7 @@ License: `data_licenses/MIROC6.txt <https://raw.githubusercontent.com/ClimateImp
 
 Citation:
 
-  Shiogama, Hideo; Abe, Manabu; Tatebe, Hiroaki (2019). MIROC MIROC6 model output prepared for CMIP6 ScenarioMIP. Version YYYYMMDD.Earth System Grid Federation. https://doi.org/10.22033/ESGF/CMIP6.898
+  Shiogama, Hideo; Abe, Manabu; Tatebe, Hiroaki (2019). MIROC MIROC6 model output prepared for CMIP6 ScenarioMIP. Version 20191016.Earth System Grid Federation. https://doi.org/10.22033/ESGF/CMIP6.898
 
 NorESM2-LM
 ~~~~~~~~~~
@@ -116,7 +122,7 @@ License: `data_licenses/NorESM2-MM.txt <https://raw.githubusercontent.com/Climat
 
 Citation:
 
-  Bentsen, Mats; Oliviè, Dirk Jan Leo; Seland, Øyvind; Toniazzo, Thomas; Gjermundsen, Ada; Graff, Lise Seland; Debernard, Jens Boldingh; Gupta, Alok Kumar; He, Yanchun; Kirkevåg, Alf; Schwinger, Jörg; Tjiputra, Jerry; Aas, Kjetil Schanke; Bethke, Ingo; Fan, Yuanchao; Griesfeller, Jan; Grini, Alf; Guo, Chuncheng; Ilicak, Mehmet; Karset, Inger Helene Hafsahl; Landgren, Oskar Andreas; Liakka, Johan; Moseid, Kine Onsum; Nummelin, Aleksi; Spensberger, Clemens; Tang, Hui; Zhang, Zhongshi; Heinze, Christoph; Iversen, Trond; Schulz, Michael (2019). NCC NorESM2-MM model output prepared for CMIP6 CMIP. Version YYYYMMDD.Earth System Grid Federation. https://doi.org/10.22033/ESGF/CMIP6.506
+  Bentsen, Mats; Oliviè, Dirk Jan Leo; Seland, Øyvind; Toniazzo, Thomas; Gjermundsen, Ada; Graff, Lise Seland; Debernard, Jens Boldingh; Gupta, Alok Kumar; He, Yanchun; Kirkevåg, Alf; Schwinger, Jörg; Tjiputra, Jerry; Aas, Kjetil Schanke; Bethke, Ingo; Fan, Yuanchao; Griesfeller, Jan; Grini, Alf; Guo, Chuncheng; Ilicak, Mehmet; Karset, Inger Helene Hafsahl; Landgren, Oskar Andreas; Liakka, Johan; Moseid, Kine Onsum; Nummelin, Aleksi; Spensberger, Clemens; Tang, Hui; Zhang, Zhongshi; Heinze, Christoph; Iversen, Trond; Schulz, Michael (2019). NCC NorESM2-MM model output prepared for CMIP6 CMIP. Version 20191108.Earth System Grid Federation. https://doi.org/10.22033/ESGF/CMIP6.506
 
 GFDL-CM4
 ~~~~~~~~
