@@ -498,6 +498,8 @@ spec:
                 - name: time
                   value: >-
                     {{=jsonpath(inputs.parameters.simulation, '$.experiment_id') == 'historical' ? 'historical' : 'future'}}
+
+
       # This template helps to dynamically find the last year for bias-corrected
       # output based on the years available in the input simulation.
       # Different experiments have different end dates and we don't want to
@@ -518,13 +520,17 @@ spec:
         command: [ python ]
         source: |
           import dodola.repository
+
           input_zarr = "{{ inputs.parameters.in-zarr }}"
           time_variable = "{{ inputs.parameters.time-variable-name }}"
+
           print(f"Reading {input_zarr}")
           ds = dodola.repository.read(input_zarr)
+
           # Getting the full date is useful for debugging.
           max_date = ds[time_variable].max().item()
           print(f"Found {max_date=}")
+
           max_year = max_date.year
           out_lastyear = 2014   # For historical simulations.
           # For ssp* experiment simulations:
@@ -532,6 +538,7 @@ spec:
               out_lastyear = 2099
           elif max_year >= 2100:
               out_lastyear = 2100
+
           print(f"Using {out_lastyear=}")
           with open("/tmp/lastyear.txt", mode="w") as fl:
               fl.write(str(out_lastyear))
