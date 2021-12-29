@@ -26,9 +26,9 @@ Additionally, we request you cite the historical dataset used in bias correction
 
     Hersbach, H, et al. The ERA5 global reanalysis. Q J R Meteorol Soc.2020; 146: 1999–2049. https://doi.org/10.1002/qj.3803
 
-    Muñoz Sabater, J., (2019): ERA5-Land hourly data from 1981 to present. Copernicus Climate Change Service (C3S) Climate Data Store (CDS). (Accessed on **XXXX**), 10.24381/cds.e2161bac
+    Muñoz Sabater, J., (2019): ERA5-Land hourly data from 1981 to present. Copernicus Climate Change Service (C3S) Climate Data Store (CDS). (Accessed on June 4, 2021), 10.24381/cds.e2161bac
 
-    Muñoz Sabater, J., (2021): ERA5-Land hourly data from 1950 to 1980. Copernicus Climate Change Service (C3S) Climate Data Store (CDS). (Accessed on **XXXX**), 10.24381/cds.e2161bac
+    Muñoz Sabater, J., (2021): ERA5-Land hourly data from 1950 to 1980. Copernicus Climate Change Service (C3S) Climate Data Store (CDS). (Accessed on June 4, 2021), 10.24381/cds.e2161bac
 
 GCM-specific citations & licenses
 ---------------------------------
@@ -41,7 +41,7 @@ License: `data_licenses/BCC-CSM2-MR.txt <https://raw.githubusercontent.com/Clima
 
 Citation:
 
-  Xin, Xiaoge; Wu, Tongwen; Shi, Xueli; Zhang, Fang; Li, Jianglong; Chu, Min; Liu, Qianxia; Yan, Jinghui; Ma, Qiang; Wei, Min (2019). BCC BCC-CSM2MR model output prepared for CMIP6 ScenarioMIP. Version YYYYMMDD[1].Earth System Grid Federation. https://doi.org/10.22033/ESGF/CMIP6.1732
+  Xin, Xiaoge; Wu, Tongwen; Shi, Xueli; Zhang, Fang; Li, Jianglong; Chu, Min; Liu, Qianxia; Yan, Jinghui; Ma, Qiang; Wei, Min (2019). BCC BCC-CSM2MR model output prepared for CMIP6 ScenarioMIP. Historical version 20181126.Earth System Grid Federation; ScenarioMIP version 20190318.Earth System Grid Federation. https://doi.org/10.22033/ESGF/CMIP6.1732
 
 FGOALS-g3
 ~~~~~~~~~
@@ -50,7 +50,7 @@ License: `data_licenses/FGOALS-g3.txt <https://raw.githubusercontent.com/Climate
 
 Citation:
 
-  Li, Lijuan (2019). CAS FGOALS-g3 model output prepared for CMIP6 ScenarioMIP. Version YYYYMMDD.Earth System Grid Federation. https://doi.org/10.22033/ESGF/CMIP6.2056
+  Li, Lijuan (2019). CAS FGOALS-g3 model output prepared for CMIP6 ScenarioMIP. Historical version 20190826.Earth System Grid Federation; SSP2-4.5 version 20190818.Earth System Grid Federation; SSP3-7.0 version 20190820.Earth System Grid Federation. https://doi.org/10.22033/ESGF/CMIP6.2056
 
 ACCESS-ESM1-5
 ~~~~~~~~~~~~~
@@ -77,7 +77,7 @@ License: `data_licenses/INM-CM4-8.txt <https://raw.githubusercontent.com/Climate
 
 Citation:
 
-  Volodin, Evgeny; Mortikov, Evgeny; Gritsun, Andrey; Lykossov, Vasily; Galin, Vener; Diansky, Nikolay; Gusev, Anatoly; Kostrykin, Sergey; Iakovlev, Nikolay; Shestakova, Anna; Emelina, Svetlana (2019). INM INM-CM4-8 model output prepared for CMIP6 CMIP. Version YYYYMMDD.Earth System Grid Federation. https://doi.org/10.22033/ESGF/CMIP6.1422
+  Volodin, Evgeny; Mortikov, Evgeny; Gritsun, Andrey; Lykossov, Vasily; Galin, Vener; Diansky, Nikolay; Gusev, Anatoly; Kostrykin, Sergey; Iakovlev, Nikolay; Shestakova, Anna; Emelina, Svetlana (2019). INM INM-CM4-8 model output prepared for CMIP6 CMIP. Historical version 20190530.Earth System Grid Federation; ScenarioMIP version 20190603.Earth System Grid Federation. https://doi.org/10.22033/ESGF/CMIP6.1422
 
 INM-CM5-0
 ~~~~~~~~~
@@ -86,7 +86,7 @@ License: `data_licenses/INM-CM5-0.txt <https://raw.githubusercontent.com/Climate
 
 Citation:
 
-  Volodin, Evgeny; Mortikov, Evgeny; Gritsun, Andrey; Lykossov, Vasily; Galin, Vener; Diansky, Nikolay; Gusev, Anatoly; Kostrykin, Sergey; Iakovlev, Nikolay; Shestakova, Anna; Emelina, Svetlana (2019). INM INM-CM5-0 model output prepared for CMIP6 CMIP. Version YYYYMMDD.Earth System Grid Federation. https://doi.org/10.22033/ESGF/CMIP6.1423
+  Volodin, Evgeny; Mortikov, Evgeny; Gritsun, Andrey; Lykossov, Vasily; Galin, Vener; Diansky, Nikolay; Gusev, Anatoly; Kostrykin, Sergey; Iakovlev, Nikolay; Shestakova, Anna; Emelina, Svetlana (2019). INM INM-CM5-0 model output prepared for CMIP6 CMIP. Historical version 20190610.Earth System Grid Federation; SSP2-4.5 version 20190619.Earth System Grid Federation; SSP3.70 version 20190618.Earth System Grid Federation. https://doi.org/10.22033/ESGF/CMIP6.1423
 
 MIROC-ES2L
 ~~~~~~~~~~
@@ -95,7 +95,7 @@ License: `data_licenses/MIROC-ES2L.txt <https://raw.githubusercontent.com/Climat
 
 Citation:
 
-  Tachiiri, Kaoru; Abe, Manabu; Hajima, Tomohiro; Arakawa, Osamu; Suzuki, Tatsuo; Komuro, Yoshiki; Ogochi, Koji; Watanabe, Michio; Yamamoto, Akitomo; Tatebe, Hiroaki; Noguchi, Maki A.; Ohgaito, Rumi; Ito, Akinori; Yamazaki, Dai; Ito, Akihiko; Takata, Kumiko; Watanabe, Shingo; Kawamiya, Michio (2019). MIROC MIROC-ES2L model output prepared for CMIP6 ScenarioMIP. Version YYYYMMDD.Earth System Grid Federation. https://doi.org/10.22033/ESGF/CMIP6.936
+  Tachiiri, Kaoru; Abe, Manabu; Hajima, Tomohiro; Arakawa, Osamu; Suzuki, Tatsuo; Komuro, Yoshiki; Ogochi, Koji; Watanabe, Michio; Yamamoto, Akitomo; Tatebe, Hiroaki; Noguchi, Maki A.; Ohgaito, Rumi; Ito, Akinori; Yamazaki, Dai; Ito, Akihiko; Takata, Kumiko; Watanabe, Shingo; Kawamiya, Michio (2019). MIROC MIROC-ES2L model output prepared for CMIP6 ScenarioMIP. Historical version 20191129.Earth System Grid Federation; ScenarioMIP version 20200318.Earth System Grid Federation. https://doi.org/10.22033/ESGF/CMIP6.936
 
 MIROC6
 ~~~~~~
@@ -113,7 +113,7 @@ License: `data_licenses/NorESM2-LM.txt <https://raw.githubusercontent.com/Climat
 
 Citation:
 
-  Seland, Øyvind; Bentsen, Mats; Oliviè, Dirk Jan Leo; Toniazzo, Thomas; Gjermundsen, Ada; Graff, Lise Seland; Debernard, Jens Boldingh; Gupta, Alok Kumar; He, Yanchun; Kirkevåg, Alf; Schwinger, Jörg; Tjiputra, Jerry; Aas, Kjetil Schanke; Bethke, Ingo; Fan, Yuanchao; Griesfeller, Jan; Grini, Alf; Guo, Chuncheng; Ilicak, Mehmet; Karset, Inger Helene Hafsahl; Landgren, Oskar Andreas; Liakka, Johan; Moseid, Kine Onsum; Nummelin, Aleksi; Spensberger, Clemens; Tang, Hui; Zhang, Zhongshi; Heinze, Christoph; Iversen, Trond; Schulz, Michael (2019). NCC NorESM2-LM model output prepared for CMIP6 CMIP. Version YYYYMMDD.Earth System Grid Federation. https://doi.org/10.22033/ESGF/CMIP6.502
+  Seland, Øyvind; Bentsen, Mats; Oliviè, Dirk Jan Leo; Toniazzo, Thomas; Gjermundsen, Ada; Graff, Lise Seland; Debernard, Jens Boldingh; Gupta, Alok Kumar; He, Yanchun; Kirkevåg, Alf; Schwinger, Jörg; Tjiputra, Jerry; Aas, Kjetil Schanke; Bethke, Ingo; Fan, Yuanchao; Griesfeller, Jan; Grini, Alf; Guo, Chuncheng; Ilicak, Mehmet; Karset, Inger Helene Hafsahl; Landgren, Oskar Andreas; Liakka, Johan; Moseid, Kine Onsum; Nummelin, Aleksi; Spensberger, Clemens; Tang, Hui; Zhang, Zhongshi; Heinze, Christoph; Iversen, Trond; Schulz, Michael (2019). NCC NorESM2-LM model output prepared for CMIP6 CMIP. Historical version 20190815.Earth System Grid Federation; ScenarioMIP version 20191108.Earth System Grid Federation. https://doi.org/10.22033/ESGF/CMIP6.502
 
 NorESM2-MM
 ~~~~~~~~~~
@@ -131,7 +131,7 @@ License: `data_licenses/GFDL-CM4.txt <https://raw.githubusercontent.com/ClimateI
 
 Citation:
 
-  Guo, Huan; John, Jasmin G; Blanton, Chris; McHugh, Colleen; Nikonov, Serguei; Radhakrishnan, Aparna; Rand, Kristopher; Zadeh, Niki T.; Balaji, V; Durachta, Jeff; Dupuis, Christopher; Menzel, Raymond; Robinson, Thomas; Underwood, Seth; Vahlenkamp, Hans; Bushuk, Mitchell; Dunne, Krista A.; Dussin, Raphael; Gauthier, Paul PG; Ginoux, Paul; Griffies, Stephen M.; Hallberg, Robert; Harrison, Matthew; Hurlin, William; Lin, Pu; Malyshev, Sergey; Naik, Vaishali; Paulot, Fabien; Paynter, David J; Ploshay, Jeffrey; Reichl, Brandon G; Schwarzkopf, Daniel M; Seman, Charles J; Shao, Andrew; Silvers, Levi; Wyman, Bruce; Yan, Xiaoqin; Zeng, Yujin; Adcroft, Alistair; Dunne, John P.; Held, Isaac M; Krasting, John P.; Horowitz, Larry W.; Milly, P.C.D; Shevliakova, Elena; Winton, Michael; Zhao, Ming; Zhang, Rong (2018). NOAA-GFDL GFDL-CM4 model output. Version YYYYMMDD.Earth System Grid Federation. https://doi.org/10.22033/ESGF/CMIP6.1402
+  Guo, Huan; John, Jasmin G; Blanton, Chris; McHugh, Colleen; Nikonov, Serguei; Radhakrishnan, Aparna; Rand, Kristopher; Zadeh, Niki T.; Balaji, V; Durachta, Jeff; Dupuis, Christopher; Menzel, Raymond; Robinson, Thomas; Underwood, Seth; Vahlenkamp, Hans; Bushuk, Mitchell; Dunne, Krista A.; Dussin, Raphael; Gauthier, Paul PG; Ginoux, Paul; Griffies, Stephen M.; Hallberg, Robert; Harrison, Matthew; Hurlin, William; Lin, Pu; Malyshev, Sergey; Naik, Vaishali; Paulot, Fabien; Paynter, David J; Ploshay, Jeffrey; Reichl, Brandon G; Schwarzkopf, Daniel M; Seman, Charles J; Shao, Andrew; Silvers, Levi; Wyman, Bruce; Yan, Xiaoqin; Zeng, Yujin; Adcroft, Alistair; Dunne, John P.; Held, Isaac M; Krasting, John P.; Horowitz, Larry W.; Milly, P.C.D; Shevliakova, Elena; Winton, Michael; Zhao, Ming; Zhang, Rong (2018). NOAA-GFDL GFDL-CM4 model output. Version 20180701.Earth System Grid Federation. https://doi.org/10.22033/ESGF/CMIP6.1402
 
 GFDL-ESM4
 ~~~~~~~~~
@@ -140,7 +140,7 @@ License: `data_licenses/GFDL-ESM4.txt <https://raw.githubusercontent.com/Climate
 
 Citation:
 
-  Krasting, John P.; John, Jasmin G; Blanton, Chris; McHugh, Colleen; Nikonov, Serguei; Radhakrishnan, Aparna; Rand, Kristopher; Zadeh, Niki T.; Balaji, V; Durachta, Jeff; Dupuis, Christopher; Menzel, Raymond; Robinson, Thomas; Underwood, Seth; Vahlenkamp, Hans; Dunne, Krista A.; Gauthier, Paul PG; Ginoux, Paul; Griffies, Stephen M.; Hallberg, Robert; Harrison, Matthew; Hurlin, William; Malyshev, Sergey; Naik, Vaishali; Paulot, Fabien; Paynter, David J; Ploshay, Jeffrey; Reichl, Brandon G; Schwarzkopf, Daniel M; Seman, Charles J; Silvers, Levi; Wyman, Bruce; Zeng, Yujin; Adcroft, Alistair; Dunne, John P.; Dussin, Raphael; Guo, Huan; He, Jian; Held, Isaac M; Horowitz, Larry W.; Lin, Pu; Milly, P.C.D; Shevliakova, Elena; Stock, Charles; Winton, Michael; Wittenberg, Andrew T.; Xie, Yuanyu; Zhao, Ming (2018). NOAA-GFDL GFDL-ESM4 model output prepared for CMIP6 CMIP. Version YYYYMMDD.Earth System Grid Federation. https://doi.org/10.22033/ESGF/CMIP6.1407
+  Krasting, John P.; John, Jasmin G; Blanton, Chris; McHugh, Colleen; Nikonov, Serguei; Radhakrishnan, Aparna; Rand, Kristopher; Zadeh, Niki T.; Balaji, V; Durachta, Jeff; Dupuis, Christopher; Menzel, Raymond; Robinson, Thomas; Underwood, Seth; Vahlenkamp, Hans; Dunne, Krista A.; Gauthier, Paul PG; Ginoux, Paul; Griffies, Stephen M.; Hallberg, Robert; Harrison, Matthew; Hurlin, William; Malyshev, Sergey; Naik, Vaishali; Paulot, Fabien; Paynter, David J; Ploshay, Jeffrey; Reichl, Brandon G; Schwarzkopf, Daniel M; Seman, Charles J; Silvers, Levi; Wyman, Bruce; Zeng, Yujin; Adcroft, Alistair; Dunne, John P.; Dussin, Raphael; Guo, Huan; He, Jian; Held, Isaac M; Horowitz, Larry W.; Lin, Pu; Milly, P.C.D; Shevliakova, Elena; Stock, Charles; Winton, Michael; Wittenberg, Andrew T.; Xie, Yuanyu; Zhao, Ming (2018). NOAA-GFDL GFDL-ESM4 model output prepared for CMIP6 CMIP. Historical version 20190726.Earth System Grid Federation; ScenarioMIP version 20180701.Earth System Grid Federation. https://doi.org/10.22033/ESGF/CMIP6.1407
 
 NESM3
 ~~~~~
@@ -149,6 +149,6 @@ License: `data_licenses/NESM3.txt <https://raw.githubusercontent.com/ClimateImpa
 
 Citation:
 
-  Cao, Jian; Wang, Bin (2019). NUIST NESMv3 model output prepared for CMIP6 CMIP. Version YYYYMMDD.Earth System Grid Federation. https://doi.org/10.22033/ESGF/CMIP6.2021
+  Cao, Jian; Wang, Bin (2019). NUIST NESMv3 model output prepared for CMIP6 CMIP. Historical version 20190812.Earth System Grid Federation; ScenarioMIP version 20190805.Earth System Grid Federation. https://doi.org/10.22033/ESGF/CMIP6.2021
 
 
