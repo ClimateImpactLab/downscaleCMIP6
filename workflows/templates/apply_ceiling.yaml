@@ -1,0 +1,46 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Workflow
+metadata:
+  generateName: apply-non-polar-dtr-ceiling-dev-
+  labels:
+    component: apply-non-polar-dtr-ceiling
+spec:
+  entrypoint: apply-non-polar-dtr-ceiling
+  arguments:
+    parameters:
+      - name: in-zarr
+        value: "gs://downscaled-288ec5ac/stage/ScenarioMIP/EC-Earth-Consortium/EC-Earth3-Veg/ssp370/r1i1p1f1/day/dtr/gr/v20211228052639.zarr"
+      - name: out-zarr
+        value: "gs://scratch-170cd6ec/60bdbd70-892d-4ec4-ad5e-dc2c57ce04b8/biascorrectdownscale-dtr-dev-2z6bl-3317972701/with-non-polar-dtr-ceiling.zarr"
+  templates:
+    - name: apply-non-polar-dtr-ceiling
+      inputs:
+        parameters:
+          - name: in-zarr
+          - name: out-zarr
+      outputs:
+        parameters:
+          - name: out-zarr
+            value: "{{ inputs.parameters.out-zarr }}"
+      container:
+        image: us-central1-docker.pkg.dev/downscalecmip6/private/dodola:dev
+        command: [ dodola ]
+        args:
+          - "apply-non-polar-dtr-ceiling"
+          - "{{ inputs.parameters.in-zarr }}"
+          - "--out={{ inputs.parameters.out-zarr }}"
+          - "--ceiling=70.0"
+        resources:
+          requests:
+            memory: 30Gi
+            cpu: "3000m"
+          limits:
+            memory: 40Gi
+            cpu: "6000m"
+      activeDeadlineSeconds: 4800
+      retryStrategy:
+        limit: 2
+        retryPolicy: "Always"
+        backoff:
+          duration: 30s
+          factor: 2

@@ -646,12 +646,12 @@ spec:
           - "--ceiling=70.0"
         resources:
           requests:
-            memory: 16Gi
-            cpu: "1000m"
-          limits:
-            memory: 18Gi
+            memory: 24Gi
             cpu: "2000m"
-      activeDeadlineSeconds: 1200
+          limits:
+            memory: 32Gi
+            cpu: "4000m"
+      activeDeadlineSeconds: 3600
       retryStrategy:
         limit: 4
         retryPolicy: "Always"
