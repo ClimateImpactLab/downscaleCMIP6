@@ -335,6 +335,10 @@ spec:
           - name: lat-slice-min
           - name: lat-slice-max
           - name: kind
+          - name: time-sel-start
+            value: "1994-12-17"
+          - name: time-sel-stop
+            value: "2015-01-15"
           - name: out-zarr
             value: "gs://scratch-170cd6ec/{{ workflow.uid }}/{{ pod.name }}/qdm_model.zarr"
       outputs:
@@ -342,7 +346,7 @@ spec:
           - name: out-zarr
             value: "{{ inputs.parameters.out-zarr }}"
       container:
-        image: us-central1-docker.pkg.dev/downscalecmip6/private/dodola:0.10.0
+        image: us-central1-docker.pkg.dev/downscalecmip6/private/dodola:0.15.1
         command: [ "dodola" ]
         args:
           - "train-qdm"
@@ -352,6 +356,8 @@ spec:
           - "--out={{ inputs.parameters.out-zarr }}"
           - "--kind={{ inputs.parameters.kind }}"
           - "--iselslice=lat={{ inputs.parameters.lat-slice-min }},{{ inputs.parameters.lat-slice-max }}"
+          - "--selslice"
+          - "time={{ inputs.parameters.time-sel-start }},{{ inputs.parameters.time-sel-stop }}"
         resources:
           requests:
             memory: 24Gi
