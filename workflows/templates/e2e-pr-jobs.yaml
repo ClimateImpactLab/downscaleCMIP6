@@ -11,6 +11,8 @@ metadata:
     component: e2e
 spec:
   entrypoint: e2e-pr-jobs
+  # Workflows must finish in 12 hours. Precip runs a bit long right now:
+  activeDeadlineSeconds: 43200
   arguments:
     parameters:
       - name: jobs
