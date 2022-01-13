@@ -1,0 +1,83 @@
+apiVersion: argoproj.io/v1alpha1
+kind: WorkflowTemplate
+metadata:
+  name: e2e-tasmin-jobs
+  annotations:
+    workflows.argoproj.io/description: >-
+      Download, clean, biascorrect, and downscale a list of CMIP6 "tasmin" data.
+    workflows.argoproj.io/tags: e2e,jobs,cmip6,dc6
+    workflows.argoproj.io/version: '>= 3.1.0'
+  labels:
+    component: e2e
+spec:
+  entrypoint: e2e-tasmin-jobs
+  arguments:
+    parameters:
+      - name: jobs
+        value: |
+          [
+            {
+              "target": "ssp",
+              "variable_id": "tasmin",
+              "historical": {
+                "activity_id": "CMIP",
+                "experiment_id": "historical",
+                "table_id": "day",
+                "variable_id": "tasmin",
+                "source_id": "GFDL-ESM4",
+                "institution_id": "NOAA-GFDL",
+                "member_id": "r1i1p1f1",
+                "grid_label": "gr1",
+                "version": "20190726"
+              },
+              "ssp": {
+                "activity_id": "ScenarioMIP",
+                "experiment_id": "ssp370",
+                "table_id": "day",
+                "variable_id": "tasmin",
+                "source_id": "GFDL-ESM4",
+                "institution_id": "NOAA-GFDL",
+                "member_id": "r1i1p1f1",
+                "grid_label": "gr1",
+                "version": "20180701"
+              }
+            }
+          ]
+  templates:
+    - name: e2e-tasmin-jobs
+      inputs:
+        parameters:
+          - name: jobs
+      steps:
+        - - name: download
+            templateRef:
+              name: download-cmip6
+              template: with-jobs
+            arguments:
+              parameters:
+                - name: jobs
+                  value: "{{ inputs.parameters.jobs }}"
+        - - name: clean
+            templateRef:
+              name: clean-cmip6
+              template: with-jobs
+            arguments:
+              parameters:
+                - name: jobs
+                  value: "{{ inputs.parameters.jobs }}"
+        - - name: biascorrectdownscale
+            templateRef:
+              name: biascorrectdownscale
+              template: with-jobs
+            arguments:
+              parameters:
+                - name: jobs
+                  value: "{{ inputs.parameters.jobs }}"
+                - name: regrid-method
+                  value: "bilinear"
+                - name: correct-wetday-frequency
+                  value: "false"
+                - name: qdm-kind
+                  value: "additive"
+                - name: apply-dtr-minimum-threshold
+                  value: "false"
