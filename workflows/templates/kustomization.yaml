@@ -15,6 +15,7 @@ resources:
   - e2e-dtr-jobs.yaml
   - e2e-pr-jobs.yaml
   - e2e-tasmax-jobs.yaml
+  - e2e-tasmin-jobs.yaml
   - qdm.yaml
   - qdm-preprocess.yaml
   - qualitycontrol-check-cmip6.yaml
