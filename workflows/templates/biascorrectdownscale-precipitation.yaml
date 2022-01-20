@@ -360,11 +360,11 @@ spec:
             templateRef:
               name: qplad
               template: preprocess-biascorrected
-            depends: rechunk-biascorrected && validate-biascorrected
+            depends: cap-max-biascorrected-precip && validate-biascorrected
             arguments:
               parameters:
                 - name: in-zarr
-                  value: "{{ tasks.rechunk-biascorrected.outputs.parameters.out-zarr }}"
+                  value: "{{ tasks.cap-max-biascorrected-precip.outputs.parameters.out-zarr }}"
                 - name: domain-file
                   value: "{{ inputs.parameters.domainfile0p25x0p25 }}"
           - name: qplad
