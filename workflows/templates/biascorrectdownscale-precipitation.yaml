@@ -311,14 +311,14 @@ spec:
                 - name: out-zarr
                   value: "{{ tasks.get-output-biascorrected-url.outputs.parameters.out-url }}"
           - name: validate-biascorrected
-            depends: cap-max-biascorrected-precip
+            depends: cap-max-biascorrected-precip && get-output-biascorrected-url
             templateRef:
               name: qualitycontrol-check-cmip6
               template: qualitycontrol-check-cmip6
             arguments:
               parameters:
                 - name: in-zarr
-                  value: "{{ tasks.cap-max-biascorrected-precip.outputs.parameters.out-zarr }}"
+                  value: "{{ tasks.get-output-biascorrected-url.outputs.parameters.out-url }}"
                 - name: variable
                   value: "{{=jsonpath(inputs.parameters.simulation, '$.variable_id')}}"
                 - name: data
@@ -360,11 +360,11 @@ spec:
             templateRef:
               name: qplad
               template: preprocess-biascorrected
-            depends: cap-max-biascorrected-precip && validate-biascorrected
+            depends:  get-output-biascorrected-url && validate-biascorrected
             arguments:
               parameters:
                 - name: in-zarr
-                  value: "{{ tasks.cap-max-biascorrected-precip.outputs.parameters.out-zarr }}"
+                  value: "{{ tasks.get-output-biascorrected-url.outputs.parameters.out-url }}"
                 - name: domain-file
                   value: "{{ inputs.parameters.domainfile0p25x0p25 }}"
           - name: qplad
@@ -401,14 +401,14 @@ spec:
                 - name: out-zarr
                   value: "{{ tasks.get-output-downscaled-url.outputs.parameters.out-url }}"
           - name: validate-downscaled
-            depends: cap-max-downscaled-precip
+            depends: cap-max-downscaled-precip && get-output-downscaled-url
             templateRef:
               name: qualitycontrol-check-cmip6
               template: qualitycontrol-check-cmip6
             arguments:
               parameters:
                 - name: in-zarr
-                  value: "{{ tasks.cap-max-downscaled-precip.outputs.parameters.out-zarr }}"
+                  value: "{{ tasks.get-output-downscaled-url.outputs.parameters.out-url }}"
                 - name: variable
                   value: "{{=jsonpath(inputs.parameters.simulation, '$.variable_id')}}"
                 - name: data
