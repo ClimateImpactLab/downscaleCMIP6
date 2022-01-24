@@ -185,6 +185,8 @@ spec:
           - name: regrid-method
           - name: domainfile0p25x0p25
           - name: domainfile1x1
+          - name: fine-regrid-method
+            value: "nearest_s2d"
           - name: correct-wetday-frequency
             value: "false"
       outputs:
@@ -201,6 +203,7 @@ spec:
                   value: "{{ inputs.parameters.in-zarr }}"
                 - name: correct-wetday-frequency
                   value: "{{ inputs.parameters.correct-wetday-frequency }}"
+            # This regrid should match how the simulation data is regrid from native to 1x1 grid before bias correction.
         - - name: coarse-regrid
             templateRef:
               name: regrid
@@ -227,6 +230,7 @@ spec:
                   value: -1
                 - name: lon-chunk
                   value: -1
+            # This regrid should match how the bias-corrected simulation data is regrid from 1x1 to 0.25x0.25 before downscaling.
         - - name: fine-regrid
             templateRef:
               name: distributed-regrid
@@ -236,11 +240,11 @@ spec:
                 - name: in-zarr
                   value: "{{ steps.move-chunks-to-time.outputs.parameters.out-zarr }}"
                 - name: regrid-method
-                  value: "nearest_s2d"
+                  value: "{{ inputs.parameters.fine-regrid-method }}"
                 - name: domain-file
                   value: "{{ inputs.parameters.domainfile0p25x0p25 }}"
                 - name: add-cyclic-lon
-                  value: "{{=inputs.parameters['regrid-method'] == 'bilinear' ? 'true' : 'false'}}"
+                  value: "{{=inputs.parameters['fine-regrid-method'] == 'bilinear' ? 'true' : 'false'}}"
                 - name: add-lat-buffer
                   value: "true"
         - - name: move-chunks-to-space
