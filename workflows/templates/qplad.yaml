@@ -236,7 +236,7 @@ spec:
                 - name: in-zarr
                   value: "{{ steps.move-chunks-to-time.outputs.parameters.out-zarr }}"
                 - name: regrid-method
-                  value: "{{ inputs.parameters.regrid-method }}"
+                  value: "nearest_s2d"
                 - name: domain-file
                   value: "{{ inputs.parameters.domainfile0p25x0p25 }}"
                 - name: add-cyclic-lon
