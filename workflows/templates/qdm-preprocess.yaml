@@ -163,10 +163,10 @@ spec:
           - "--out={{ inputs.parameters.out-zarr }}"
         resources:
           requests:
-            memory: 20Gi
+            memory: 30Gi
             cpu: "1000m"
           limits:
-            memory: 20Gi
+            memory: 30Gi
             cpu: "2000m"
       activeDeadlineSeconds: 1800
       retryStrategy:
