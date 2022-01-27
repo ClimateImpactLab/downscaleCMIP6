@@ -1,0 +1,216 @@
+apiVersion: argoproj.io/v1alpha1
+kind: WorkflowTemplate
+metadata:
+  name: create-pr-references
+  annotations:
+    workflows.argoproj.io/description: >-
+      Process cleaned ERA-5 precipitation data into three reference datasets to input to QDM/QPLAD biascorrection and downscaling.
+
+    workflows.argoproj.io/tags: biascorrect,downscale,reference,dc6,qplad, qdm, pr, precipitation
+    workflows.argoproj.io/version: '>= 3.1.0'
+  labels:
+    component: biascorrectdownscale
+spec:
+  workflowMetadata:
+    labels:
+      component: biascorrectdownscale
+      variable_id: pr
+      source_id: ERA-5
+  entrypoint: create-pr-references
+  arguments:
+    parameters:
+      - name: in-zarr
+        value: "gs://clean-b1dbca25/reanalysis/ERA-5/F320/pr.1995-2015.F320.zarr"
+  templates:
+
+    - name: create-pr-references
+      inputs:
+        parameters:
+          - name: in-zarr
+          - name: out-qdm-reference
+            value: "gs://support-c23ff1a3/qdm-reference/pr/v{{ inputs.parameters.version }}.zarr"
+          - name: out-qplad-fine-reference
+            value: "gs://support-c23ff1a3/qplad-fine-reference/pr/v{{ inputs.parameters.version }}.zarr"
+          - name: out-qplad-coarse-reference
+            value: "gs://support-c23ff1a3/qplad-coarse-reference/pr/v{{ inputs.parameters.version }}.zarr"
+          - name: regrid-method
+            value: "conservative"
+          - name: domainfile1x1
+            value: "gs://support-c23ff1a3/domain.1x1.zarr"
+          - name: domainfile0p25x0p25
+            value: "gs://support-c23ff1a3/domain.0p25x0p25.zarr"
+          - name: version
+            value: "{{workflow.creationTimestamp.Y}}{{workflow.creationTimestamp.m}}{{workflow.creationTimestamp.d}}{{workflow.creationTimestamp.H}}{{workflow.creationTimestamp.M}}{{workflow.creationTimestamp.S}}"
+      dag:
+        tasks:
+
+          # Rechunk because regridding cannot have data chunks in space (lat, lon) dimensions.
+          - name: rechunk-for-regrid
+            templateRef:
+              name: rechunk
+              template: rechunk
+            arguments:
+              parameters:
+                - name: in-zarr
+                  value: "{{ inputs.parameters.in-zarr }}"
+                - name: time-chunk
+                  value: "365"
+                - name: lat-chunk
+                  value: -1
+                - name: lon-chunk
+                  value: -1
+          - name: regrid1x1
+            depends: rechunk-for-regrid
+            templateRef:
+              name: regrid
+              template: regrid
+            arguments:
+              parameters:
+                - name: in-zarr
+                  value: "{{ tasks.rechunk-for-regrid.outputs.parameters.out-zarr }}"
+                - name: regrid-method
+                  value: "{{ inputs.parameters.regrid-method }}"
+                - name: domain-file
+                  value: "{{ inputs.parameters.domainfile1x1 }}"
+          - name: wdf-pre-adjustment
+            template: precorrect-wetday-frequency
+            depends: regrid1x1
+            arguments:
+              parameters:
+                - name: in-zarr
+                  value: "{{ tasks.regrid1x1.outputs.parameters.out-zarr }}"
+          # Big transposing rechunk so chunks appear in space (lat, lon) and not time. This is required for
+          # QDM biascorrection.
+          - name: rechunk-for-qdm
+            depends: wdf-pre-adjustment
+            templateRef:
+              name: rechunk
+              template: rechunk
+            arguments:
+              parameters:
+                - name: in-zarr
+                  value: "{{ tasks.wdf-pre-adjustment.outputs.parameters.out-zarr }}"
+                - name: out-zarr
+                  value: "{{ inputs.parameters.out-qdm-reference }}"
+                - name: time-chunk
+                  value: -1
+                - name: lat-chunk
+                  value: 10
+                - name: lon-chunk
+                  value: 10
+
+            # Exclusively to create QPLAD's "coarse reference" input. It needs to follow the regridding and
+            # preprocessing that QDM bias-corrected data undergoes before being passed to QPLAD downscaling.
+          - name: coarseref-regrid
+            depends: wdf-pre-adjustment
+            templateRef:
+              name: distributed-regrid
+              template: main
+            arguments:
+              parameters:
+                - name: in-zarr
+                  value: "{{ tasks.wdf-pre-adjustment.outputs.parameters.out-zarr }}"
+                - name: regrid-method
+                  value: "nearest_s2d"
+                - name: domain-file
+                  value: "{{ inputs.parameters.domainfile0p25x0p25 }}"
+                - name: add-cyclic-lon
+                  value: "false"
+                - name: add-lat-buffer
+                  value: "true"
+            # Heavy transpose rechunking because QPLAD require no chunks in time.
+          - name: rechunk-coarseref-for-qplad
+            depends: coarseref-regrid
+            templateRef:
+              name: rechunk
+              template: rechunk
+            arguments:
+              parameters:
+                - name: in-zarr
+                  value: "{{ tasks.coarseref-regrid.outputs.parameters.out-zarr }}"
+                - name: out-zarr
+                  value: "{{ inputs.parameters.out-qplad-coarse-reference }}"
+                - name: time-chunk
+                  value: 365
+                - name: lat-chunk
+                  value: 2
+                - name: lon-chunk
+                  value: -1
+
+            # Exclusively to create QPLAD's "fine reference" input.
+          - name: fineref-regrid
+            depends: rechunk-for-regrid
+            templateRef:
+              name: distributed-regrid
+              template: main
+            arguments:
+              parameters:
+                - name: in-zarr
+                  value: "{{ tasks.rechunk-for-regrid.outputs.parameters.out-zarr }}"
+                - name: regrid-method
+                  value: "{{ inputs.parameters.regrid-method }}"
+                - name: domain-file
+                  value: "{{ inputs.parameters.domainfile0p25x0p25 }}"
+                - name: add-cyclic-lon
+                  value: "false"
+                - name: add-lat-buffer
+                  value: "true"
+          - name: wdf-pre-adjustment2
+            depends: fineref-regrid
+            template: precorrect-wetday-frequency
+            arguments:
+              parameters:
+                - name: in-zarr
+                  value: "{{ tasks.fineref-regrid.outputs.parameters.out-zarr }}"
+            # Heavy transpose rechunking because QPLAD require no chunks in time.
+          - name: rechunk-fineref-for-qplad
+            depends: wdf-pre-adjustment2
+            templateRef:
+              name: rechunk
+              template: rechunk
+            arguments:
+              parameters:
+                - name: in-zarr
+                  value: "{{ tasks.wdf-pre-adjustment2.outputs.parameters.out-zarr }}"
+                - name: out-zarr
+                  value: "{{ inputs.parameters.out-qplad-fine-reference }}"
+                - name: time-chunk
+                  value: 365
+                - name: lat-chunk
+                  value: 2
+                - name: lon-chunk
+                  value: -1
+
+
+    - name: precorrect-wetday-frequency
+      inputs:
+        parameters:
+          - name: in-zarr
+          - name: out-zarr
+            value: "gs://scratch-170cd6ec/{{ workflow.uid }}/{{ pod.name }}/wdf-corrected.zarr"
+      outputs:
+        parameters:
+          - name: out-zarr
+            value: "{{ inputs.parameters.out-zarr }}"
+      container:
+        image: us-central1-docker.pkg.dev/downscalecmip6/private/dodola:dev
+        command: [ dodola ]
+        args:
+          - "correct-wetday-frequency"
+          - "{{ inputs.parameters.in-zarr}}"
+          - "--process=pre"
+          - "--out={{ inputs.parameters.out-zarr }}"
+        resources:
+          requests:
+            memory: 100Gi
+            cpu: "1000m"
+          limits:
+            memory: 100Gi
+            cpu: "2000m"
+      activeDeadlineSeconds: 1800
+      retryStrategy:
+        limit: 4
+        retryPolicy: "Always"
+        backoff:
+          duration: 30s
+          factor: 2
