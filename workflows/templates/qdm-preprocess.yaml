@@ -153,31 +153,22 @@ spec:
         parameters:
           - name: out-zarr
             value: "{{ inputs.parameters.out-zarr }}"
-      script:
-        image: us-central1-docker.pkg.dev/downscalecmip6/private/dodola:0.15.0
-        command: [ python ]
-        source: |
-          import logging
-          import dodola.services
-
-          logging.basicConfig(level=logging.INFO)
-          logger = logging.getLogger(__name__)
-
-          input_zarr = "{{ inputs.parameters.in-zarr }}"
-
-          dodola.services.correct_wet_day_frequency(
-              "{{ inputs.parameters.in-zarr }}",
-              process="pre",
-              out="{{ inputs.parameters.out-zarr }}"
-          )
+      container:
+        image: us-central1-docker.pkg.dev/downscalecmip6/private/dodola:0.16.1
+        command: [ dodola ]
+        args:
+          - "correct-wetday-frequency"
+          - "{{ inputs.parameters.in-zarr}}"
+          - "--process=pre"
+          - "--out={{ inputs.parameters.out-zarr }}"
         resources:
           requests:
-            memory: 16Gi
+            memory: 30Gi
             cpu: "1000m"
           limits:
-            memory: 18Gi
+            memory: 30Gi
             cpu: "2000m"
-      activeDeadlineSeconds: 1200
+      activeDeadlineSeconds: 1800
       retryStrategy:
         limit: 4
         retryPolicy: "Always"
