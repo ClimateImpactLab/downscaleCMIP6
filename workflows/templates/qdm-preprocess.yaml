@@ -128,8 +128,8 @@ spec:
             value: "false"
       dag:
         tasks:
-          - name: correct-wetday-frequency
-            template: correct-wetday-frequency
+          - name: wetday-frequency-precorrection
+            template: wetday-frequency-precorrection
             arguments:
               parameters:
                 - name: in-zarr
@@ -139,11 +139,11 @@ spec:
         parameters:
           - name: out-zarr
             valueFrom:
-              expression: "inputs.parameters['correct-wetday-frequency'] == 'true' ? tasks['correct-wetday-frequency'].outputs.parameters['out-zarr'] : inputs.parameters['in-zarr']"
+              expression: "inputs.parameters['correct-wetday-frequency'] == 'true' ? tasks['wetday-frequency-precorrection'].outputs.parameters['out-zarr'] : inputs.parameters['in-zarr']"
 
 
-      # Wet-day freqency correction for downscaling precipitation
-    - name: correct-wetday-frequency
+      # This correction is for GCM precipitation fields
+    - name: wetday-frequency-precorrection
       inputs:
         parameters:
           - name: in-zarr
