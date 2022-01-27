@@ -57,11 +57,3 @@ spec:
               parameters:
                 - name: jobs
                   value: "{{ inputs.parameters.jobs }}"
-                - name: regrid-method
-                  value: "conservative"
-                - name: correct-wetday-frequency
-                  value: "true"
-                - name: qdm-kind
-                  value: "multiplicative"
-                - name: apply-dtr-minimum-threshold
-                  value: "false"
