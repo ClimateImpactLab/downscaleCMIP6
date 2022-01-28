@@ -50,21 +50,12 @@ spec:
               expression: "inputs.parameters['apply-dtr-minimum-threshold'] == 'true' ? tasks['apply-minimum-threshold'].outputs.parameters['out-zarr'] : tasks['move-chunks-to-space'].outputs.parameters['out-zarr']"
       dag:
         tasks:
-          - name: check-to-correct-wetday-frequency
-            template: check-to-correct-wetday-frequency
-            arguments:
-              parameters:
-                - name: in-zarr
-                  value: "{{ inputs.parameters.in-zarr }}"
-                - name: correct-wetday-frequency
-                  value: "{{ inputs.parameters.correct-wetday-frequency }}"
           - name: check-to-add-cyclic-pixels
-            depends: check-to-correct-wetday-frequency
             template: check-to-add-cyclic-pixels
             arguments:
               parameters:
                 - name: in-zarr
-                  value: "{{ tasks.check-to-correct-wetday-frequency.outputs.parameters.out-zarr }}"
+                  value: "{{ inputs.parameters.in-zarr }}"
                 - name: add-cyclic
                   value: "{{ inputs.parameters.add-cyclic }}"
           - name: move-chunks-to-time
@@ -95,15 +86,24 @@ spec:
                   value: "{{ inputs.parameters.regrid-method }}"
                 - name: domain-file
                   value: "{{ inputs.parameters.domain-file }}"
-          - name: move-chunks-to-space
+          - name: check-to-correct-wetday-frequency
+            template: check-to-correct-wetday-frequency
             depends: regrid
+            arguments:
+              parameters:
+                - name: in-zarr
+                  value: "{{ tasks.regrid.outputs.parameters.out-zarr }}"
+                - name: correct-wetday-frequency
+                  value: "{{ inputs.parameters.correct-wetday-frequency }}"
+          - name: move-chunks-to-space
+            depends: check-to-correct-wetday-frequency
             templateRef:
               name: rechunk
               template: rechunk
             arguments:
               parameters:
                 - name: in-zarr
-                  value: "{{ tasks.regrid.outputs.parameters.out-zarr }}"
+                  value: "{{ tasks.check-to-correct-wetday-frequency.outputs.parameters.out-zarr }}"
                 - name: time-chunk
                   value: -1
                 - name: lat-chunk
@@ -128,8 +128,8 @@ spec:
             value: "false"
       dag:
         tasks:
-          - name: correct-wetday-frequency
-            template: correct-wetday-frequency
+          - name: wetday-frequency-precorrection
+            template: wetday-frequency-precorrection
             arguments:
               parameters:
                 - name: in-zarr
@@ -139,11 +139,11 @@ spec:
         parameters:
           - name: out-zarr
             valueFrom:
-              expression: "inputs.parameters['correct-wetday-frequency'] == 'true' ? tasks['correct-wetday-frequency'].outputs.parameters['out-zarr'] : inputs.parameters['in-zarr']"
+              expression: "inputs.parameters['correct-wetday-frequency'] == 'true' ? tasks['wetday-frequency-precorrection'].outputs.parameters['out-zarr'] : inputs.parameters['in-zarr']"
 
 
-      # Wet-day freqency correction for downscaling precipitation
-    - name: correct-wetday-frequency
+      # This correction is for GCM precipitation fields
+    - name: wetday-frequency-precorrection
       inputs:
         parameters:
           - name: in-zarr
