@@ -193,7 +193,7 @@ spec:
           - name: out-zarr
             value: "{{ inputs.parameters.out-zarr }}"
       container:
-        image: us-central1-docker.pkg.dev/downscalecmip6/private/dodola:dev
+        image: us-central1-docker.pkg.dev/downscalecmip6/private/dodola:0.16.1
         command: [ dodola ]
         args:
           - "correct-wetday-frequency"
