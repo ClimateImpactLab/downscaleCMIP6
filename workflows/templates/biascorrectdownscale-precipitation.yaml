@@ -37,42 +37,18 @@ spec:
       inputs:
         parameters:
           - name: jobs
-          - name: regrid-method
-            value: conservative
-          - name: correct-wetday-frequency  # "true" or "false" STRING!
-            value: "true"
-          - name: qdm-kind
-            value: multiplicative
-          - name: apply-dtr-minimum-threshold
-            value: "false"
       steps:
-        - - name: variable-id-switch
-            template: variable-id-switch
-            arguments:
-              parameters:
-                - name: job
-                  value: "{{ item }}"
-            withParam: "{{ inputs.parameters.jobs }}"
-
-
-    # TODO: Don't need this anymore.
-    - name: variable-id-switch
-      inputs:
-        parameters:
-          - name: job
-          - name: variable-id
-            value: "{{=jsonpath(inputs.parameters.job, '$.variable_id') }}"
-      steps:
-        - - name: parameterize-simple-job
+        - - name: parameterize
             template: parameterize
             arguments:
               parameters:
                 - name: target
-                  value: "{{=jsonpath(inputs.parameters.job, '$.target')}}"
+                  value: "{{ item.target }}"
                 - name: historical
-                  value: "{{=toJson(jsonpath(inputs.parameters.job, '$.historical'))}}"
+                  value: "{{ item.historical }}"
                 - name: ssp
-                  value: "{{=toJson(jsonpath(inputs.parameters.job, '$.ssp'))}}"
+                  value: "{{ item.ssp }}"
+            withParam: "{{ inputs.parameters.jobs }}"
 
 
       # Start work for target simulation, with target-specific configs.
@@ -82,10 +58,6 @@ spec:
           - name: target
           - name: ssp
           - name: historical
-          - name: domainfile1x1
-            value: "gs://support-c23ff1a3/domain.1x1.zarr"
-          - name: domainfile0p25x0p25
-            value: "gs://support-c23ff1a3/domain.0p25x0p25.zarr"
       steps:
         - - name: historical
             template: biascorrectdownscale
@@ -97,10 +69,6 @@ spec:
                   value: "{{ inputs.parameters.historical }}"
                 - name: first-year
                   value: 1950
-                - name: domainfile1x1
-                  value: "{{ inputs.parameters.domainfile1x1 }}"
-                - name: domainfile0p25x0p25
-                  value: "{{ inputs.parameters.domainfile0p25x0p25 }}"
             when: "{{inputs.parameters.target}} == historical"
           - name: ssp
             template: biascorrectdownscale
@@ -112,10 +80,6 @@ spec:
                   value: "{{ inputs.parameters.historical }}"
                 - name: first-year
                   value: 2015
-                - name: domainfile1x1
-                  value: "{{ inputs.parameters.domainfile1x1 }}"
-                - name: domainfile0p25x0p25
-                  value: "{{ inputs.parameters.domainfile0p25x0p25 }}"
             when: "{{inputs.parameters.target}} == ssp"
 
 
@@ -125,12 +89,14 @@ spec:
           - name: simulation
           - name: historical
           - name: regrid-method
-            value: conservative
+            value: "conservative"
           - name: first-year
           - name: domainfile1x1
+            value: "gs://support-c23ff1a3/domain.1x1.zarr"
           - name: domainfile0p25x0p25
+            value: "gs://support-c23ff1a3/domain.0p25x0p25.zarr"
           - name: qdm-kind
-            value: multiplicative
+            value: "multiplicative"
           - name: correct-wetday-frequency
             value: "true"
           - name: apply-dtr-minimum-threshold
