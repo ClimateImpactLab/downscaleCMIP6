@@ -15,7 +15,7 @@ spec:
     labels:
       component: biascorrectdownscale
       variable_id: pr
-      source_id: ERA-5
+      source_id: ERA5
   entrypoint: create-pr-references
   arguments:
     parameters:
@@ -159,8 +159,6 @@ spec:
                   value: "{{ tasks.fineref-regrid.outputs.parameters.out-zarr }}"
                 - name: wdf-correction-zarr
                   value: "{{ tasks.create-qplad-wdf-precorrection-data.outputs.parameters.out-zarr }}"
-                - name: out-zarr
-                  value: "gs://scratch-170cd6ec/{{ workflow.uid }}/{{ pod.name }}/fineref_wdf_precorrected.zarr"
           - name: apply-qplad-wdf-precorrection-coarseref
             depends: >-
               create-qplad-wdf-precorrection-data
@@ -172,8 +170,6 @@ spec:
                   value: "{{ tasks.coarseref-regrid.outputs.parameters.out-zarr }}"
                 - name: wdf-correction-zarr
                   value: "{{ tasks.create-qplad-wdf-precorrection-data.outputs.parameters.out-zarr }}"
-                - name: out-zarr
-                  value: "gs://scratch-170cd6ec/{{ workflow.uid }}/{{ pod.name }}/coarseref_wdf_precorrected.zarr"
 
           # Heavy transpose rechunking because QPLAD require no chunks in time.
           - name: rechunk-coarseref-for-qplad
