@@ -148,31 +148,43 @@ spec:
               parameters:
                 - name: fineref-zarr
                   value: "{{ tasks.fineref-regrid.outputs.parameters.out-zarr }}"
-          - name: apply-qplad-wdf-precorrection
+          - name: apply-qplad-wdf-precorrection-fineref
             depends: >-
               create-qplad-wdf-precorrection-data
               && fineref-regrid
+            template: apply-wdf-precorrection
+            arguments:
+              parameters:
+                - name: ref-zarr
+                  value: "{{ tasks.fineref-regrid.outputs.parameters.out-zarr }}"
+                - name: wdf-correction-zarr
+                  value: "{{ tasks.create-qplad-wdf-precorrection-data.outputs.parameters.out-zarr }}"
+                - name: out-zarr
+                  value: "gs://scratch-170cd6ec/{{ workflow.uid }}/{{ pod.name }}/fineref_wdf_precorrected.zarr"
+          - name: apply-qplad-wdf-precorrection-coarseref
+            depends: >-
+              create-qplad-wdf-precorrection-data
               && coarseref-regrid
             template: apply-wdf-precorrection
             arguments:
               parameters:
-                - name: fineref-zarr
-                  value: "{{ tasks.fineref-regrid.outputs.parameters.out-zarr }}"
-                - name: coarseref-zarr
+                - name: ref-zarr
                   value: "{{ tasks.coarseref-regrid.outputs.parameters.out-zarr }}"
                 - name: wdf-correction-zarr
                   value: "{{ tasks.create-qplad-wdf-precorrection-data.outputs.parameters.out-zarr }}"
+                - name: out-zarr
+                  value: "gs://scratch-170cd6ec/{{ workflow.uid }}/{{ pod.name }}/coarseref_wdf_precorrected.zarr"
 
           # Heavy transpose rechunking because QPLAD require no chunks in time.
           - name: rechunk-coarseref-for-qplad
-            depends: apply-qplad-wdf-precorrection
+            depends: apply-qplad-wdf-precorrection-coarseref
             templateRef:
               name: rechunk
               template: rechunk
             arguments:
               parameters:
                 - name: in-zarr
-                  value: "{{ tasks.apply-qplad-wdf-precorrection.outputs.parameters.coarseref-out-zarr }}"
+                  value: "{{ tasks.apply-qplad-wdf-precorrection-coarseref.outputs.parameters.out-zarr }}"
                 - name: out-zarr
                   value: "{{ inputs.parameters.out-qplad-coarse-reference }}"
                 - name: time-chunk
@@ -182,14 +194,14 @@ spec:
                 - name: lon-chunk
                   value: -1
           - name: rechunk-fineref-for-qplad
-            depends: apply-qplad-wdf-precorrection
+            depends: apply-qplad-wdf-precorrection-fineref
             templateRef:
               name: rechunk
               template: rechunk
             arguments:
               parameters:
                 - name: in-zarr
-                  value: "{{ tasks.apply-qplad-wdf-precorrection.outputs.parameters.fineref-out-zarr }}"
+                  value: "{{ tasks.apply-qplad-wdf-precorrection-fineref.outputs.parameters.out-zarr }}"
                 - name: out-zarr
                   value: "{{ inputs.parameters.out-qplad-fine-reference }}"
                 - name: time-chunk
@@ -276,21 +288,16 @@ spec:
     - name: apply-wdf-precorrection
       inputs:
         parameters:
-          - name: fineref-zarr
-          - name: coarseref-zarr
+          - name: ref-zarr
           - name: wdf-correction-zarr
-          - name: fineref-out-zarr
-            value: "gs://scratch-170cd6ec/{{ workflow.uid }}/{{ pod.name }}/fineref_wdf_precorrected.zarr"
-          - name: coarseref-out-zarr
-            value: "gs://scratch-170cd6ec/{{ workflow.uid }}/{{ pod.name }}/coarseref_wdf_precorrected.zarr"
+          - name: out-zarr
+            value: "gs://scratch-170cd6ec/{{ workflow.uid }}/{{ pod.name }}/wdf_precorrected.zarr"
           - name: variable
             value: "pr"
       outputs:
         parameters:
-          - name: fineref-out-zarr
-            value: "{{ inputs.parameters.fineref-out-zarr }}"
-          - name: coarseref-out-zarr
-            value: "{{ inputs.parameters.coarseref-out-zarr }}"
+          - name: out-zarr
+            value: "{{ inputs.parameters.out-zarr }}"
       script:
         image: us-central1-docker.pkg.dev/downscalecmip6/private/dodola:0.16.1
         command: [ python ]
@@ -317,31 +324,24 @@ spec:
           
           if __name__ == "__main__":
               print("Beginning applying wet-day frequency correction")
-              fineref_url = "{{ inputs.parameters.fineref-zarr }}"
-              coarseref_url = "{{ inputs.parameters.coarseref-zarr }}"
+              ref_url = "{{ inputs.parameters.ref-zarr }}"
               correction_url = "{{ inputs.parameters.wdf-correction-zarr }}"
               target_variable = "{{ inputs.parameters.variable }}"
           
-              fineref_out_url = "{{ inputs.parameters.fineref-out-zarr }}"
-              coarseref_out_url = "{{ inputs.parameters.coarseref-out-zarr }}"
-          
-              print(f"Reading {fineref_url}")
-              fineref = xr.open_zarr(fineref_url)
-              print(f"Reading {coarseref_url}")
-              coarseref = xr.open_zarr(coarseref_url)
+              out_url = "{{ inputs.parameters.out-zarr }}"
+
+              print(f"Reading {ref_url}")
+              ref = xr.open_zarr(ref_url)
               print(f"Reading {correction_url}")
               m = xr.open_zarr(correction_url)[target_variable]
           
-              fineref_correct = apply_wdf_correction(fineref[target_variable], m).to_dataset(name=target_variable)
-              coarseref_correct = apply_wdf_correction(coarseref[target_variable], m).to_dataset(name=target_variable)
-          
-              fineref_correct.attrs = deepcopy(fineref.attrs)
-              coarseref_correct.attrs = deepcopy(coarseref.attrs)
-          
-              print(f"Writing to {fineref_out_url} and {coarseref_out_url}")
+              ref_correct = apply_wdf_correction(ref[target_variable], m).to_dataset(name=target_variable)
+
+              ref_correct.attrs = deepcopy(ref.attrs)
+
+              print(f"Writing to {out_url}")
               tasks = [
-                  fineref_correct.to_zarr(fineref_out_url, compute=False),
-                  coarseref_correct.to_zarr(coarseref_out_url, compute=False)
+                  ref_correct.to_zarr(out_url, compute=False),
               ]
               dask.compute(tasks)
               print("Done")
