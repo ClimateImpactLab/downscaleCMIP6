@@ -10,6 +10,7 @@ resources:
   - clean-era5.yaml
   - compute-dtr.yaml
   - create-output-metadata-json.yaml
+  - create-pr-references.yaml
   - distributed-regrid.yaml
   - download-cmip6.yaml
   - e2e-dtr-jobs.yaml

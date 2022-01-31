@@ -1,0 +1,388 @@
+apiVersion: argoproj.io/v1alpha1
+kind: WorkflowTemplate
+metadata:
+  name: create-pr-references
+  annotations:
+    workflows.argoproj.io/description: >-
+      Process cleaned ERA5 precipitation data into three reference datasets to input to QDM/QPLAD biascorrection and downscaling.
+
+    workflows.argoproj.io/tags: biascorrect,downscale,reference,dc6,qplad, qdm, pr, precipitation
+    workflows.argoproj.io/version: '>= 3.1.0'
+  labels:
+    component: biascorrectdownscale
+spec:
+  workflowMetadata:
+    labels:
+      component: biascorrectdownscale
+      variable_id: pr
+      source_id: ERA5
+  entrypoint: create-pr-references
+  arguments:
+    parameters:
+      - name: in-zarr
+        value: "gs://clean-b1dbca25/reanalysis/ERA-5/F320/pr.1995-2015.F320.zarr"
+  templates:
+
+    - name: create-pr-references
+      inputs:
+        parameters:
+          - name: in-zarr
+          - name: out-qdm-reference
+            value: "gs://support-c23ff1a3/qdm-reference/pr/v{{ inputs.parameters.version }}.zarr"
+          - name: out-qplad-fine-reference
+            value: "gs://support-c23ff1a3/qplad-fine-reference/pr/v{{ inputs.parameters.version }}.zarr"
+          - name: out-qplad-coarse-reference
+            value: "gs://support-c23ff1a3/qplad-coarse-reference/pr/v{{ inputs.parameters.version }}.zarr"
+          - name: regrid-method
+            value: "conservative"
+          - name: domainfile1x1
+            value: "gs://support-c23ff1a3/domain.1x1.zarr"
+          - name: domainfile0p25x0p25
+            value: "gs://support-c23ff1a3/domain.0p25x0p25.zarr"
+          - name: version
+            value: "{{workflow.creationTimestamp.Y}}{{workflow.creationTimestamp.m}}{{workflow.creationTimestamp.d}}{{workflow.creationTimestamp.H}}{{workflow.creationTimestamp.M}}{{workflow.creationTimestamp.S}}"
+      dag:
+        tasks:
+
+          # Rechunk because regridding cannot have data chunks in space (lat, lon) dimensions.
+          - name: rechunk-for-regrid
+            templateRef:
+              name: rechunk
+              template: rechunk
+            arguments:
+              parameters:
+                - name: in-zarr
+                  value: "{{ inputs.parameters.in-zarr }}"
+                - name: time-chunk
+                  value: "365"
+                - name: lat-chunk
+                  value: -1
+                - name: lon-chunk
+                  value: -1
+          - name: regrid1x1
+            depends: rechunk-for-regrid
+            templateRef:
+              name: regrid
+              template: regrid
+            arguments:
+              parameters:
+                - name: in-zarr
+                  value: "{{ tasks.rechunk-for-regrid.outputs.parameters.out-zarr }}"
+                - name: regrid-method
+                  value: "{{ inputs.parameters.regrid-method }}"
+                - name: domain-file
+                  value: "{{ inputs.parameters.domainfile1x1 }}"
+          - name: qdm-wdf-precorrection
+            template: precorrect-wetday-frequency
+            depends: regrid1x1
+            arguments:
+              parameters:
+                - name: in-zarr
+                  value: "{{ tasks.regrid1x1.outputs.parameters.out-zarr }}"
+          # Big transposing rechunk so chunks appear in space (lat, lon) and not time. This is required for
+          # QDM biascorrection.
+          - name: rechunk-for-qdm
+            depends: qdm-wdf-precorrection
+            templateRef:
+              name: rechunk
+              template: rechunk
+            arguments:
+              parameters:
+                - name: in-zarr
+                  value: "{{ tasks.qdm-wdf-precorrection.outputs.parameters.out-zarr }}"
+                - name: out-zarr
+                  value: "{{ inputs.parameters.out-qdm-reference }}"
+                - name: time-chunk
+                  value: -1
+                - name: lat-chunk
+                  value: 10
+                - name: lon-chunk
+                  value: 10
+
+            # Exclusively to create QPLAD's "coarse reference" input. It needs to follow the regridding
+            # that QDM bias-corrected data undergoes before being passed to QPLAD downscaling.
+          - name: coarseref-regrid
+            depends: regrid1x1
+            templateRef:
+              name: distributed-regrid
+              template: main
+            arguments:
+              parameters:
+                - name: in-zarr
+                  value: "{{ tasks.regrid1x1.outputs.parameters.out-zarr }}"
+                - name: regrid-method
+                  value: "nearest_s2d"
+                - name: domain-file
+                  value: "{{ inputs.parameters.domainfile0p25x0p25 }}"
+                - name: add-cyclic-lon
+                  value: "false"
+                - name: add-lat-buffer
+                  value: "true"
+
+            # Exclusively to create QPLAD's "fine reference" input.
+          - name: fineref-regrid
+            depends: rechunk-for-regrid
+            templateRef:
+              name: distributed-regrid
+              template: main
+            arguments:
+              parameters:
+                - name: in-zarr
+                  value: "{{ tasks.rechunk-for-regrid.outputs.parameters.out-zarr }}"
+                - name: regrid-method
+                  value: "{{ inputs.parameters.regrid-method }}"
+                - name: domain-file
+                  value: "{{ inputs.parameters.domainfile0p25x0p25 }}"
+                - name: add-cyclic-lon
+                  value: "false"
+                - name: add-lat-buffer
+                  value: "true"
+
+            # QPLAD WDF precorrection has a shared random correction between
+            # QPLAD's coarse and fine reference inputs. WDF precorrection is
+            # created and applied in two steps:
+          - name: create-qplad-wdf-precorrection-data
+            depends: fineref-regrid
+            template: create-wdf-precorrection
+            arguments:
+              parameters:
+                - name: fineref-zarr
+                  value: "{{ tasks.fineref-regrid.outputs.parameters.out-zarr }}"
+          - name: apply-qplad-wdf-precorrection-fineref
+            depends: >-
+              create-qplad-wdf-precorrection-data
+              && fineref-regrid
+            template: apply-wdf-precorrection
+            arguments:
+              parameters:
+                - name: ref-zarr
+                  value: "{{ tasks.fineref-regrid.outputs.parameters.out-zarr }}"
+                - name: wdf-correction-zarr
+                  value: "{{ tasks.create-qplad-wdf-precorrection-data.outputs.parameters.out-zarr }}"
+          - name: apply-qplad-wdf-precorrection-coarseref
+            depends: >-
+              create-qplad-wdf-precorrection-data
+              && coarseref-regrid
+            template: apply-wdf-precorrection
+            arguments:
+              parameters:
+                - name: ref-zarr
+                  value: "{{ tasks.coarseref-regrid.outputs.parameters.out-zarr }}"
+                - name: wdf-correction-zarr
+                  value: "{{ tasks.create-qplad-wdf-precorrection-data.outputs.parameters.out-zarr }}"
+
+          # Heavy transpose rechunking because QPLAD require no chunks in time.
+          - name: rechunk-coarseref-for-qplad
+            depends: apply-qplad-wdf-precorrection-coarseref
+            templateRef:
+              name: rechunk
+              template: rechunk
+            arguments:
+              parameters:
+                - name: in-zarr
+                  value: "{{ tasks.apply-qplad-wdf-precorrection-coarseref.outputs.parameters.out-zarr }}"
+                - name: out-zarr
+                  value: "{{ inputs.parameters.out-qplad-coarse-reference }}"
+                - name: time-chunk
+                  value: 365
+                - name: lat-chunk
+                  value: 2
+                - name: lon-chunk
+                  value: -1
+          - name: rechunk-fineref-for-qplad
+            depends: apply-qplad-wdf-precorrection-fineref
+            templateRef:
+              name: rechunk
+              template: rechunk
+            arguments:
+              parameters:
+                - name: in-zarr
+                  value: "{{ tasks.apply-qplad-wdf-precorrection-fineref.outputs.parameters.out-zarr }}"
+                - name: out-zarr
+                  value: "{{ inputs.parameters.out-qplad-fine-reference }}"
+                - name: time-chunk
+                  value: 365
+                - name: lat-chunk
+                  value: 2
+                - name: lon-chunk
+                  value: -1
+
+      # This is specifically for correcting the two QPLAD references together:
+    - name: create-wdf-precorrection
+      inputs:
+        parameters:
+          - name: fineref-zarr
+          - name: out-zarr
+            value: "gs://scratch-170cd6ec/{{ workflow.uid }}/{{ pod.name }}/wdf_precorrection.zarr"
+          - name: variable
+            value: "pr"
+      outputs:
+        parameters:
+          - name: out-zarr
+            value: "{{ inputs.parameters.out-zarr }}"
+      script:
+        image: us-central1-docker.pkg.dev/downscalecmip6/private/dodola:0.16.1
+        command: [ python ]
+        source: |
+          import numpy as np
+          import xarray as xr
+
+          def make_wdf_correction(da, threshold=1.0):
+              """
+              Make DataArray with RNG uniform draws for values under threshold, otherwise Falses
+
+              Note this modifies da in-place!
+              """
+              def mascara(x):
+                  slug = xr.zeros_like(x)  # Because 0.0 == False &  False == no need to mask for wdf...
+
+                  # Working on underlaying .data so we can use the tensor mask to strategically
+                  # insert a few random values rather than generating an entire random field.
+                  mask = x.data < threshold
+
+                  # This might risk drawing common/bad random sample if run 
+                  # multithread/process. Not sure this matters.
+                  rng = np.random.default_rng()
+                  slug.data[mask] = rng.uniform(
+                      low=threshold / 2.0,
+                      high=threshold,
+                      size=mask.sum().item()
+                  )
+                  return slug
+
+              return da.map_blocks(mascara, template=da)
+          
+          
+          if __name__ == "__main__":
+              print("Beginning creating wet-day frequency correction data")
+              fineref_url = "{{ inputs.parameters.fineref-zarr }}"
+              out_url = "{{ inputs.parameters.out-zarr }}"
+              target_variable = "{{ inputs.parameters.variable }}"
+          
+              print(f"Reading from {fineref_url}")
+              fineref = xr.open_zarr(fineref_url)
+          
+              out = make_wdf_correction(fineref[target_variable]).to_dataset(name=target_variable)
+          
+              print(f"Writing to {out_url}")
+              out.to_zarr(out_url)
+              print("Done")
+        resources:
+          requests:
+            memory: 750Mi
+            cpu: "500m"
+          limits:
+            memory: 1Gi
+            cpu: "1000m"
+      activeDeadlineSeconds: 3600
+      retryStrategy:
+        limit: 2
+        retryPolicy: "Always"
+
+
+      # This is specifically for correcting the two QPLAD references together:
+    - name: apply-wdf-precorrection
+      inputs:
+        parameters:
+          - name: ref-zarr
+          - name: wdf-correction-zarr
+          - name: out-zarr
+            value: "gs://scratch-170cd6ec/{{ workflow.uid }}/{{ pod.name }}/wdf_precorrected.zarr"
+          - name: variable
+            value: "pr"
+      outputs:
+        parameters:
+          - name: out-zarr
+            value: "{{ inputs.parameters.out-zarr }}"
+      script:
+        image: us-central1-docker.pkg.dev/downscalecmip6/private/dodola:0.16.1
+        command: [ python ]
+        source: |
+          from copy import deepcopy
+          import dask
+          import xarray as xr
+          
+          
+          def copy_attrs(da_to, da_from):
+              """In-place deep copy attrs and coord attrs"""
+              da_to.attrs = deepcopy(da_from.attrs)
+              
+              for k, v in da_from.coords.items():
+                  if k in da_to.coords:
+                      da_to.coords[k].attrs = deepcopy(v.attrs)
+          
+          
+          def apply_wdf_correction(da, c):
+              out = c.where(c, da)
+              copy_attrs(out, da)
+              return out
+          
+          
+          if __name__ == "__main__":
+              print("Beginning applying wet-day frequency correction")
+              ref_url = "{{ inputs.parameters.ref-zarr }}"
+              correction_url = "{{ inputs.parameters.wdf-correction-zarr }}"
+              target_variable = "{{ inputs.parameters.variable }}"
+          
+              out_url = "{{ inputs.parameters.out-zarr }}"
+
+              print(f"Reading {ref_url}")
+              ref = xr.open_zarr(ref_url)
+              print(f"Reading {correction_url}")
+              m = xr.open_zarr(correction_url)[target_variable]
+          
+              ref_correct = apply_wdf_correction(ref[target_variable], m).to_dataset(name=target_variable)
+
+              ref_correct.attrs = deepcopy(ref.attrs)
+
+              print(f"Writing to {out_url}")
+              tasks = [
+                  ref_correct.to_zarr(out_url, compute=False),
+              ]
+              dask.compute(tasks)
+              print("Done")
+        resources:
+          requests:
+            memory: 0.5Gi
+            cpu: "500m"
+          limits:
+            memory: 1Gi
+            cpu: "1000m"
+      activeDeadlineSeconds: 7200
+      retryStrategy:
+        limit: 2
+        retryPolicy: "Always"
+
+
+    - name: precorrect-wetday-frequency
+      inputs:
+        parameters:
+          - name: in-zarr
+          - name: out-zarr
+            value: "gs://scratch-170cd6ec/{{ workflow.uid }}/{{ pod.name }}/wdf-corrected.zarr"
+      outputs:
+        parameters:
+          - name: out-zarr
+            value: "{{ inputs.parameters.out-zarr }}"
+      container:
+        image: us-central1-docker.pkg.dev/downscalecmip6/private/dodola:0.16.1
+        command: [ dodola ]
+        args:
+          - "correct-wetday-frequency"
+          - "{{ inputs.parameters.in-zarr}}"
+          - "--process=pre"
+          - "--out={{ inputs.parameters.out-zarr }}"
+        resources:
+          requests:
+            memory: 25Gi
+            cpu: "500m"
+          limits:
+            memory: 25Gi
+            cpu: "1000m"
+      activeDeadlineSeconds: 1800
+      retryStrategy:
+        limit: 4
+        retryPolicy: "Always"
+        backoff:
+          duration: 30s
+          factor: 2
