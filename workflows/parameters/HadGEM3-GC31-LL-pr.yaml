@@ -1,0 +1,27 @@
+jobs: |
+  [
+    {
+      "target": "historical",
+      "variable_id": "pr",
+      "historical": { "activity_id": "CMIP", "experiment_id": "historical", "table_id": "day", "variable_id": "pr", "source_id": "HadGEM3-GC31-LL", "institution_id": "MOHC", "member_id": "r1i1p1f3", "grid_label": "gn", "version": "20190624" },
+      "ssp": { "activity_id": "ScenarioMIP", "experiment_id": "ssp245", "table_id": "day", "variable_id": "pr", "source_id": "HadGEM3-GC31-LL", "institution_id": "MOHC", "member_id": "r1i1p1f3", "grid_label": "gn", "version": "20190908" }
+    },
+    {
+      "target": "ssp",
+      "variable_id": "pr",
+      "historical": { "activity_id": "CMIP", "experiment_id": "historical", "table_id": "day", "variable_id": "pr", "source_id": "HadGEM3-GC31-LL", "institution_id": "MOHC", "member_id": "r1i1p1f3", "grid_label": "gn", "version": "20190624" },
+      "ssp": { "activity_id": "ScenarioMIP", "experiment_id": "ssp245", "table_id": "day", "variable_id": "pr", "source_id": "HadGEM3-GC31-LL", "institution_id": "MOHC", "member_id": "r1i1p1f3", "grid_label": "gn", "version": "20190908" }
+    },
+    {
+      "target": "ssp",
+      "variable_id": "pr",
+      "historical": { "activity_id": "CMIP", "experiment_id": "historical", "table_id": "day", "variable_id": "pr", "source_id": "HadGEM3-GC31-LL", "institution_id": "MOHC", "member_id": "r1i1p1f3", "grid_label": "gn", "version": "20190624" },
+      "ssp": { "activity_id": "ScenarioMIP", "experiment_id": "ssp126", "table_id": "day", "variable_id": "pr", "source_id": "HadGEM3-GC31-LL", "institution_id": "MOHC", "member_id": "r1i1p1f3", "grid_label": "gn", "version": "20200114" }
+    },
+    {
+      "target": "ssp",
+      "variable_id": "pr",
+      "historical": { "activity_id": "CMIP", "experiment_id": "historical", "table_id": "day", "variable_id": "pr", "source_id": "HadGEM3-GC31-LL", "institution_id": "MOHC", "member_id": "r1i1p1f3", "grid_label": "gn", "version": "20190624" },
+      "ssp": { "activity_id": "ScenarioMIP", "experiment_id": "ssp585", "table_id": "day", "variable_id": "pr", "source_id": "HadGEM3-GC31-LL", "institution_id": "MOHC", "member_id": "r1i1p1f3", "grid_label": "gn", "version": "20200114" }
+    }
+  ]
