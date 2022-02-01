@@ -27,7 +27,7 @@ jobs: |
     {
       "target": "ssp",
       "variable_id": "tasmin",
-      "historical": { "activity_id": "CMIP", "experiment_id": "historical", "table_id": "day", "variable_id": "tasmin", "source_id": "UKESM1-0-LL", "institution_id": "MOHC", "member_id": "r1i1p1f2", "grid_label": "gn", "version": "20191016" },
+      "historical": { "activity_id": "CMIP", "experiment_id": "historical", "table_id": "day", "variable_id": "tasmin", "source_id": "UKESM1-0-LL", "institution_id": "MOHC", "member_id": "r1i1p1f2", "grid_label": "gn", "version": "20190627" },
       "ssp": { "activity_id": "ScenarioMIP", "experiment_id": "ssp585", "table_id": "day", "variable_id": "tasmin", "source_id": "UKESM1-0-LL", "institution_id": "MOHC", "member_id": "r1i1p1f2", "grid_label": "gn", "version": "20190726" }
     }
   ]
