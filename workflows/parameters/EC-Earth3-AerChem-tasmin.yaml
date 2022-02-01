@@ -11,6 +11,6 @@ jobs: |
       "variable_id": "tasmin",
       "historical": { "activity_id": "CMIP", "experiment_id": "historical", "table_id": "day", "variable_id": "tasmin", "source_id": "EC-Earth3-AerChem", "institution_id": "EC-Earth-Consortium", "member_id": "r1i1p1f1", "grid_label": "gr", "version": "20200624" },
       "ssp": { "activity_id": "ScenarioMIP", "experiment_id": "ssp370", "table_id": "day", "variable_id": "tasmin", "source_id": "EC-Earth3-AerChem", "institution_id": "EC-Earth-Consortium", "member_id": "r1i1p1f1", "grid_label": "gr", "version": "20200827" }
-    },
+    }
   ]
 
