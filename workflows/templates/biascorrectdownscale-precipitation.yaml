@@ -101,10 +101,12 @@ spec:
             value: "true"
           - name: apply-dtr-minimum-threshold
             value: "false"
-          - name: reference-zarr
-            # Use simulation variable_id to get reference URL.
-            value: >-
-              gs://clean-b1dbca25/reanalysis/ERA-5/F320/{{=jsonpath(inputs.parameters.simulation, '$.variable_id')}}.1995-2015.F320.zarr
+          - name: qdm-reference-zarr
+            value: "gs://support-c23ff1a3/qdm-reference/pr/v20220201000555.zarr"
+          - name: qplad-fine-reference-zarr
+            value: "gs://support-c23ff1a3/qplad-fine-reference/pr/v20220201000555.zarr"
+          - name: qplad-coarse-reference-zarr
+            value: "gs://support-c23ff1a3/qplad-coarse-reference/pr/v20220201000555.zarr"
       dag:
         tasks:
           - name: get-input-clean-training-url
@@ -218,35 +220,61 @@ spec:
               parameters:
                 - name: in-zarr
                   value: "{{ tasks.get-input-clean-simulation-url.outputs.parameters.out-url }}"
-          - name: biascorrect
+          - name: preprocess-training
             templateRef:
-              name: qdm
-              template: main
-            depends: >-
-              get-input-clean-simulation-url
-              && get-input-clean-training-url
-              && get-biascorrected-last-year
+              name: qdm-preprocess
+              template: preprocess
+            depends: get-input-clean-training-url
             arguments:
               parameters:
-                - name: variable-id
-                  value: "{{=jsonpath(inputs.parameters.simulation, '$.variable_id')}}"
-                - name: reference-zarr
-                  value: "{{ inputs.parameters.reference-zarr }}"
-                - name: training-zarr
+                - name: in-zarr
                   value: "{{ tasks.get-input-clean-training-url.outputs.parameters.out-url }}"
-                - name: simulation-zarr
-                  value: "{{ tasks.get-input-clean-simulation-url.outputs.parameters.out-url }}"
-                - name: out-zarr
-                  value: "gs://scratch-170cd6ec/{{ workflow.uid }}/{{ pod.name }}/qdm-adjusted.zarr"
                 - name: regrid-method
                   value: "{{ inputs.parameters.regrid-method }}"
-                - name: domainfile1x1
+                - name: domain-file
                   value: "{{ inputs.parameters.domainfile1x1 }}"
                 - name: correct-wetday-frequency
                   value: "{{ inputs.parameters.correct-wetday-frequency }}"
                 - name: apply-dtr-minimum-threshold
-                  value: "{{ inputs.parameters.apply-dtr-minimum-threshold }}"                
-                - name: qdm-kind
+                  value: "false"
+          - name: preprocess-simulation
+            templateRef:
+              name: qdm-preprocess
+              template: preprocess
+            depends: get-input-clean-simulation-url
+            arguments:
+              parameters:
+                - name: in-zarr
+                  value: "{{ tasks.get-input-clean-simulation-url.outputs.parameters.out-url }}"
+                - name: regrid-method
+                  value: "{{ inputs.parameters.regrid-method }}"
+                - name: domain-file
+                  value: "{{ inputs.parameters.domainfile1x1 }}"
+                - name: correct-wetday-frequency
+                  value: "{{ inputs.parameters.correct-wetday-frequency }}"
+                - name: apply-dtr-minimum-threshold
+                  value: "false"
+          - name: biascorrect
+            templateRef:
+              name: qdm
+              template: qdm
+            depends: >-
+              preprocess-simulation
+              && preprocess-training
+              && get-biascorrected-last-year
+            arguments:
+              parameters:
+                - name: variable
+                  value: "{{=jsonpath(inputs.parameters.simulation, '$.variable_id')}}"
+                - name: ref-zarr
+                  value: "{{ inputs.parameters.qdm-reference-zarr }}"
+                - name: train-zarr
+                  value: "{{ tasks.preprocess-training.outputs.parameters.out-zarr }}"
+                - name: simulation-zarr
+                  value: "{{ tasks.preprocess-simulation.outputs.parameters.out-zarr }}"
+                - name: out-zarr
+                  value: "gs://scratch-170cd6ec/{{ workflow.uid }}/{{ pod.name }}/qdm-adjusted.zarr"
+                - name: kind
                   value: "{{ inputs.parameters.qdm-kind }}"
                 - name: first-year
                   value: "{{ inputs.parameters.first-year }}"
@@ -292,36 +320,6 @@ spec:
                 - name: time
                   value: >-
                     {{=jsonpath(inputs.parameters.simulation, '$.experiment_id') == 'historical' ? 'historical' : 'future'}}
-          - name: create-fine-reference
-            templateRef:
-              name: qplad
-              template: create-fine-reference
-            arguments:
-              parameters:
-                - name: in-zarr
-                  value: "{{ inputs.parameters.reference-zarr }}"
-                - name: regrid-method
-                  value: "{{ inputs.parameters.regrid-method }}"
-                - name: domain-file
-                  value: "{{ inputs.parameters.domainfile0p25x0p25 }}"
-                - name: correct-wetday-frequency
-                  value: "{{ inputs.parameters.correct-wetday-frequency }}"
-          - name: create-coarse-reference
-            templateRef:
-              name: qplad
-              template: create-coarse-reference
-            arguments:
-              parameters:
-                - name: in-zarr
-                  value: "{{ inputs.parameters.reference-zarr }}"
-                - name: regrid-method
-                  value: "{{ inputs.parameters.regrid-method }}"
-                - name: domainfile0p25x0p25
-                  value: "{{ inputs.parameters.domainfile0p25x0p25 }}"
-                - name: domainfile1x1
-                  value: "{{ inputs.parameters.domainfile1x1 }}"
-                - name: correct-wetday-frequency
-                  value: "{{ inputs.parameters.correct-wetday-frequency }}"
           - name: preprocess-biascorrected
             templateRef:
               name: qplad
@@ -334,13 +332,10 @@ spec:
                 - name: domain-file
                   value: "{{ inputs.parameters.domainfile0p25x0p25 }}"
           - name: qplad
-            depends: >-
-              preprocess-biascorrected
-              && create-coarse-reference
-              && create-fine-reference
             templateRef:
               name: qplad
               template: qplad
+            depends: preprocess-biascorrected
             arguments:
               parameters:
                 - name: variable-id
@@ -348,9 +343,9 @@ spec:
                 - name: simulation-zarr
                   value: "{{ tasks.preprocess-biascorrected.outputs.parameters.out-zarr }}"
                 - name: coarse-reference-zarr
-                  value: "{{ tasks.create-coarse-reference.outputs.parameters.out-zarr }}"
+                  value: "{{ inputs.parameters.qplad-coarse-reference-zarr }}"
                 - name: fine-reference-zarr
-                  value: "{{ tasks.create-fine-reference.outputs.parameters.out-zarr }}"
+                  value: "{{ inputs.parameters.qplad-fine-reference-zarr }}"
                 - name: qdm-kind
                   value: "{{ inputs.parameters.qdm-kind }}"
                 - name: out-zarr
