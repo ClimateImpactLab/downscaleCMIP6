@@ -51,8 +51,6 @@ spec:
                   value: "{{ inputs.parameters.regrid-method }}"
                 - name: domain-file
                   value: "{{ inputs.parameters.domain-file }}"
-                - name: nontime-variables
-                  value: "{{ inputs.parameters.nontime-variables }}"
         - - name: regrid-year-to-primedzarr
             template: regrid-select-year-to-primedzarr
             arguments:
@@ -65,8 +63,6 @@ spec:
                   value: "{{ inputs.parameters.regrid-method }}"
                 - name: domain-file
                   value: "{{ inputs.parameters.domain-file }}"
-                - name: nontime-variables
-                  value: "{{ inputs.parameters.nontime-variables }}"
                 - name: select-year
                   value: "{{ item }}"
                 - name: add-cyclic-lon
@@ -85,8 +81,6 @@ spec:
           - name: in-zarr
           - name: regrid-method
           - name: domain-file
-          - name: nontime-variables
-            value: "lat lon"
           - name: out-zarr
             value: "gs://scratch-170cd6ec/{{ workflow.uid }}/{{ pod.name }}/regridded.zarr"
       outputs:
@@ -110,8 +104,6 @@ spec:
             value: "{{ inputs.parameters.regrid-method }}"
           - name: DOMAIN_FILE
             value: "{{ inputs.parameters.domain-file }}"
-          - name: NONTIME_VARIABLES
-            value: "{{ inputs.parameters.nontime-variables }}"
         command: [ python ]
         source: |
           import os
@@ -123,8 +115,6 @@ spec:
           out_zarr = os.environ["OUT_ZARR"]
           regrid_method = os.environ["REGRID_METHOD"]
           domain_file = os.environ["DOMAIN_FILE"]
-          # Space-delim string of variables and coordinates that do use "time" dimension.
-          non_time = os.environ["NONTIME_VARIABLES"].strip().rsplit()
 
           ds_in = dodola.repository.read(in_zarr)
           domain_fl = dodola.repository.read(domain_file)
@@ -151,18 +141,23 @@ spec:
               compute=False,
               consolidated=True
           )
-
-          print(f"{ds_out[non_time]=}")  # DEBUG
-
-          # Append variables that do not depend on "time"
-          if non_time:
-              ds_out[non_time].to_zarr(
-                  out_zarr,
-                  mode="a",
-                  compute=True,
-                  consolidated=True
+          
+          # Write variables that don't rely on 'time' dim - variables 
+          # that do use 'time' will be written regionally into the zarr 
+          # store in a later process.
+          non_time_variables = []
+          for variable_name, variable in ds_out.variables.items():
+              if "time" not in variable.dims:
+                  non_time_variables.append(variable_name)
+          if non_time_variables:
+              print(f"Appending {non_time_variables} to primed Zarr Store")
+              ds_out[non_time_variables].to_zarr(
+                  out_zarr, mode="a", compute=True, consolidated=True
               )
-
+              print(f"Appended non-regional variables to {out_zarr}")
+          else:
+              print("No non-time variables to append to Zarr Store")
+      
           with open("/tmp/firstyear.txt", mode="w") as fl:
               fl.write(str(first_year))
           with open("/tmp/lastyear.txt", mode="w") as fl:
@@ -193,8 +188,6 @@ spec:
             value: "false"
           - name: add-lat-buffer
             value: "false"
-          - name: nontime-variables
-            value: "lat lon"
       outputs:
         parameters:
           - name: out-zarr
@@ -212,8 +205,6 @@ spec:
             value: "{{ inputs.parameters.regrid-method }}"
           - name: DOMAIN_FILE
             value: "{{ inputs.parameters.domain-file }}"
-          - name: NONTIME_VARIABLES
-            value: "{{ inputs.parameters.nontime-variables }}"
           - name: ADD_CYCLIC_LON
             value: "{{ inputs.parameters.add-cyclic-lon }}"
           - name: ADD_LAT_BUFFER
@@ -231,11 +222,6 @@ spec:
           sel_time = os.environ["SELTIME"]
           regrid_method = os.environ["REGRID_METHOD"]
           domain_file = os.environ["DOMAIN_FILE"]
-          # Space-delim string of variables and coordinates that do use "time" dimension.
-          # If data has something like `lat_b` or `height`, and you care about getting it in output,
-          # those names need to be in this variable!
-          # TODO: We could make this dynamically find non-time dependent variables/coord variables.
-          non_time = os.environ["NONTIME_VARIABLES"].strip().rsplit()
           add_cyclic_lon =  os.environ["ADD_CYCLIC_LON"].lower() == "true"
           add_lat_buffer =  os.environ["ADD_LAT_BUFFER"].lower() == "true"
 
@@ -283,8 +269,15 @@ spec:
                       ds_out[k].attrs |= v.attrs
               target_idx_slice = out_store["time"].to_index().get_loc(sel_time)
 
-          if non_time:
-              ds_out = ds_out.drop_vars(non_time)
+          # Drop variables that don't rely on 'time' dim. This is required to 
+          # regionally write to zarr store. These variables should already
+          # be in primed zarr store.
+          non_time_variables = []
+          for variable_name, variable in ds_out.variables.items():
+              if "time" not in variable.dims:
+                  non_time_variables.append(variable_name)
+          if non_time_variables:
+              ds_out = ds_out.drop_vars(non_time_variables)
 
           # Write to isolated region of Zarr store so can be done by independent processes.
           ds_out.to_zarr(out_zarr, region={"time": target_idx_slice}, mode="a")
