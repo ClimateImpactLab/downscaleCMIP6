@@ -115,7 +115,6 @@ spec:
           out_zarr = os.environ["OUT_ZARR"]
           regrid_method = os.environ["REGRID_METHOD"]
           domain_file = os.environ["DOMAIN_FILE"]
-          # Space-delim string of variables and coordinates that do use "time" dimension.
 
           ds_in = dodola.repository.read(in_zarr)
           domain_fl = dodola.repository.read(domain_file)
@@ -222,9 +221,6 @@ spec:
           sel_time = os.environ["SELTIME"]
           regrid_method = os.environ["REGRID_METHOD"]
           domain_file = os.environ["DOMAIN_FILE"]
-          # Space-delim string of variables and coordinates that do use "time" dimension.
-          # If data has something like `lat_b` or `height`, and you care about getting it in output,
-          # those names need to be in this variable!
           add_cyclic_lon =  os.environ["ADD_CYCLIC_LON"].lower() == "true"
           add_lat_buffer =  os.environ["ADD_LAT_BUFFER"].lower() == "true"
 
