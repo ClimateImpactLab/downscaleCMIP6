@@ -142,8 +142,9 @@ spec:
               consolidated=True
           )
           
-          # Write variables that don't rely on 'time' dim - those will be
-          # written regionally into the zarr store in a later process.
+          # Write variables that don't rely on 'time' dim - variables 
+          # that do use 'time' will be written regionally into the zarr 
+          # store in a later process.
           non_time_variables = []
           for variable_name, variable in ds_out.variables.items():
               if "time" not in variable.dims:
