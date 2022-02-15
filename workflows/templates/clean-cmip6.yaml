@@ -408,7 +408,7 @@ spec:
           - name: out-zarr
             value: "{{ inputs.parameters.out-zarr }}"
       container:
-        image: us-central1-docker.pkg.dev/downscalecmip6/private/dodola:0.16.1
+        image: us-central1-docker.pkg.dev/downscalecmip6/private/dodola:0.16.2
         command: [ "dodola" ]
         args:
           - "cleancmip6"
