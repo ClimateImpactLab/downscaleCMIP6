@@ -1,0 +1,18 @@
+
+This work is licensed under the Creative Commons Attribution 4.0 International License.
+To view a copy of this license, visit http://creativecommons.org/licenses/by/4.0/ or see
+the license text at data_licenses/legalcode/cc_by_4.0.txt within this repository. Please
+note that this license only pertains to the downscaled results corresponding to this
+model within the Rhodium Group/Climate Impact Lab Global Downscaled Projections for
+Climate Impacts Research (R/CIL GDPCIR) dataset. Note that different license terms may
+apply to the original GCM output provided by the relevant modeling institution as part
+of the CMIP6 project.
+ 
+In using this data, you must provide proper attribution to both the original model and
+the R/CIL GDPCIR dataset. See the license terms for more information. See the repository
+README.rst file for citation information:
+https://github.com/ClimateImpactLab/downscaleCMIP6/blob/master/README.rst
+ 
+See the repository license for information about the license governing the code used to
+produce this data:
+https://github.com/ClimateImpactLab/downscaleCMIP6/blob/master/LICENSE
