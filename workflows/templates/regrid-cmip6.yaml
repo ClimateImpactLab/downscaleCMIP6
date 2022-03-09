@@ -1,0 +1,318 @@
+apiVersion: argoproj.io/v1alpha1
+kind: WorkflowTemplate
+metadata:
+  name: regrid-cmip6
+  annotations:
+    workflows.argoproj.io/description: >-
+      Regrid already existing and cleaned CMIP6 data to a common 1 degree resolution grid
+    workflows.argoproj.io/tags: cmip6,dc6,regrid
+    workflows.argoproj.io/version: '>= 3.1.0'
+  labels:
+    component: regrid-cmip6
+spec:
+  entrypoint: with-jobs
+  arguments:
+    parameters:
+      - name: jobs
+        value: |
+          [
+            {
+              "target": "ssp",
+              "variable_id": "tasmax",
+              "historical": { "activity_id": "CMIP", "experiment_id": "historical", "table_id": "day", "variable_id": "tasmax", "source_id": "ACCESS-CM2", "institution_id": "CSIRO-ARCCSS", "member_id": "r1i1p1f1", "grid_label": "gn", "version": "20191108" },
+              "ssp": { "activity_id": "ScenarioMIP", "experiment_id": "ssp245", "table_id": "day", "variable_id": "tasmax", "source_id": "ACCESS-CM2", "institution_id": "CSIRO-ARCCSS", "member_id": "r1i1p1f1", "grid_label": "gn", "version": "20191108" }
+            }
+          ]
+      - name: regrid-method
+  templates:
+
+
+      # Loop through each job listed.
+    - name: with-jobs
+      inputs:
+        parameters:
+          - name: jobs
+          - name: regrid-method
+      steps:
+        - - name: variable-id-switch
+            template: variable-id-switch
+            arguments:
+              parameters:
+                - name: job
+                  value: "{{ item }}"
+                - name: regrid-method
+                  value: "{{ inputs.parameters.regrid-method }}"
+            withParam: "{{ inputs.parameters.jobs }}"
+
+    - name: variable-id-switch
+      inputs:
+        parameters:
+          - name: job
+          - name: regrid-method
+          - name: variable-id
+            value: "{{=jsonpath(inputs.parameters.job, '$.variable_id') }}"
+      steps:
+        - - name: parameterize-simple-job
+            template: parameterize
+            arguments:
+              parameters:
+                - name: target
+                  value: "{{=jsonpath(inputs.parameters.job, '$.target')}}"
+                - name: historical
+                  value: "{{=toJson(jsonpath(inputs.parameters.job, '$.historical'))}}"
+                - name: ssp
+                  value: "{{=toJson(jsonpath(inputs.parameters.job, '$.ssp'))}}"
+                - name: regrid-method
+                  value: "{{ inputs.parameters.regrid-method }}"
+
+      # Start work for target simulation, with target-specific configs.
+    - name: parameterize
+      inputs:
+        parameters:
+          - name: target
+          - name: ssp
+          - name: historical
+          - name: regrid-method
+          - name: domainfile1x1
+            value: "gs://support-c23ff1a3/domain.1x1.zarr"
+      steps:
+        - - name: historical
+            template: regrid-cmip6
+            arguments:
+              parameters:
+                - name: simulation
+                  value: "{{ inputs.parameters.historical }}"
+                - name: regrid-method
+                  value: "{{ inputs.parameters.regrid-method }}"
+                - name: domainfile1x1
+                  value: "{{ inputs.parameters.domainfile1x1 }}"
+            when: "{{inputs.parameters.target}} == historical"
+          - name: ssp
+            template: regrid-cmip6
+            arguments:
+              parameters:
+                - name: simulation
+                  value: "{{ inputs.parameters.ssp }}"
+                - name: regrid-method
+                  value: "{{ inputs.parameters.regrid-method }}"
+                - name: domainfile1x1
+                  value: "{{ inputs.parameters.domainfile1x1 }}"
+            when: "{{inputs.parameters.target}} == ssp"
+
+
+    - name: regrid-cmip6
+      inputs:
+        parameters:
+          - name: simulation
+          - name: regrid-method
+          - name: domainfile1x1
+      dag:
+        tasks:
+          - name: get-input-clean-url
+            templateRef:
+              name: catalog
+              template: get-fsspec-url-from-parameters
+            arguments:
+              parameters:
+                - name: experiment-id
+                  value: "{{=jsonpath(inputs.parameters.simulation, '$.experiment_id')}}"
+                - name: activity-id
+                  value: "{{=jsonpath(inputs.parameters.simulation, '$.activity_id')}}"
+                - name: table-id
+                  value: "{{=jsonpath(inputs.parameters.simulation, '$.table_id')}}"
+                - name: variable-id
+                  value: "{{=jsonpath(inputs.parameters.simulation, '$.variable_id')}}"
+                - name: source-id
+                  value: "{{=jsonpath(inputs.parameters.simulation, '$.source_id')}}"
+                - name: institution-id
+                  value: "{{=jsonpath(inputs.parameters.simulation, '$.institution_id')}}"
+                - name: member-id
+                  value: "{{=jsonpath(inputs.parameters.simulation, '$.member_id')}}"
+                - name: grid-label
+                  value: "{{=jsonpath(inputs.parameters.simulation, '$.grid_label')}}"
+                - name: version
+                  value: "{{=jsonpath(inputs.parameters.simulation, '$.version')}}"
+                - name: base-url
+                  value: "gs://clean-b1dbca25/cmip6"
+          - name: get-output-regridded-url
+            templateRef:
+              name: catalog
+              template: get-fsspec-url-from-parameters
+            arguments:
+              parameters:
+                - name: experiment-id
+                  value: "{{=jsonpath(inputs.parameters.simulation, '$.experiment_id')}}"
+                - name: activity-id
+                  value: "{{=jsonpath(inputs.parameters.simulation, '$.activity_id')}}"
+                - name: table-id
+                  value: "{{=jsonpath(inputs.parameters.simulation, '$.table_id')}}"
+                - name: variable-id
+                  value: "{{=jsonpath(inputs.parameters.simulation, '$.variable_id')}}"
+                - name: source-id
+                  value: "{{=jsonpath(inputs.parameters.simulation, '$.source_id')}}"
+                - name: institution-id
+                  value: "{{=jsonpath(inputs.parameters.simulation, '$.institution_id')}}"
+                - name: member-id
+                  value: "{{=jsonpath(inputs.parameters.simulation, '$.member_id')}}"
+                - name: grid-label
+                  value: "{{=jsonpath(inputs.parameters.simulation, '$.grid_label')}}"
+                - name: version
+                  value: "{{workflow.creationTimestamp.Y}}{{workflow.creationTimestamp.m}}{{workflow.creationTimestamp.d}}{{workflow.creationTimestamp.H}}{{workflow.creationTimestamp.M}}{{workflow.creationTimestamp.S}}"
+                - name: base-url
+                  value: "gs://support-c23ff1a3/regrid-cmip6"
+          - name: regrid-cmip6
+            template: preprocess
+            depends: >-
+              get-input-clean-url
+              && get-output-regridded-url
+            arguments:
+              parameters:
+                - name: in-zarr
+                  value: "{{ tasks.get-input-clean-url.outputs.parameters.out-url }}"
+                - name: out-zarr
+                  value: "{{ tasks.get-output-regridded-url.outputs.parameters.out-url }}"
+                - name: regrid-method
+                  value: "{{ inputs.parameters.regrid-method }}"
+                - name: domain-file
+                  value: "{{ inputs.parameters.domainfile1x1 }}"
+
+
+
+    - name: preprocess
+      inputs:
+        parameters:
+          - name: in-zarr
+          - name: out-zarr
+          - name: regrid-method
+          - name: domain-file
+          - name: add-cyclic
+            value: "{{=inputs.parameters['regrid-method'] == 'bilinear' ? 'lon' : 'false'}}"
+      dag:
+        tasks:
+          - name: check-to-add-cyclic-pixels
+            template: check-to-add-cyclic-pixels
+            arguments:
+              parameters:
+                - name: in-zarr
+                  value: "{{ inputs.parameters.in-zarr }}"
+                - name: add-cyclic
+                  value: "{{ inputs.parameters.add-cyclic }}"
+          - name: move-chunks-to-time
+            depends: check-to-add-cyclic-pixels
+            templateRef:
+              name: rechunk
+              template: rechunk
+            arguments:
+              parameters:
+                - name: in-zarr
+                  value: "{{ tasks.check-to-add-cyclic-pixels.outputs.parameters.out-zarr }}"
+                - name: time-chunk
+                  value: "365"
+                - name: lat-chunk
+                  value: -1
+                - name: lon-chunk
+                  value: -1
+          - name: regrid
+            depends: move-chunks-to-time
+            templateRef:
+              name: regrid
+              template: regrid
+            arguments:
+              parameters:
+                - name: in-zarr
+                  value: "{{ tasks.move-chunks-to-time.outputs.parameters.out-zarr }}"
+                - name: regrid-method
+                  value: "{{ inputs.parameters.regrid-method }}"
+                - name: domain-file
+                  value: "{{ inputs.parameters.domain-file }}"
+          - name: move-chunks-to-space
+            depends: regrid
+            templateRef:
+              name: rechunk
+              template: rechunk
+            arguments:
+              parameters:
+                - name: in-zarr
+                  value: "{{ tasks.regrid.outputs.parameters.out-zarr }}"
+                - name: out-zarr
+                  value: "{{ inputs.parameters.out-zarr }}"
+                - name: time-chunk
+                  value: -1
+                - name: lat-chunk
+                  value: 10
+                - name: lon-chunk
+                  value: 10
+
+
+
+    - name: check-to-add-cyclic-pixels
+      inputs:
+        parameters:
+          - name: in-zarr
+          - name: add-cyclic
+            value: "false"
+      dag:
+        tasks:
+          - name: add-cyclic
+            template: add-cyclic
+            arguments:
+              parameters:
+                - name: in-zarr
+                  value: "{{ inputs.parameters.in-zarr }}"
+                - name: add-cyclic
+                  value: "{{ inputs.parameters.add-cyclic }}"
+            when: "{{inputs.parameters.add-cyclic}} != false"
+      outputs:
+        parameters:
+          - name: out-zarr
+            valueFrom:
+              expression: "inputs.parameters['add-cyclic'] != 'false' ? tasks['add-cyclic'].outputs.parameters['out-zarr'] : inputs.parameters['in-zarr']"
+
+
+      # Prevents weird artifacts in datasets near international dateline with
+      # bilinear regridding.
+    - name: add-cyclic
+      inputs:
+        parameters:
+          - name: in-zarr
+          - name: out-zarr
+            value: "gs://scratch-170cd6ec/{{ workflow.uid }}/{{ pod.name }}/cyclic-added.zarr"
+          - name: add-cyclic
+            value: "lon"
+      outputs:
+        parameters:
+          - name: out-zarr
+            value: "{{ inputs.parameters.out-zarr }}"
+      script:
+        image: us-central1-docker.pkg.dev/downscalecmip6/private/dodola:0.12.0
+        command: [ python ]
+        source: |
+          import logging
+          import dodola.repository as storage
+          from dodola.core import _add_cyclic
+
+          logging.basicConfig(level=logging.INFO)
+          logger = logging.getLogger(__name__)
+
+          logger.info("Adding cyclic wraparound pixels")
+          storage.write(
+              "{{ inputs.parameters.out-zarr }}",
+              _add_cyclic(
+                  storage.read("{{ inputs.parameters.in-zarr }}"),
+                  dim="{{ inputs.parameters.add-cyclic }}".lower()
+              )
+          )
+        resources:
+          requests:
+            memory: 16Gi
+            cpu: "1000m"
+          limits:
+            memory: 18Gi
+            cpu: "2000m"
+      activeDeadlineSeconds: 1200
+      retryStrategy:
+        limit: 4
+        retryPolicy: "Always"
+        backoff:
+          duration: 30s
+          factor: 2
