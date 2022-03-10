@@ -167,7 +167,9 @@ spec:
                 - name: base-url
                   value: "gs://support-c23ff1a3/regrid-cmip6"
           - name: check-to-add-cyclic-pixels
-            template: check-to-add-cyclic-pixels
+            templateRef:
+              name: qdm-preprocess
+              template: check-to-add-cyclic-pixels
             depends: >-
               get-input-clean-url
               && get-output-regridded-url
@@ -222,75 +224,3 @@ spec:
                   value: 10
                 - name: lon-chunk
                   value: 10
-
-    - name: check-to-add-cyclic-pixels
-      inputs:
-        parameters:
-          - name: in-zarr
-          - name: add-cyclic
-            value: "false"
-      dag:
-        tasks:
-          - name: add-cyclic
-            template: add-cyclic
-            arguments:
-              parameters:
-                - name: in-zarr
-                  value: "{{ inputs.parameters.in-zarr }}"
-                - name: add-cyclic
-                  value: "{{ inputs.parameters.add-cyclic }}"
-            when: "{{inputs.parameters.add-cyclic}} != false"
-      outputs:
-        parameters:
-          - name: out-zarr
-            valueFrom:
-              expression: "inputs.parameters['add-cyclic'] != 'false' ? tasks['add-cyclic'].outputs.parameters['out-zarr'] : inputs.parameters['in-zarr']"
-
-
-      # Prevents weird artifacts in datasets near international dateline with
-      # bilinear regridding.
-    - name: add-cyclic
-      inputs:
-        parameters:
-          - name: in-zarr
-          - name: out-zarr
-            value: "gs://scratch-170cd6ec/{{ workflow.uid }}/{{ pod.name }}/cyclic-added.zarr"
-          - name: add-cyclic
-            value: "lon"
-      outputs:
-        parameters:
-          - name: out-zarr
-            value: "{{ inputs.parameters.out-zarr }}"
-      script:
-        image: us-central1-docker.pkg.dev/downscalecmip6/private/dodola:0.12.0
-        command: [ python ]
-        source: |
-          import logging
-          import dodola.repository as storage
-          from dodola.core import _add_cyclic
-
-          logging.basicConfig(level=logging.INFO)
-          logger = logging.getLogger(__name__)
-
-          logger.info("Adding cyclic wraparound pixels")
-          storage.write(
-              "{{ inputs.parameters.out-zarr }}",
-              _add_cyclic(
-                  storage.read("{{ inputs.parameters.in-zarr }}"),
-                  dim="{{ inputs.parameters.add-cyclic }}".lower()
-              )
-          )
-        resources:
-          requests:
-            memory: 16Gi
-            cpu: "1000m"
-          limits:
-            memory: 18Gi
-            cpu: "2000m"
-      activeDeadlineSeconds: 1200
-      retryStrategy:
-        limit: 4
-        retryPolicy: "Always"
-        backoff:
-          duration: 30s
-          factor: 2
