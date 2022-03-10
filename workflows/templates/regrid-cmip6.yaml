@@ -4,7 +4,13 @@ metadata:
   name: regrid-cmip6
   annotations:
     workflows.argoproj.io/description: >-
-      Regrid already existing and cleaned CMIP6 data to a common 1 degree resolution grid
+      Regrid existin, cleaned CMIP6 data to a common 1 degree resolution grid for analysis.
+      
+      Note this only regrids the simulation targetted for output, and not the 
+      cleaned, historical, and training datasets.
+      
+      This regridded data is used for separate diagnostics and graphics, 
+      independent of the main downscaling pipeline.
     workflows.argoproj.io/tags: cmip6,dc6,regrid
     workflows.argoproj.io/version: '>= 3.1.0'
   labels:
