@@ -57,7 +57,7 @@ spec:
                 - name: in-zarr
                   value: "{{ tasks.rechunk-for-regrid.outputs.parameters.out-zarr }}"
                 - name: out-zarr
-                  value: gs://support-c23ff1a3/regrid-reference/regrid1x1/{{ inputs.parameters.variable-id }}/v{{ inputs.parameters.version }}.zarr"
+                  value: "gs://support-c23ff1a3/regrid-reference/regrid1x1/{{ inputs.parameters.variable-id }}/v{{ inputs.parameters.version }}.zarr"
                 - name: regrid-method
                   value: "{{ inputs.parameters.regrid-method }}"
                 - name: domain-file
@@ -72,7 +72,7 @@ spec:
                 - name: in-zarr
                   value: "{{ tasks.rechunk-for-regrid.outputs.parameters.out-zarr }}"
                 - name: out-zarr
-                  value: gs://support-c23ff1a3/regrid-reference/regrid0p25x0p25/{{inputs.parameters.variable-id}}/v{{inputs.parameters.version}}.zarr"
+                  value: "gs://support-c23ff1a3/regrid-reference/regrid0p25x0p25/{{inputs.parameters.variable-id}}/v{{inputs.parameters.version}}.zarr"
                 - name: regrid-method
                   value: "{{ inputs.parameters.regrid-method }}"
                 - name: domain-file
