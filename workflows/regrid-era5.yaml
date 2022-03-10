@@ -1,0 +1,79 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Workflow
+metadata:
+  generatename: regrid-era5-
+  annotatIons:
+    workflows.argoproj.io/description: >-
+      Regrid existing, cleaned ERA5 data to 1x1 and 0p25x0p25 grids for analysis.
+
+      This regridded data is used for separate diagnostics and graphics,
+      independent of the main downscaling pipeline.
+    workflows.argoproj.io/tags: era5,dc6,regrid
+    workflows.argoproj.io/version: '>= 3.1.0'
+  labels:
+    component: regrid-era5
+spec:
+  entrypoint: regrid-era5
+  arguments:
+    parameters:
+      - name: variable-id
+  templates:
+
+    - name: regrid-era5
+      inputs:
+        parameters:
+          - name: variable-id
+          - name: regrid-method
+            value: "{{=inputs.parameters['variable-id'] == 'pr' ? 'conservative' : 'bilinear'}}"
+          - name: version
+            value: "{{workflow.creationTimestamp.Y}}{{workflow.creationTimestamp.m}}{{workflow.creationTimestamp.d}}{{workflow.creationTimestamp.H}}{{workflow.creationTimestamp.M}}{{workflow.creationTimestamp.S}}"
+          - name: domainfile1x1
+            value: "gs://support-c23ff1a3/domain.1x1.zarr"
+          - name: domainfile0p25x0p25
+            value: "gs://support-c23ff1a3/domain.0p25x0p25.zarr"
+      dag:
+        tasks:
+          - name: rechunk-for-regrid
+            templateRef:
+              name: rechunk
+              template: rechunk
+            arguments:
+              parameters:
+                - name: in-zarr
+                  value: "gs://clean-b1dbca25/reanalysis/ERA-5/F320/{{ inputs.parameters.variable-id }}.1995-2015.F320.zarr"
+                - name: time-chunk
+                  value: "365"
+                - name: lat-chunk
+                  value: -1
+                - name: lon-chunk
+                  value: -1
+          - name: regrid1x1
+            depends: rechunk-for-regrid
+            templateRef:
+              name: regrid
+              template: regrid
+            arguments:
+              parameters:
+                - name: in-zarr
+                  value: "{{ tasks.rechunk-for-regrid.outputs.parameters.out-zarr }}"
+                - name: out-zarr
+                  value: gs://support-c23ff1a3/regrid-reference/regrid1x1/{{ inputs.parameters.variable-id }}/v{{ inputs.parameters.version }}.zarr"
+                - name: regrid-method
+                  value: "{{ inputs.parameters.regrid-method }}"
+                - name: domain-file
+                  value: "{{ inputs.parameters.domainfile1x1 }}"
+          - name: regrid0p25x0p25
+            depends: rechunk-for-regrid
+            templateRef:
+              name: regrid
+              template: regrid
+            arguments:
+              parameters:
+                - name: in-zarr
+                  value: "{{ tasks.rechunk-for-regrid.outputs.parameters.out-zarr }}"
+                - name: out-zarr
+                  value: gs://support-c23ff1a3/regrid-reference/regrid0p25x0p25/{{inputs.parameters.variable-id}}/v{{inputs.parameters.version}}.zarr"
+                - name: regrid-method
+                  value: "{{ inputs.parameters.regrid-method }}"
+                - name: domain-file
+                  value: "{{ inputs.parameters.domainfile0p25x0p25 }}"
