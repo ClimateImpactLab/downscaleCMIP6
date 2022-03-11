@@ -1,7 +1,5 @@
 # downscaleCMIP6-infra-argo
-Kubernetes internals and Argo Workflow configuration for CMIP6 downscaling project.
-
-Manifests for Argo Workflow itself are in `./argo/`. The `./workflows-default/` directory contains manifests required to run analysis Workflows. `./minio/` is a configuration Helm Chart to deploy the artifact repository. Cluster internals are mostly managed with `argocd`. The hard infrastructure we're deploying on top of is in `/infrastructure/terraform/`.
+Argo Workflow configuration for CMIP6 downscaling project.
 
 ## Updating
 
@@ -61,22 +59,4 @@ hello-world-kqvvg:   ~~~ {~~ ~~~~ ~~~ ~~~~ ~~ ~ /  ===- ~~~
 hello-world-kqvvg:        \______ o          __/            
 hello-world-kqvvg:         \    \        __/             
 hello-world-kqvvg:           \____\______/   
-```
-
-### Argo Workflow artifact repository (minio)
-
-`minio` works as an S3 wrapper to an underlying Azure Blob Storage. With the S3 interface, we can easily use Azure storage as an Argo Workflows artifact repository.
-
-Deploy `minio` into the `argo` namespace with:
-
-```
-argocd app create minio \
-    --repo https://github.com/ClimateImpactLab/downscaleCMIP6 \
-    --path infrastructure/kubernetes/minio \
-    --values values.yaml \
-    --dest-server https://kubernetes.default.svc \
-    --dest-namespace argo \
-    --sync-policy automated \
-    --auto-prune \
-    --port-forward-namespace argocd
 ```
