@@ -1,8 +1,8 @@
 apiVersion: argoproj.io/v1alpha1
 kind: Workflow
 metadata:
-  generatename: regrid-era5-
-  annotatIons:
+  generateName: regrid-era5-
+  annotations:
     workflows.argoproj.io/description: >-
       Regrid existing, cleaned ERA5 data to 1x1 and 0p25x0p25 grids for analysis.
 
