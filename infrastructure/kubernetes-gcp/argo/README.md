@@ -11,7 +11,7 @@ If there is already a deployment -- file a pull request with changes to `main`. 
 To begin, you need to have `argocd` deployed on a cluster. If it is not already deployed, you can do so with
 
 ```bash
-kubectl apply -n argocd -f https://raw.githubusercontent.com/argoproj/argo-cd/v2.1.2/manifests/install.yaml
+kubectl apply -n argocd -f https://raw.githubusercontent.com/argoproj/argo-cd/v2.1.9/manifests/install.yaml
 kubectl patch deploy argocd-server -n argocd -p '[{"op": "add", "path": "/spec/template/spec/containers/0/command/-", "value": "--disable-auth"}]' --type json
 ```
 
