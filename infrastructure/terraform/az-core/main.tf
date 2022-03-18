@@ -35,19 +35,6 @@ resource "azurerm_resource_group" "rg" {
   }
 }
 
-module "aks_cluster" {
-  source              = "./modules/aks_cluster"
-  prefix              = var.prefix
-  resource_group_name = azurerm_resource_group.rg.name
-  k8scluster_name     = var.k8scluster_name
-  kubernetes_version  = var.kubernetes_version
-  aks_admin_group     = var.aks_admin_group
-
-  depends_on = [
-    azurerm_resource_group.rg,
-  ]
-}
-
 resource "azurerm_container_registry" "acr" {
   name                = "downscaleCmip6"
   resource_group_name = azurerm_resource_group.rg.name
