@@ -67,3 +67,13 @@ module "storage_account" {
     azurerm_resource_group.rg,
   ]
 }
+
+module "kubernetes_internal" {
+  source                       = "./modules/kubernetes_internal"
+  host                         = module.aks_cluster.host
+  client_certificate           = base64decode(module.aks_cluster.client_certificate)
+  client_key                   = base64decode(module.aks_cluster.client_key)
+  cluster_ca_certificate       = base64decode(module.aks_cluster.cluster_ca_certificate)
+  climate_storage_account_name = module.storage_account.name
+  climate_storage_account_key  = module.storage_account.primary_access_key
+}
