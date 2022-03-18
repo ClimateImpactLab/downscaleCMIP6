@@ -35,26 +35,6 @@ resource "azurerm_resource_group" "rg" {
   }
 }
 
-
-# Public IP address for services from the cluster.
-resource "azurerm_public_ip" "primary" {
-  name                = "aksPublicIPAddress"
-  location            = var.location
-  sku                 = "Standard"
-  resource_group_name = module.aks_cluster.node_resource_group
-  allocation_method   = "Static"
-  tags = {
-    managed-by = "terraform"
-  }
-  lifecycle {
-    ignore_changes = [
-      domain_name_label,
-      tags
-    ]
-  }
-}
-
-
 module "aks_cluster" {
   source              = "./modules/aks_cluster"
   prefix              = var.prefix
@@ -76,17 +56,6 @@ resource "azurerm_container_registry" "acr" {
   tags = {
     managed-by = "terraform"
   }
-}
-
-resource "azurerm_role_assignment" "aksra" {
-  scope                = azurerm_container_registry.acr.id
-  role_definition_name = "AcrPull"
-  principal_id         = module.aks_cluster.kubelet_id
-
-  depends_on = [
-    azurerm_container_registry.acr,
-    module.aks_cluster
-  ]
 }
 
 module "storage_account" {
