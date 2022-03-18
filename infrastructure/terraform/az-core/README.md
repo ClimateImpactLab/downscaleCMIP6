@@ -4,10 +4,6 @@ General managed infrastructure for CMIP6 downscaling project on Azure Cloud.
 
 Change and provision resources by opening Pull Requests to the `master` branch.
 
-## Things not covered by Terraform
-
-Kubernetes internals are deployed from `/infrastructure/kubernetes/` using `argocd`.
-
 ### Creating Service Principal for Github Actions for container CI/CD
 
 Terraform also does not handle some Active Directory and IAM tasks due to limited permissions. Because of this the
