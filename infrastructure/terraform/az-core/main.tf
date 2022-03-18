@@ -35,26 +35,6 @@ resource "azurerm_resource_group" "rg" {
   }
 }
 
-
-# Public IP address for services from the cluster.
-resource "azurerm_public_ip" "primary" {
-  name                = "aksPublicIPAddress"
-  location            = var.location
-  sku                 = "Standard"
-  resource_group_name = module.aks_cluster.node_resource_group
-  allocation_method   = "Static"
-  tags = {
-    managed-by = "terraform"
-  }
-  lifecycle {
-    ignore_changes = [
-      domain_name_label,
-      tags
-    ]
-  }
-}
-
-
 module "aks_cluster" {
   source              = "./modules/aks_cluster"
   prefix              = var.prefix
@@ -78,17 +58,6 @@ resource "azurerm_container_registry" "acr" {
   }
 }
 
-resource "azurerm_role_assignment" "aksra" {
-  scope                = azurerm_container_registry.acr.id
-  role_definition_name = "AcrPull"
-  principal_id         = module.aks_cluster.kubelet_id
-
-  depends_on = [
-    azurerm_container_registry.acr,
-    module.aks_cluster
-  ]
-}
-
 module "storage_account" {
   source               = "./modules/storage_account"
   storage_account_name = "dc6"
@@ -97,14 +66,4 @@ module "storage_account" {
   depends_on = [
     azurerm_resource_group.rg,
   ]
-}
-
-module "kubernetes_internal" {
-  source                       = "./modules/kubernetes_internal"
-  host                         = module.aks_cluster.host
-  client_certificate           = base64decode(module.aks_cluster.client_certificate)
-  client_key                   = base64decode(module.aks_cluster.client_key)
-  cluster_ca_certificate       = base64decode(module.aks_cluster.cluster_ca_certificate)
-  climate_storage_account_name = module.storage_account.name
-  climate_storage_account_key  = module.storage_account.primary_access_key
 }
