@@ -516,7 +516,7 @@ spec:
             valueFrom:
               path: "/tmp/lastyear.txt"
       script:
-        image: ghcr.io/climateimpactlab/dodola:dev
+        image: ghcr.io/climateimpactlab/dodola:0.10.0
         command: [ python ]
         source: |
           import dodola.repository
