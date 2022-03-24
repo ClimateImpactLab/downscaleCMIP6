@@ -154,7 +154,7 @@ spec:
           - name: out-zarr
             value: "{{ inputs.parameters.out-zarr }}"
       container:
-        image: us-central1-docker.pkg.dev/downscalecmip6/private/dodola:0.16.1
+        image: ghcr.io/climateimpactlab/dodola:0.16.1
         command: [ dodola ]
         args:
           - "correct-wetday-frequency"
@@ -216,7 +216,7 @@ spec:
           - name: out-zarr
             value: "{{ inputs.parameters.out-zarr }}"
       script:
-        image: us-central1-docker.pkg.dev/downscalecmip6/private/dodola:0.12.0
+        image: ghcr.io/climateimpactlab/dodola:0.12.0
         command: [ python ]
         source: |
           import logging
@@ -262,7 +262,7 @@ spec:
           - name: out-zarr
             value: "{{ inputs.parameters.out-zarr }}"
       script:
-        image: us-central1-docker.pkg.dev/downscalecmip6/private/dodola:0.12.0
+        image: ghcr.io/climateimpactlab/dodola:0.12.0
         command: [ python ]
         source: |
           import logging
