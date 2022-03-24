@@ -1,0 +1,36 @@
+lats:
+  Buenos Aires: -34.6075682
+  Cairo: 30.0443879
+  Delhi: 28.6517178
+  Dhaka: 23.7861979
+  Istanbul: 41.0091982
+  Lagos: 6.4550575
+  London: 51.5073219
+  Manila: 14.5948914
+  Mexico City: 19.4326296
+  Miami: 25.7741728
+  Moscow: 55.7504461
+  Mumbai: 19.0759899
+  New York: 40.7127281
+  Paris: 48.8588897
+  Sao Paulo: -23.5506507
+  Shanghai: 31.2322758
+  Tokyo: 35.6828387
+lons:
+  Buenos Aires: -58.4370894
+  Cairo: 31.2357257
+  Delhi: 77.2219388
+  Dhaka: 90.4026151
+  Istanbul: 28.9662187
+  Lagos: 3.3941795
+  London: -0.1276474
+  Manila: 120.9782618
+  Mexico City: -99.1331785
+  Miami: -80.19362
+  Moscow: 37.6174943
+  Mumbai: 72.8773928
+  New York: -74.0060152
+  Paris: 2.3200410217200766
+  Sao Paulo: -46.6333824
+  Shanghai: 121.4692071
+  Tokyo: 139.7594549
