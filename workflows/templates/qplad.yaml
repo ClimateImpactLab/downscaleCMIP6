@@ -455,7 +455,7 @@ spec:
           - name: out-zarr
             value: "{{ inputs.parameters.out-zarr }}"
       container:
-        image: ghcr.io/climateimpactlab/dodola:0.15.0
+        image: ghcr.io/climateimpactlab/dodola:dev
         command: [ dodola ]
         args:
           - "train-qplad"
@@ -499,7 +499,7 @@ spec:
           - name: global-attrs-json
             path: /tmp/global_attrs.json
       container:
-        image: ghcr.io/climateimpactlab/dodola:0.15.0
+        image: ghcr.io/climateimpactlab/dodola:dev
         command: [ dodola ]
         args:
           - "apply-qplad"
@@ -543,7 +543,7 @@ spec:
           - name: out-zarr
             value: "{{ inputs.parameters.out-zarr }}"
       container:
-        image: ghcr.io/climateimpactlab/dodola:0.15.0
+        image: ghcr.io/climateimpactlab/dodola:dev
         command: [ dodola ]
         args:
           - "prime-qplad-output-zarrstore"
@@ -599,7 +599,7 @@ spec:
           - name: out-zarr
             value: "{{ inputs.parameters.out-zarr }}"
       script:
-        image: ghcr.io/climateimpactlab/dodola:0.15.0
+        image: ghcr.io/climateimpactlab/dodola:dev
         command: [ python ]
         source: |
           import logging

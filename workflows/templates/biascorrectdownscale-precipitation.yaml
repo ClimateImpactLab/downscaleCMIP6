@@ -395,7 +395,7 @@ spec:
             valueFrom:
               path: "/tmp/lastyear.txt"
       script:
-        image: ghcr.io/climateimpactlab/dodola:0.10.0
+        image: ghcr.io/climateimpactlab/dodola:dev
         command: [ python ]
         source: |
           import dodola.repository
@@ -448,7 +448,7 @@ spec:
           - name: out-zarr
             value: "{{ inputs.parameters.out-zarr }}"
       container:
-        image: ghcr.io/climateimpactlab/dodola:0.15.0
+        image: ghcr.io/climateimpactlab/dodola:dev
         command: [ dodola ]
         args:
           - "adjust-maximum-precipitation"
