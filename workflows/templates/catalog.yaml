@@ -24,7 +24,7 @@ spec:
             valueFrom:
               path: "/tmp/url.txt"
       script:
-        image: us-central1-docker.pkg.dev/downscalecmip6/private/dodola:0.8.0
+        image: ghcr.io/climateimpactlab/dodola:0.8.0
         command: [ python ]
         source: |
           import dodola.repository as storage
@@ -84,7 +84,7 @@ spec:
             valueFrom:
               path: "/tmp/url.txt"
       script:
-        image: us-central1-docker.pkg.dev/downscalecmip6/private/dodola:0.8.0
+        image: ghcr.io/climateimpactlab/dodola:0.8.0
         command: [ python ]
         source: |
           base_url = "{{ inputs.parameters.base-url }}"
