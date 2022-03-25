@@ -32,7 +32,7 @@ spec:
           - name: global-attrs-json
             path: /tmp/global_attrs.json
       script:
-        image: ghcr.io/climateimpactlab/dodola:0.8.0
+        image: ghcr.io/climateimpactlab/dodola:0.19.0
         command: [ python ]
         source: |
           import json

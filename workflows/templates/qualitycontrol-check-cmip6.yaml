@@ -40,7 +40,7 @@ spec:
           - name: data
           - name: time
       container:
-        image: ghcr.io/climateimpactlab/dodola:0.18.0
+        image: ghcr.io/climateimpactlab/dodola:0.19.0
         command: [ "dodola" ]
         args:
           - "validate-dataset"

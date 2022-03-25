@@ -221,7 +221,7 @@ spec:
           - name: out-zarr
             value: "{{ inputs.parameters.out-zarr }}"
       script:
-        image: ghcr.io/climateimpactlab/dodola:0.16.1
+        image: ghcr.io/climateimpactlab/dodola:0.19.0
         command: [ python ]
         source: |
           import numpy as np
@@ -295,7 +295,7 @@ spec:
           - name: out-zarr
             value: "{{ inputs.parameters.out-zarr }}"
       script:
-        image: ghcr.io/climateimpactlab/dodola:0.16.1
+        image: ghcr.io/climateimpactlab/dodola:0.19.0
         command: [ python ]
         source: |
           from copy import deepcopy
@@ -365,7 +365,7 @@ spec:
           - name: out-zarr
             value: "{{ inputs.parameters.out-zarr }}"
       container:
-        image: ghcr.io/climateimpactlab/dodola:0.16.1
+        image: ghcr.io/climateimpactlab/dodola:0.19.0
         command: [ dodola ]
         args:
           - "correct-wetday-frequency"
