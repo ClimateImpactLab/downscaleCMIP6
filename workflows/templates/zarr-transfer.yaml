@@ -27,7 +27,7 @@ spec:
           - name: from-zarr
           - name: to-zarr
       script:
-        image: ghcr.io/climateimpactlab/dodola:0.8.0
+        image: ghcr.io/climateimpactlab/dodola:0.19.0
         command: [ python ]
         source: |
           import dodola.repository
