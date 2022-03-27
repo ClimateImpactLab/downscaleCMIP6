@@ -1,8 +1,9 @@
-name: downscaleCMIP6
+name: python 3.9
 channels:
   - conda-forge
   - defaults
 dependencies:
+  - python=3.9
   - ipykernel
   - pandas
   - xarray
@@ -27,3 +28,4 @@ dependencies:
   - python-graphviz
   - xclim
   - clisops
+  - jupyterlab
