@@ -1,0 +1,45 @@
+title,variable,corr
+annual and seasonal tasmax - admin0,annual,0.9992835050222911
+annual and seasonal tasmax - admin0,DJF,0.9983654151013708
+annual and seasonal tasmax - admin0,MAM,0.9988805112403151
+annual and seasonal tasmax - admin0,JJA,0.9990424386094915
+annual and seasonal tasmax - admin0,SON,0.9991591543470137
+annual and seasonal tasmax - admin1,annual,0.9954771179907776
+annual and seasonal tasmax - admin1,DJF,0.9934913356530518
+annual and seasonal tasmax - admin1,MAM,0.9921753861503565
+annual and seasonal tasmax - admin1,JJA,0.9934717093311722
+annual and seasonal tasmax - admin1,SON,0.9956507629169903
+annual and seasonal total precip - admin0,annual,0.8787932205220917
+annual and seasonal total precip - admin0,DJF,0.8927863845470866
+annual and seasonal total precip - admin0,MAM,0.8188047242025135
+annual and seasonal total precip - admin0,JJA,0.8475101044421556
+annual and seasonal total precip - admin0,SON,0.918295348439644
+annual and seasonal total precip - admin1,annual,0.7974703024163435
+annual and seasonal total precip - admin1,DJF,0.9034411543252139
+annual and seasonal total precip - admin1,MAM,0.7966872809068943
+annual and seasonal total precip - admin1,JJA,0.758606952299471
+annual and seasonal total precip - admin1,SON,0.8430111393743577
+log annual and seasonal total precip - admin0,annual,0.9370222312274809
+log annual and seasonal total precip - admin0,DJF,0.8332058966752568
+log annual and seasonal total precip - admin0,MAM,0.8960902122476733
+log annual and seasonal total precip - admin0,JJA,0.8511525771208911
+log annual and seasonal total precip - admin0,SON,0.9578562775305132
+log annual and seasonal total precip - admin1,annual,0.9075284832640452
+log annual and seasonal total precip - admin1,DJF,0.7399683822083493
+log annual and seasonal total precip - admin1,MAM,0.8231847060919562
+log annual and seasonal total precip - admin1,JJA,
+log annual and seasonal total precip - admin1,SON,0.8958628395123307
+annual and seasonal extremes - admin0,number_of_days_with_tasmax_above_25C,0.884504223343866
+annual and seasonal extremes - admin0,number_of_days_with_tasmax_above_90F,0.8790941843361862
+annual and seasonal extremes - admin0,number_of_days_with_tasmax_above_95F,0.8900075551234296
+annual and seasonal extremes - admin0,number_of_days_with_tasmin_above_20C,0.9085555663687722
+annual and seasonal extremes - admin0,number_of_days_with_tasmin_below_0C,0.9310796939256654
+annual and seasonal extremes - admin0,wetdays_above_10mm,0.8765164124184445
+annual and seasonal extremes - admin0,wetdays_above_1mm,0.9292620181981015
+annual and seasonal extremes - admin1,number_of_days_with_tasmax_above_25C,0.8482399989987521
+annual and seasonal extremes - admin1,number_of_days_with_tasmax_above_90F,0.8136008608459507
+annual and seasonal extremes - admin1,number_of_days_with_tasmax_above_95F,0.7142663253357244
+annual and seasonal extremes - admin1,number_of_days_with_tasmin_above_20C,0.8254155262107151
+annual and seasonal extremes - admin1,number_of_days_with_tasmin_below_0C,0.8917769144889827
+annual and seasonal extremes - admin1,wetdays_above_10mm,0.8213996041882132
+annual and seasonal extremes - admin1,wetdays_above_1mm,0.8584659459135616

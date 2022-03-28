@@ -25,3 +25,5 @@ dependencies:
   - python-graphviz
   - xclim
   - clisops
+  - geopandas
+  - tqdm
