@@ -25,10 +25,10 @@ R/CIL GDPCIR
 
 Users are requested to cite this project in derived works. This project does not yet have a public DOI or citation - check back for details.
 
-ERA-5
------
+ERA5
+----
 
-Additionally, we request you cite the historical dataset used in bias correction and downscaling, ERA-5. See the `ECMWF guide to citing a dataset on the Climate Data Store <https://confluence.ecmwf.int/display/CKB/How+to+acknowledge+and+cite+a+Climate+Data+Store+%28CDS%29+catalogue+entry+and+the+data+published+as+part+of+it>`_:
+Additionally, we request you cite the historical dataset used in bias correction and downscaling, ERA5. See the `ECMWF guide to citing a dataset on the Climate Data Store <https://confluence.ecmwf.int/display/CKB/How+to+acknowledge+and+cite+a+Climate+Data+Store+%28CDS%29+catalogue+entry+and+the+data+published+as+part+of+it>`_:
 
     Hersbach, H, et al. The ERA5 global reanalysis. Q J R Meteorol Soc.2020; 146: 1999–2049. https://doi.org/10.1002/qj.3803
 
