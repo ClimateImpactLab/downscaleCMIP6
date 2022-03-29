@@ -7,7 +7,7 @@ metadata:
       Preprocessing steps before Quantile Delta Mapping bias correction for reanalysis and CMIP6 GCM Zarr Stores.
 
       This workflow applies wet-day-frequency correction, a minimum threshold for small variable values, and regrids
-      cleaned CMIP6 and ERA-5 renalsysis data to a standard grid. The output also chunked to be contiguous across the
+      cleaned CMIP6 and ERA5 renalsysis data to a standard grid. The output also chunked to be contiguous across the
       "time" dimension in preparation for bias-correction via Quantile Delta Mapping (QDM).
     workflows.argoproj.io/tags: zarr,biascorrect,cmip6,qdm,dc6,preprocess,regrid,rechunk
     workflows.argoproj.io/version: '>= 3.1.0'
