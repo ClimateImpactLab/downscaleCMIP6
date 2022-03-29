@@ -1,6 +1,12 @@
-==============
-downscaleCMIP6
-==============
+.. raw :: html
+
+    <div>
+    <img src="https://raw.githubusercontent.com/ClimateImpactLab/downscaleCMIP6/master/resources/GDPCIR-sphere.png" style="width: 30%" align="right">
+    </div>
+
+==========================================================
+Global Downscaled Projections for Climate Impacts Research
+==========================================================
 
 This repo contains infrastructure setup, argo workflows, and validation notebooks which together produce the bias corrected and downscaled daily 1/4-degree CMIP6 tasmin, tasmax, and pr data for the Rhodium/Climate Impact Lab Global Downscaled Projections for Climate Impacts Research (R/CIL GDPCIR) project.
 
