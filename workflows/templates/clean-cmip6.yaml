@@ -218,7 +218,7 @@ spec:
                   value: "{{ steps.standardize-historical-run.outputs.parameters.out-zarr }}"
                 - name: out-zarr
                   value: "{{ steps.get-output-clean-training-url.outputs.parameters.out-url }}"
-                  # Matches window of "reference" ERA-5 data +/- 15 days.
+                  # Matches window of "reference" ERA5 data +/- 15 days.
                 - name: from-time
                   value: "1994-12-17"
                 - name: to-time
