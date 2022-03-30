@@ -20,5 +20,5 @@ The majority of the other `WorkflowTemplate` files specify single-tasks used as 
 
 A few other files to note:
 
-- `clean-era5.yaml` Needs to be run on its own before the larger workflow is run. This performs additional preprocessing to ERA5, in addition to the processing described in `notebooks/`. This is needed so the ERA5 can be used as a reference dataset.
+- `clean-era5.yaml` Needs to be run on its own before the larger workflow is run. This performs preprocessing to ERA5, in addition to the downloading/processing described in `notebooks/`. This is needed so the ERA5 can be used as a reference dataset.
 - `create-pr-references.yaml`  Also needs to be run before the larger workflow is run for precipitation. It reads in the cleaned ERA5 data to create precipitation reference dataset. This allows us to carefully handle wet-day adjustments and run the larger precipitation workflow without repeating reference-creation steps. 
