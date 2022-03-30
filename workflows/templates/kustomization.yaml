@@ -3,17 +3,14 @@ kind: Kustomization
 resources:
   - qplad.yaml
   - biascorrectdownscale.yaml
-  - biascorrectdownscale-dtr.yaml
   - biascorrectdownscale-precipitation.yaml
   - catalog.yaml
   - clean-cmip6.yaml
   - clean-era5.yaml
-  - compute-dtr.yaml
   - create-output-metadata-json.yaml
   - create-pr-references.yaml
   - distributed-regrid.yaml
   - download-cmip6.yaml
-  - e2e-dtr-jobs.yaml
   - e2e-pr-jobs.yaml
   - e2e-tasmax-jobs.yaml
   - e2e-tasmin-jobs.yaml
