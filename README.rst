@@ -43,35 +43,35 @@ The spatial domain covers all 0.25-degree grid cells, indexed by the grid center
 
 The set of available scenarios varies by model, as shown in the following table:
 
-==================== ================= ==========================================  ==================
+==================== ================= ==========================================  =========================
 Modeling institution Source model      Available experiments                       License collection
-==================== ================= ==========================================  ==================
-CAS                  FGOALS-g3 [*]_    SSP2-4.5, SSP3-7.0, and SSP5-8.5            `CC0`_
-INM                  INM-CM4-8         SSP1-2.6, SSP2-4.5, SSP3-7.0, and SSP5-8.5  `CC0`_
-INM                  INM-CM5-0         SSP1-2.6, SSP2-4.5, SSP3-7.0, and SSP5-8.5  `CC0`_
-BCC                  BCC-CSM2-MR       SSP1-2.6, SSP2-4.5, SSP3-7.0, and SSP5-8.5  `CC-BY`_
-CMCC                 CMCC-CM2-SR5      ssp1-2.6, ssp2-4.5, ssp3-7.0, ssp5-8.5      `CC-BY`_
-CMCC                 CMCC-ESM2         ssp1-2.6, ssp2-4.5, ssp3-7.0, ssp5-8.5      `CC-BY`_
-CSIRO-ARCCSS         ACCESS-CM2        SSP2-4.5 and SSP3-7.0                       `CC-BY`_
-CSIRO                ACCESS-ESM1-5     SSP1-2.6, SSP2-4.5, and SSP3-7.0            `CC-BY`_
-MIROC                MIROC-ES2L        SSP1-2.6, SSP2-4.5, SSP3-7.0, and SSP5-8.5  `CC-BY`_
-MIROC                MIROC6            SSP1-2.6, SSP2-4.5, SSP3-7.0, and SSP5-8.5  `CC-BY`_
-MOHC                 HadGEM3-GC31-LL   SSP1-2.6, SSP2-4.5, and SSP5-8.5            `CC-BY`_
-MOHC                 UKESM1-0-LL       SSP1-2.6, SSP2-4.5, SSP3-7.0, and SSP5-8.5  `CC-BY`_
-MPI-M                MPI-ESM1-2-LR     SSP1-2.6, SSP2-4.5, SSP3-7.0, and SSP5-8.5  `CC-BY`_
-MPI-M/DKRZ [*]_      MPI-ESM1-2-HR     SSP1-2.6 and SSP5-8.5                       `CC-BY`_
-NCC                  NorESM2-LM        SSP1-2.6, SSP2-4.5, SSP3-7.0, and SSP5-8.5  `CC-BY`_
-NCC                  NorESM2-MM        SSP1-2.6, SSP2-4.5, SSP3-7.0, and SSP5-8.5  `CC-BY`_
-NOAA-GFDL            GFDL-CM4          SSP2-4.5 and SSP5-8.5                       `CC-BY`_
-NOAA-GFDL            GFDL-ESM4         SSP1-2.6, SSP2-4.5, SSP3-7.0, and SSP5-8.5  `CC-BY`_
-NUIST                NESM3             SSP1-2.6, SSP2-4.5, and SSP5-8.5            `CC-BY`_
-EC-Earth-Consortium  EC-Earth3         ssp1-2.6, ssp2-4.5, ssp3-7.0, and ssp5-8.5  `CC-BY`_
-EC-Earth-Consortium  EC-Earth3-AerChem ssp370                                      `CC-BY`_
-EC-Earth-Consortium  EC-Earth3-CC      ssp245 and ssp585                           `CC-BY`_
-EC-Earth-Consortium  EC-Earth3-Veg     ssp1-2.6, ssp2-4.5, ssp3-7.0, and ssp5-8.5  `CC-BY`_
-EC-Earth-Consortium  EC-Earth3-Veg-LR  ssp1-2.6, ssp2-4.5, ssp3-7.0, and ssp5-8.5  `CC-BY`_
-CCCma                CanESM5           ssp1-2.6, ssp2-4.5, ssp3-7.0, ssp5-8.5      `CC-BY-SA`_
-==================== ================= ==========================================  ==================
+==================== ================= ==========================================  =========================
+CAS                  FGOALS-g3 [*]_    SSP2-4.5, SSP3-7.0, and SSP5-8.5            `Public domain datasets`_
+INM                  INM-CM4-8         SSP1-2.6, SSP2-4.5, SSP3-7.0, and SSP5-8.5  `Public domain datasets`_
+INM                  INM-CM5-0         SSP1-2.6, SSP2-4.5, SSP3-7.0, and SSP5-8.5  `Public domain datasets`_
+BCC                  BCC-CSM2-MR       SSP1-2.6, SSP2-4.5, SSP3-7.0, and SSP5-8.5  `CC-BY-4.0`_
+CMCC                 CMCC-CM2-SR5      ssp1-2.6, ssp2-4.5, ssp3-7.0, ssp5-8.5      `CC-BY-4.0`_
+CMCC                 CMCC-ESM2         ssp1-2.6, ssp2-4.5, ssp3-7.0, ssp5-8.5      `CC-BY-4.0`_
+CSIRO-ARCCSS         ACCESS-CM2        SSP2-4.5 and SSP3-7.0                       `CC-BY-4.0`_
+CSIRO                ACCESS-ESM1-5     SSP1-2.6, SSP2-4.5, and SSP3-7.0            `CC-BY-4.0`_
+MIROC                MIROC-ES2L        SSP1-2.6, SSP2-4.5, SSP3-7.0, and SSP5-8.5  `CC-BY-4.0`_
+MIROC                MIROC6            SSP1-2.6, SSP2-4.5, SSP3-7.0, and SSP5-8.5  `CC-BY-4.0`_
+MOHC                 HadGEM3-GC31-LL   SSP1-2.6, SSP2-4.5, and SSP5-8.5            `CC-BY-4.0`_
+MOHC                 UKESM1-0-LL       SSP1-2.6, SSP2-4.5, SSP3-7.0, and SSP5-8.5  `CC-BY-4.0`_
+MPI-M                MPI-ESM1-2-LR     SSP1-2.6, SSP2-4.5, SSP3-7.0, and SSP5-8.5  `CC-BY-4.0`_
+MPI-M/DKRZ [*]_      MPI-ESM1-2-HR     SSP1-2.6 and SSP5-8.5                       `CC-BY-4.0`_
+NCC                  NorESM2-LM        SSP1-2.6, SSP2-4.5, SSP3-7.0, and SSP5-8.5  `CC-BY-4.0`_
+NCC                  NorESM2-MM        SSP1-2.6, SSP2-4.5, SSP3-7.0, and SSP5-8.5  `CC-BY-4.0`_
+NOAA-GFDL            GFDL-CM4          SSP2-4.5 and SSP5-8.5                       `CC-BY-4.0`_
+NOAA-GFDL            GFDL-ESM4         SSP1-2.6, SSP2-4.5, SSP3-7.0, and SSP5-8.5  `CC-BY-4.0`_
+NUIST                NESM3             SSP1-2.6, SSP2-4.5, and SSP5-8.5            `CC-BY-4.0`_
+EC-Earth-Consortium  EC-Earth3         ssp1-2.6, ssp2-4.5, ssp3-7.0, and ssp5-8.5  `CC-BY-4.0`_
+EC-Earth-Consortium  EC-Earth3-AerChem ssp370                                      `CC-BY-4.0`_
+EC-Earth-Consortium  EC-Earth3-CC      ssp245 and ssp585                           `CC-BY-4.0`_
+EC-Earth-Consortium  EC-Earth3-Veg     ssp1-2.6, ssp2-4.5, ssp3-7.0, and ssp5-8.5  `CC-BY-4.0`_
+EC-Earth-Consortium  EC-Earth3-Veg-LR  ssp1-2.6, ssp2-4.5, ssp3-7.0, and ssp5-8.5  `CC-BY-4.0`_
+CCCma                CanESM5           ssp1-2.6, ssp2-4.5, ssp3-7.0, ssp5-8.5      `CC-BY-SA-4.0`_
+==================== ================= ==========================================  =========================
 
 *Notes:*
 
