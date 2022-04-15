@@ -13,24 +13,37 @@ Global Downscaled Projections for Climate Impacts Research
 
 The World Climate Research Programme's `6th Coupled Model Intercomparison Project (CMIP6) <https://www.wcrp-climate.org/wgcm-cmip/wgcm-cmip6>`_ represents an enormous advance in the quality, detail, and scope of climate modeling.
 
-The Global Downscaled Projections for Climate Impacts Research dataset makes this modeling more applicable to understanding the impacts of changes in the climate on humans and society with two key developments: trend-preserving bias correction and downscaling. In this dataset, we provide global, daily minimum and maximum air temperature at the surface (``tasmin`` and ``tasmax``) and daily cumulative surface precipitation (``pr``) corresponding to the CMIP6 historical, ssp1-2.6, ssp2-4.5, ssp3-7.0, and ssp5-8.5 scenarios for 25 global climate models on a 1/4-degree regular global grid.
+The Global Downscaled Projections for Climate Impacts Research dataset makes this modeling more applicable to understanding the impacts of changes in the climate on humans and society with two key developments: trend-preserving bias correction and downscaling. In this dataset, the `Climate Impact Lab <https://impactlab.org>`_ provides global, daily minimum and maximum air temperature at the surface (``tasmin`` and ``tasmax``) and daily cumulative surface precipitation (``pr``) corresponding to the CMIP6 historical, ssp1-2.6, ssp2-4.5, ssp3-7.0, and ssp5-8.5 scenarios for 25 global climate models on a 1/4-degree regular global grid.
 
 Contents:
 
-* `Accessing the data`_
-* `Example use`_
-* `Project methods`_
-* `The downscaleCMIP6 repository`_
-* `Citing, licensing, and using data produced by this project`_
-* `Acknowledgements`_
-* `Financial support`_
+* `Accessing the data <#accessing-the-data>`_
+* `Example use <#example-use>`_
+* `Project methods <#project-methods>`_
+* `The downscaleCMIP6 repository <#the-downscalecmip6-repository>`_
+* `Citing, licensing, and using data produced by this project <#citing-licensing-and-using-data-produced-by-this-project>`_
+* `Acknowledgements <#acknowledgements>`_
+
+.. * `Financial support`_
+
+Additional links:
+
+* CIL GDPCIR project homepage: `github.com/ClimateImpactLab/downscaleCMIP6 <https://github.com/ClimateImpactLab/downscaleCMIP6>`_
+* Climate Impact Lab homepage: `impactlab.org <https://impactlab.org>`_
+* Project listing on Microsoft Planetary Computer: `planetarycomputer.microsoft.com/dataset/group/cil-gdpcir <https://planetarycomputer.microsoft.com/dataset/group/cil-gdpcir>`_
 
 .. _Accessing the data:
 
 Accessing the data
 ==================
 
-GDPCIR data will be hosted for free public access by the Microsoft Planetary computer. Details of the release and instructions/examples for how to access and use the data are coming soon. Stay tuned!
+GDPCIR data can be accessed on the Microsoft Planetary Computer. The dataset is made of of three collections, distinguished by data license:
+
+* `Public domain (CC0-1.0) collection <https://planetarycomputer.microsoft.com/dataset/cil-gdpcir-cc0>`_
+* `Attribution (CC BY 4.0) collection <https://planetarycomputer.microsoft.com/dataset/cil-gdpcir-cc-by>`_
+* `Attribution-ShareAlike (CC BY SA 4.0) collection <https://planetarycomputer.microsoft.com/dataset/cil-gdpcir-cc-by-sa>`_
+
+Each modeling center with bias corrected and downscaled data in this collection falls into one of these license categories - see the `table below <#available-institutions-models-and-scenarios-by-license-collection>`_ to see which model is in each collection, and see the section below on `Citing, Licensing, and using data produced by this project <#citing-licensing-and-using-data-produced-by-this-project>`_ for citations and additional information about each license.
 
 Data format & contents
 ======================
@@ -41,7 +54,8 @@ Historical data is daily, excluding leap days, from Jan 1, 1950 to Dec 31, 2014;
 
 The spatial domain covers all 0.25-degree grid cells, indexed by the grid center, with grid edges on the quarter-degree, using a -180 to 180 longitude convention. Thus, the “lon” coordinate extends from -179.875 to 179.875, and the “lat” coordinate extends from -89.875 to 89.875, with intermediate values at each 0.25-degree increment between (e.g. -179.875, -179.625, -179.375, etc).
 
-The set of available scenarios varies by model, as shown in the following table:
+Available institutions, models, and scenarios by license collection
+-------------------------------------------------------------------
 
 ==================== ================= ==========================================  =========================
 Modeling institution Source model      Available experiments                       License collection
@@ -84,7 +98,9 @@ CCCma                CanESM5           ssp1-2.6, ssp2-4.5, ssp3-7.0, ssp5-8.5   
 Example Use
 ===========
 
-* `Microsoft Planetary Computer Examples: Querying the STAC API and loading data <https://github.com/microsoft/PlanetaryComputerExamples/blob/main/datasets/cil-gdpcir/cil-gdpcir-example.ipynb>`_
+See the following examples on github:
+
+* `Querying the STAC API and loading data <https://github.com/microsoft/PlanetaryComputerExamples/blob/main/datasets/cil-gdpcir/cil-gdpcir-example.ipynb>`_
 
 .. _Project methods:
 
@@ -154,7 +170,7 @@ The CMIP6 simulation data made available through the Earth System Grid Federatio
 Public Domain Datasets
 ~~~~~~~~~~~~~~~~~~~~~~
 
-The following bias corrected and downscaled model simulations are available in the public domain using a `CC0 1.0 Universal Public Domain Declaration <https://creativecommons.org/publicdomain/zero/1.0/>`_.
+The following bias corrected and downscaled model simulations are available in the public domain using a `CC0 1.0 Universal Public Domain Declaration <https://creativecommons.org/publicdomain/zero/1.0/>`_. Access the collection on Planetary Computer at https://planetarycomputer.microsoft.com/dataset/cil-gdpcir-cc0.
 
 * **FGOALS-g3**
 
@@ -200,7 +216,7 @@ The following bias corrected and downscaled model simulations are available in t
 CC-BY-4.0
 ~~~~~~~~~
 
-The following bias corrected and downscaled model simulations are licensed under a `Creative Commons Attribution 4.0 International License <https://creativecommons.org/licenses/by/4.0/>`_. Note that this license requires citation of the source model output (included here). Please see https://creativecommons.org/licenses/by/4.0/ for more information.
+The following bias corrected and downscaled model simulations are licensed under a `Creative Commons Attribution 4.0 International License <https://creativecommons.org/licenses/by/4.0/>`_. Note that this license requires citation of the source model output (included here). Please see https://creativecommons.org/licenses/by/4.0/ for more information. Access the collection on Planetary Computer at https://planetarycomputer.microsoft.com/dataset/cil-gdpcir-cc-by.
 
 * **ACCESS-CM2**
 
@@ -479,7 +495,7 @@ The following bias corrected and downscaled model simulations are licensed under
 CC-BY-SA-4.0
 ~~~~~~~~~~~~
 
-The following bias corrected and downscaled model simulations are licensed under a `Creative Commons Attribution-ShareAlike 4.0 International License <https://creativecommons.org/licenses/by-sa/4.0/>`_. Note that this license requires citation of the source model output (included here) and requires that derived works be shared under the same license. Please see https://creativecommons.org/licenses/by-sa/4.0/ for more information.
+The following bias corrected and downscaled model simulations are licensed under a `Creative Commons Attribution-ShareAlike 4.0 International License <https://creativecommons.org/licenses/by-sa/4.0/>`_. Note that this license requires citation of the source model output (included here) and requires that derived works be shared under the same license. Please see https://creativecommons.org/licenses/by-sa/4.0/ for more information. Access the collection on Planetary Computer at https://planetarycomputer.microsoft.com/dataset/cil-gdpcir-cc-by-sa.
 
 * **CanESM5**
 
@@ -498,7 +514,7 @@ Acknowledgements
 
 This work is the result of many years worth of work by members of the `Climate Impact Lab <https://impactlab.org>`_, but would not have been possible without many contributions from across the wider scientific and computing communities.
 
-Specifically, we would like to acknowledge the World Climate Research Programme's Working Group on Coupled Modeling, which is responsible for CMIP, and we would like to thank the climate modeling groups for producing and making their model output available.
+Specifically, we would like to acknowledge the World Climate Research Programme's Working Group on Coupled Modeling, which is responsible for CMIP, and we would like to thank the climate modeling groups for producing and making their model output available. We would particularly like to thank the modeling institutions whose results are included as an input to this repository (listed above) for their contributions to the CMIP6 project and for responding to (and in most cases, granting) our requests for license waivers.
 
 We would also like to thank Lamont-Doherty Earth Observatory, the `Pangeo Consortium <https://github.com/pangeo-data>`_ (and especially the `ESGF Cloud Data Working Group <https://pangeo-data.github.io/pangeo-cmip6-cloud/#>`_) and Google Cloud and the Google Public Datasets program for making the `CMIP6 Google Cloud collection <https://console.cloud.google.com/marketplace/details/noaa-public/cmip6>`_ possible. In particular we're extremely grateful to `Ryan Abernathey <https://github.com/rabernat>`_, `Naomi Henderson <https://github.com/naomi-henderson>`_, `Charles Blackmon-Luca <https://github.com/charlesbluca>`_, `Aparna Radhakrishnan <https://github.com/aradhakrishnanGFDL>`_, Julius Busecke (`@jbusecke <https://github.com/jbusecke>`_), and Charles Stern (`@cisaacstern <https://github.com/cisaacstern>`_) for the huge amount of work they've done to translate the ESGF CMIP6 netCDF archives into consistently-formattted, analysis-ready zarr stores on Google Cloud.
 
