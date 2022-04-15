@@ -1,9 +1,17 @@
 """
-This script updates the license and citation information in the following files:
+This script exports the license and citation information in the following files:
 
 * citations_cc0.rst
 * citations_cc_by.rst
 * citations_cc_by_sa.rst
+
+These files are not included in the repository, but contain the contents of the
+"GCM-specific licenses & citations" section of the README. This script can be run
+to create these files and then manually update the readme with their contents.
+
+Run the script from the project root:
+
+    python -m utilities/report_gcm_versions.py
 
 """
 
