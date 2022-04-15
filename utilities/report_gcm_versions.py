@@ -5,6 +5,13 @@ This script exports the license and citation information in the following files:
 * citations_cc_by.rst
 * citations_cc_by_sa.rst
 
+Citation information is pulled from the JSON metadata API here:
+https://cera-www.dkrz.de/WDCC/ui/cerasearch/cerarest/exportcmip6
+
+Any errors in the citations generated from these entries are unintentional.
+Feel free to suggest an edit on the [downscaleCMIP6 repository issues](https://github.com/ClimateImpactLab/downscaleCMIP6/issues)
+or by emailing climatesci@rhg.com.
+
 These files are not included in the repository, but contain the contents of the
 "GCM-specific licenses & citations" section of the README. This script can be run
 to create these files and then manually update the readme with their contents.
