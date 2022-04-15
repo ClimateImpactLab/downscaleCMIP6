@@ -493,3 +493,13 @@ The following bias corrected and downscaled model simulations are licensed under
 
     Swart, Neil Cameron; Cole, Jason N.S.; Kharin, Viatcheslav V.; Lazare, Mike; Scinocca, John F.; Gillett, Nathan P.; Anstey, James; Arora, Vivek; Christian, James R.; Jiao, Yanjun; Lee, Warren G.; Majaess, Fouad; Saenko, Oleg A.; Seiler, Christian; Seinen, Clint; Shao, Andrew; Solheim, Larry; von Salzen, Knut; Yang, Duo; Winter, Barbara; Sigmond, Michael **(2019)**. *CCCma CanESM5 model output prepared for CMIP6 ScenarioMIP*. Version 20190429. Earth System Grid Federation. https://doi.org/10.22033/ESGF/CMIP6.1317
 
+Acknowledgements
+================
+
+This work is the result of many years worth of work by members of the `Climate Impact Lab <https://impactlab.org>`_, but would not have been possible without many contributions from across the wider scientific and computing communities.
+
+Specifically, we would like to acknowledge the World Climate Research Programme's Working Group on Coupled Modeling, which is responsible for CMIP, and we would like to thank the climate modeling groups for producing and making their model output available.
+
+We would also like to thank Lamont-Doherty Earth Observatory, the `Pangeo Consortium <https://github.com/pangeo-data>`_ (and especially the `ESGF Cloud Data Working Group <https://pangeo-data.github.io/pangeo-cmip6-cloud/#>`_) and Google Cloud and the Google Public Datasets program for making the `CMIP6 Google Cloud collection <https://console.cloud.google.com/marketplace/details/noaa-public/cmip6>`_ possible. In particular we're extremely grateful to `Ryan Abernathey <https://github.com/rabernat>`_, `Naomi Henderson <https://github.com/naomi-henderson>`_, `Charles Blackmon-Luca <https://github.com/charlesbluca>`_, `Aparna Radhakrishnan <https://github.com/aradhakrishnanGFDL>`_, Julius Busecke (`@jbusecke <https://github.com/jbusecke>`_), and Charles Stern (`@cisaacstern <https://github.com/cisaacstern>`_) for the huge amount of work they've done to translate the ESGF CMIP6 netCDF archives into consistently-formattted, analysis-ready zarr stores on Google Cloud.
+
+We're also grateful to the `xclim developers <https://github.com/Ouranosinc/xclim/graphs/contributors>`_, in particular Pascal Bourgault (`@aulemahal <https://github.com/aulemahal>`_) and Travis Logan (`@tlogan2000 <https://github.com/tlogan2000>`_), for implementing the QDM bias correction method in the xclim python package, supporting our QPLAD implementation into the package, and ongoing support in integrating dask into downscaling workflows. For method advice and useful conversations, we would like to thank Keith Dixon, Dennis Adams-Smith, and `Joe Hamman <https://github.com/jhamman>`_.
