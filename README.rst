@@ -18,6 +18,7 @@ The Global Downscaled Projections for Climate Impacts Research dataset makes thi
 Contents:
 
 * `Accessing the data <#accessing-the-data>`_
+* `Data formats and contents <#data-formats-and-contents>`_
 * `Example use <#example-use>`_
 * `Project methods <#project-methods>`_
 * `The downscaleCMIP6 repository <#the-downscalecmip6-repository>`_
@@ -37,13 +38,15 @@ Additional links:
 Accessing the data
 ==================
 
-GDPCIR data can be accessed on the Microsoft Planetary Computer. The dataset is made of of three collections, distinguished by data license:
+GDPCIR data can be accessed on the Microsoft Planetary Computer: `planetarycomputer.microsoft.com/dataset/group/cil-gdpcir <https://planetarycomputer.microsoft.com/dataset/group/cil-gdpcir>`_
+
+The dataset is made of of three collections, distinguished by data license:
 
 * `Public domain (CC0-1.0) collection <https://planetarycomputer.microsoft.com/dataset/cil-gdpcir-cc0>`_
 * `Attribution (CC BY 4.0) collection <https://planetarycomputer.microsoft.com/dataset/cil-gdpcir-cc-by>`_
 * `Attribution-ShareAlike (CC BY SA 4.0) collection <https://planetarycomputer.microsoft.com/dataset/cil-gdpcir-cc-by-sa>`_
 
-Each modeling center with bias corrected and downscaled data in this collection falls into one of these license categories - see the `table below <#available-institutions-models-and-scenarios-by-license-collection>`_ to see which model is in each collection, and see the section below on `Citing, Licensing, and using data produced by this project <#citing-licensing-and-using-data-produced-by-this-project>`_ for citations and additional information about each license.
+Each modeling center with bias corrected and downscaled data in this collection falls into one of these license categories - see the `table below <#available-institutions-models-and-scenarios-by-license-collection>`_ to see which model is in each collection, and see the section below on `Citing, Licensing, and using data produced by this project <#citing-licensing-and-using-data-produced-by-this-project>`_ for citations and additional information about each license. For examples of how to browse the collections and load the data using python, see the `example use <#example-use>`_ section below.
 
 Data format & contents
 ======================
