@@ -18,7 +18,7 @@ The Global Downscaled Projections for Climate Impacts Research dataset makes thi
 Contents:
 
 * `Accessing the data <#accessing-the-data>`_
-* `Data formats and contents <#data-formats-and-contents>`_
+* `Data format & contents <#data-format--contents>`_
 * `Example use <#example-use>`_
 * `Project methods <#project-methods>`_
 * `The downscaleCMIP6 repository <#the-downscalecmip6-repository>`_
