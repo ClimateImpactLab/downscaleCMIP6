@@ -202,10 +202,3 @@ resource "google_project_iam_member" "cert_manager-dnsadmin-iammember" {
   member = "serviceAccount:${google_service_account.dns01_solver.email}"
   role   = "roles/dns.admin"
 }
-
-# GCP Service Account for Github Actions.
-resource "google_service_account" "github_actions" {
-  account_id   = "github-actions"
-  description  = "Github Actions service account for Github Repository CI/CD"
-  display_name = "github-actions"
-}
