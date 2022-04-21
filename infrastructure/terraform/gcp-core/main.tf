@@ -209,12 +209,3 @@ resource "google_service_account" "github_actions" {
   description  = "Github Actions service account for Github Repository CI/CD"
   display_name = "github-actions"
 }
-# Let Github Actions release to Google Docker Repository.
-resource "google_artifact_registry_repository_iam_member" "github_actions_artifactregistrywriter_iammember" {
-  provider   = google-beta
-  location   = module.artifact_registry.location
-  project    = module.artifact_registry.project
-  repository = module.artifact_registry.private_docker_repository_id
-  role       = "roles/artifactregistry.writer"
-  member     = "serviceAccount:${google_service_account.github_actions.email}"
-}
