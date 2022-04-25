@@ -24,8 +24,7 @@ Contents:
 * `The downscaleCMIP6 repository <#the-downscalecmip6-repository>`_
 * `Citing, licensing, and using data produced by this project <#citing-licensing-and-using-data-produced-by-this-project>`_
 * `Acknowledgements <#acknowledgements>`_
-
-.. * `Financial support`_
+* `Financial support`_
 
 Additional links:
 
@@ -522,3 +521,8 @@ Specifically, we would like to acknowledge the World Climate Research Programme'
 We would also like to thank Lamont-Doherty Earth Observatory, the `Pangeo Consortium <https://github.com/pangeo-data>`_ (and especially the `ESGF Cloud Data Working Group <https://pangeo-data.github.io/pangeo-cmip6-cloud/#>`_) and Google Cloud and the Google Public Datasets program for making the `CMIP6 Google Cloud collection <https://console.cloud.google.com/marketplace/details/noaa-public/cmip6>`_ possible. In particular we're extremely grateful to `Ryan Abernathey <https://github.com/rabernat>`_, `Naomi Henderson <https://github.com/naomi-henderson>`_, `Charles Blackmon-Luca <https://github.com/charlesbluca>`_, `Aparna Radhakrishnan <https://github.com/aradhakrishnanGFDL>`_, `Julius Busecke <https://github.com/jbusecke>`_, and `Charles Stern <https://github.com/cisaacstern>`_ for the huge amount of work they've done to translate the ESGF CMIP6 netCDF archives into consistently-formattted, analysis-ready zarr stores on Google Cloud.
 
 We're also grateful to the `xclim developers <https://github.com/Ouranosinc/xclim/graphs/contributors>`_ (`DOI: 10.5281/zenodo.2795043 <https://doi.org/10.5281/zenodo.2795043>`_), in particular `Pascal Bourgault <https://github.com/aulemahal>`_, `David Huard <https://github.com/huard>`_, and `Travis Logan <https://github.com/tlogan2000>`_, for implementing the QDM bias correction method in the xclim python package, supporting our QPLAD implementation into the package, and ongoing support in integrating dask into downscaling workflows. For method advice and useful conversations, we would like to thank Keith Dixon, Dennis Adams-Smith, and `Joe Hamman <https://github.com/jhamman>`_.
+
+Financial support
+=================
+
+This research has been supported by The Rockefeller Foundation and the Microsoft AI for Earth Initiative.
