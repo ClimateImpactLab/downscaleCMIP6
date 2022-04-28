@@ -11,6 +11,9 @@ Global Downscaled Projections for Climate Impacts Research
 .. image:: https://zenodo.org/badge/DOI/10.5281/zenodo.6403794.svg
    :target: https://doi.org/10.5281/zenodo.6403794
 
+.. image:: https://mybinder.org/badge_logo.svg
+   :target: https://mybinder.org/v2/gh/ClimateImpactLab/downscaleCMIP6-binder-env/main?urlpath=git-pull%3Frepo%3Dhttps%253A%252F%252Fgithub.com%252FClimateImpactLab%252FPlanetaryComputerExamples%26urlpath%3Dlab%252Ftree%252FPlanetaryComputerExamples%252Fdatasets%252Fcil-gdpcir%252FREADME.md%26branch%3Dgdpcir-additional-notebooks
+
 The World Climate Research Programme's `6th Coupled Model Intercomparison Project (CMIP6) <https://www.wcrp-climate.org/wgcm-cmip/wgcm-cmip6>`_ represents an enormous advance in the quality, detail, and scope of climate modeling.
 
 The Global Downscaled Projections for Climate Impacts Research dataset makes this modeling more applicable to understanding the impacts of changes in the climate on humans and society with two key developments: trend-preserving bias correction and downscaling. In this dataset, the `Climate Impact Lab <https://impactlab.org>`_ provides global, daily minimum and maximum air temperature at the surface (``tasmin`` and ``tasmax``) and daily cumulative surface precipitation (``pr``) corresponding to the CMIP6 historical, ssp1-2.6, ssp2-4.5, ssp3-7.0, and ssp5-8.5 scenarios for 25 global climate models on a 1/4-degree regular global grid.
@@ -100,9 +103,16 @@ CCCma                CanESM5           ssp1-2.6, ssp2-4.5, ssp3-7.0, ssp5-8.5   
 Example Use
 ===========
 
-See the following examples on github:
+See the following examples on github: `github.com/microsoft/PlanetaryComputerExamples <https://github.com/microsoft/PlanetaryComputerExamples/blob/main/datasets/cil-gdpcir/>`_
 
-* `Querying the STAC API and loading data <https://github.com/microsoft/PlanetaryComputerExamples/blob/main/datasets/cil-gdpcir/cil-gdpcir-example.ipynb>`_
+* Exploring the GDPCIR dataset with the STAC API: `cil-gdpcir-example.ipynb <https://github.com/microsoft/PlanetaryComputerExamples/blob/main/datasets/cil-gdpcir/cil-gdpcir-example.ipynb>`_
+* Selecting STAC collections and building an ensemble: `ensemble.ipynb <https://github.com/microsoft/PlanetaryComputerExamples/blob/main/datasets/cil-gdpcir/ensemble.ipynb>`_
+* Computing climate & impact indicators with xclim: `indicators.ipynb <https://github.com/microsoft/PlanetaryComputerExamples/blob/main/datasets/cil-gdpcir/indicators.ipynb>`_
+
+You can try these out in a live example on Binder:
+
+.. image:: https://mybinder.org/badge_logo.svg
+   :target: https://mybinder.org/v2/gh/ClimateImpactLab/downscaleCMIP6-binder-env/main?urlpath=git-pull%3Frepo%3Dhttps%253A%252F%252Fgithub.com%252FClimateImpactLab%252FPlanetaryComputerExamples%26urlpath%3Dlab%252Ftree%252FPlanetaryComputerExamples%252Fdatasets%252Fcil-gdpcir%252FREADME.md%26branch%3Dgdpcir-additional-notebooks
 
 .. _Project methods:
 
