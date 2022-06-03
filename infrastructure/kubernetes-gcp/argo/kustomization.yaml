@@ -1,5 +1,6 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
+namespace: argo
 
 resources:
   - https://github.com/argoproj/argo-workflows/releases/download/v3.3.6/install.yaml
@@ -17,5 +18,4 @@ patchesJson6902:
       group: apps
       kind: Deployment
       name: argo-server
-      namespace: argo
     path: patches/argo-server-deployment.yaml
