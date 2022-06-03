@@ -17,5 +17,4 @@ patchesJson6902:
       group: apps
       kind: Deployment
       name: argo-server
-      namespace: argo
     path: patches/argo-server-deployment.yaml
