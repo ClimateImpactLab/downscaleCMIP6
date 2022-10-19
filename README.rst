@@ -94,7 +94,7 @@ CCCma                CanESM5           ssp1-2.6, ssp2-4.5, ssp3-7.0, ssp5-8.5   
 
 *Notes:*
 
-.. [*] At the time of running, no ssp1-2.6 precipitation data was available. Therefore, we provide ``tasmin`` and ``tamax`` for this model and experiment, but not ``pr``. All other model/experiment combinations in the above table include all three variables.
+.. [*] At the time of running, no ssp1-2.6 precipitation data was available for the FGOALS-g3 model. Therefore, we provide ``tasmin`` and ``tamax`` for this model and experiment, but not ``pr``. All other model/experiment combinations in the above table include all three variables.
 
 .. [*] The institution which ran MPI-ESM1-2-HR’s historical (CMIP) simulations is `MPI-M`, while the future (ScenarioMIP) simulations were run by `DKRZ`. Therefore, the institution component of `MPI-ESM1-2-HR` filepaths differ between `historical` and `SSP` scenarios.
 
