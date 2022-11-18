@@ -5,13 +5,13 @@ Various `WorkflowTemplate` specifying reuseable jobs or job steps for orchestrat
 The most important "top-level" work is in the `e2e-*-jobs.yaml` files which are fed parameter files from `../parameters/`. These download, clean, and biascorrect/downscale CMIP6 data. Manually launched from the command line this might look like:
 
 ```shell
-argo submit --from workflowtemplate/e2e-tasmax-jobs.yaml \
+argo submit --from workflowtemplate/e2e-tasmax-jobs \
   -f "https://raw.githubusercontent.com/ClimateImpactLab/downscaleCMIP6/master/workflows/parameters/ACCESS-CM2-tasmax.yaml"
 ```
 
 We might also set labels for the work like so:
 ```shell
-argo submit --from workflowtemplate/e2e-tasmax-jobs.yaml \
+argo submit --from workflowtemplate/e2e-tasmax-jobs \
   -f "https://raw.githubusercontent.com/ClimateImpactLab/downscaleCMIP6/master/workflows/parameters/ACCESS-CM2-tasmax.yaml" \
   --labels "source_id=Access-CM2,variable_id=tasmax,env=prod"
 ```
