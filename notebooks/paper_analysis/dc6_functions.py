@@ -1,6 +1,6 @@
 import gcsfs
 import xarray as xr 
-def read_gcs_zarr(zarr_url, token='/opt/gcsfuse_tokens/impactlab-data.json', check=False):
+def read_gcs_zarr(zarr_url, token='/home/jovyan/impactlab-data.json', check=False):
     """
     takes in a GCSFS zarr url, bucket token, and returns a dataset 
     Note that you will need to have the proper bucket authentication. 
