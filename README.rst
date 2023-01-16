@@ -125,7 +125,7 @@ We then introduce a similar method tailored to increase spatial resolution while
 
 Together, these methods provide a robust means to handle both the central and tail behavior seen in climate model output, while aligning the full distribution to a state-of-the-art reanalysis dataset and providing the spatial granularity needed to study surface impacts.
 
-A publication providing additional detail is in review for publication in Geoscientific Model Development and a pre-print can be accessed here in EGUsphere: <https://egusphere.copernicus.org/preprints/2023/egusphere-2022-1513/>.
+A publication providing additional detail is in review for publication in Geoscientific Model Development and a pre-print can be accessed in EGUsphere: https://egusphere.copernicus.org/preprints/2023/egusphere-2022-1513/.
 
 .. _The downscaleCMIP6 Repository:
 
