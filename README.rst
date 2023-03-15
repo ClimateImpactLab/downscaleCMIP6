@@ -42,11 +42,11 @@ Accessing the data
 
 GDPCIR data can be accessed on the Microsoft Planetary Computer: `planetarycomputer.microsoft.com/dataset/group/cil-gdpcir <https://planetarycomputer.microsoft.com/dataset/group/cil-gdpcir>`_
 
-The dataset is made of of three collections, distinguished by data license:
+The dataset is made of of three collections, distinguished by data license at the time of publication:
 
 * `Public domain (CC0-1.0) collection <https://planetarycomputer.microsoft.com/dataset/cil-gdpcir-cc0>`_
 * `Attribution (CC BY 4.0) collection <https://planetarycomputer.microsoft.com/dataset/cil-gdpcir-cc-by>`_
-* `Attribution-ShareAlike (CC BY SA 4.0) collection <https://planetarycomputer.microsoft.com/dataset/cil-gdpcir-cc-by-sa>`_
+* `Attribution-ShareAlike (CC BY SA 4.0) collection <https://planetarycomputer.microsoft.com/dataset/cil-gdpcir-cc-by-sa>`_ (note, this is `now available under an attribution/CC BY 4.0 license <https://pcmdi.llnl.gov/CMIP6/TermsOfUse/TermsOfUse6-2.html>`_
 
 Each modeling center with bias corrected and downscaled data in this collection falls into one of these license categories - see the `table below <#available-institutions-models-and-scenarios-by-license-collection>`_ to see which model is in each collection, and see the section below on `Citing, Licensing, and using data produced by this project <#citing-licensing-and-using-data-produced-by-this-project>`_ for citations and additional information about each license. For examples of how to browse the collections and load the data using python, see the `example use <#example-use>`_ section below.
 
@@ -89,7 +89,7 @@ EC-Earth-Consortium  EC-Earth3-AerChem ssp370                                   
 EC-Earth-Consortium  EC-Earth3-CC      ssp245 and ssp585                           `CC-BY-4.0`_
 EC-Earth-Consortium  EC-Earth3-Veg     ssp1-2.6, ssp2-4.5, ssp3-7.0, and ssp5-8.5  `CC-BY-4.0`_
 EC-Earth-Consortium  EC-Earth3-Veg-LR  ssp1-2.6, ssp2-4.5, ssp3-7.0, and ssp5-8.5  `CC-BY-4.0`_
-CCCma                CanESM5           ssp1-2.6, ssp2-4.5, ssp3-7.0, ssp5-8.5      `CC-BY-SA-4.0`_
+CCCma                CanESM5           ssp1-2.6, ssp2-4.5, ssp3-7.0, ssp5-8.5      `CC-BY-SA-4.0`_ [*]_
 ==================== ================= ==========================================  =========================
 
 *Notes:*
@@ -97,6 +97,8 @@ CCCma                CanESM5           ssp1-2.6, ssp2-4.5, ssp3-7.0, ssp5-8.5   
 .. [*] At the time of running, no ssp1-2.6 precipitation data was available for the FGOALS-g3 model. Therefore, we provide ``tasmin`` and ``tamax`` for this model and experiment, but not ``pr``. All other model/experiment combinations in the above table include all three variables.
 
 .. [*] The institution which ran MPI-ESM1-2-HR’s historical (CMIP) simulations is `MPI-M`, while the future (ScenarioMIP) simulations were run by `DKRZ`. Therefore, the institution component of `MPI-ESM1-2-HR` filepaths differ between `historical` and `SSP` scenarios.
+
+.. [*] Downscaled data associated with the CanESM5 model is `now available under an attribution/CC BY 4.0 license <https://pcmdi.llnl.gov/CMIP6/TermsOfUse/TermsOfUse6-2.html>`_. However, the model output is still part of the CC-BY-SA collection on Planetary Computer because this is the license the data had at the time of publication.
 
 .. _Example Use:
 
@@ -145,7 +147,7 @@ See also:
 Citing, licensing, and using data produced by this project
 ==========================================================
 
-Projects making use of the data produced as part of the Climate Impact Lab Global Downscaled Projections for Climate Impacts Research (CIL GDPCIR) project are requested to cite both this project and the source datasets from which these results are derived. Additionally, the use of data derived from some GCMs *requires* citations, and some modeling centers impose licensing restrictions & requirements on derived works. See each GCM's license info in the links below for more information.
+Projects making use of the data produced as part of the Climate Impact Lab Global Downscaled Projections for Climate Impacts Research (CIL GDPCIR) project are requested to cite both this project and the source datasets from which these results are derived. Additionally, the use of data derived from some GCMs *requires* citations. See each GCM's license info in the links below for more information.
 
 
 .. _CIL GDPCIR:
@@ -507,7 +509,7 @@ The following bias corrected and downscaled model simulations are licensed under
 CC-BY-SA-4.0
 ~~~~~~~~~~~~
 
-The following bias corrected and downscaled model simulations are licensed under a `Creative Commons Attribution-ShareAlike 4.0 International License <https://creativecommons.org/licenses/by-sa/4.0/>`_. Note that this license requires citation of the source model output (included here) and requires that derived works be shared under the same license. Please see https://creativecommons.org/licenses/by-sa/4.0/ for more information. Access the collection on Planetary Computer at https://planetarycomputer.microsoft.com/dataset/cil-gdpcir-cc-by-sa.
+The following bias corrected and downscaled model simulations were originally licensed under a `Creative Commons Attribution-ShareAlike 4.0 International License <https://creativecommons.org/licenses/by-sa/4.0/>`_, but this license has since been changed to a `Creative Commons Attribution 4.0 International License <https://creativecommons.org/licenses/by/4.0/>`_. See the `CMIP6 terms of use <https://pcmdi.llnl.gov/CMIP6/TermsOfUse/TermsOfUse6-2.html>`_ for more information. Access the collection on Planetary Computer at https://planetarycomputer.microsoft.com/dataset/cil-gdpcir-cc-by-sa.
 
 * **CanESM5**
 
