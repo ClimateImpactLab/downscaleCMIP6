@@ -46,7 +46,7 @@ The dataset is made of of three collections, distinguished by data license at th
 
 * `Public domain (CC0-1.0) collection <https://planetarycomputer.microsoft.com/dataset/cil-gdpcir-cc0>`_
 * `Attribution (CC BY 4.0) collection <https://planetarycomputer.microsoft.com/dataset/cil-gdpcir-cc-by>`_
-* `Attribution-ShareAlike (CC BY SA 4.0) collection <https://planetarycomputer.microsoft.com/dataset/cil-gdpcir-cc-by-sa>`_ (note, this is `now available under an attribution/CC BY 4.0 license <https://pcmdi.llnl.gov/CMIP6/TermsOfUse/TermsOfUse6-2.html>`_
+* `Attribution-ShareAlike (CC BY SA 4.0) collection <https://planetarycomputer.microsoft.com/dataset/cil-gdpcir-cc-by-sa>`_ (note, the terms of use for these models have been updated and this collection is `now available under an attribution/CC BY 4.0 license <https://pcmdi.llnl.gov/CMIP6/TermsOfUse/TermsOfUse6-2.html>`_)
 
 Each modeling center with bias corrected and downscaled data in this collection falls into one of these license categories - see the `table below <#available-institutions-models-and-scenarios-by-license-collection>`_ to see which model is in each collection, and see the section below on `Citing, Licensing, and using data produced by this project <#citing-licensing-and-using-data-produced-by-this-project>`_ for citations and additional information about each license. For examples of how to browse the collections and load the data using python, see the `example use <#example-use>`_ section below.
 
