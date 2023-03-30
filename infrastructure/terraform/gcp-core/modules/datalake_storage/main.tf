@@ -169,3 +169,95 @@ resource "google_storage_bucket" "scratch" {
     "managed-by" = "terraform"
   }
 }
+
+# Buckets to migrate data storage to us-west1
+resource "random_id" "raw2_suffix" {
+  byte_length = 4
+}
+resource "google_storage_bucket" "raw2" {
+  name                        = "raw-${random_id.raw2_suffix.hex}"
+  location                    = "us-west1"
+  storage_class               = "STANDARD"
+  uniform_bucket_level_access = true
+
+  labels = {
+    "env"        = var.env
+    "managed-by" = "terraform"
+  }
+}
+
+
+resource "random_id" "clean2_suffix" {
+  byte_length = 4
+}
+resource "google_storage_bucket" "clean2" {
+  name                        = "clean-${random_id.clean2_suffix.hex}"
+  location                    = "us-west1"
+  storage_class               = "STANDARD"
+  uniform_bucket_level_access = true
+
+  labels = {
+    "env"        = var.env
+    "managed-by" = "terraform"
+  }
+}
+
+resource "random_id" "biascorrected2_suffix" {
+  byte_length = 4
+}
+resource "google_storage_bucket" "biascorrected2" {
+  name                        = "biascorrected-${random_id.biascorrected2_suffix.hex}"
+  location                    = "us-west1"
+  storage_class               = "STANDARD"
+  uniform_bucket_level_access = true
+
+  labels = {
+    "env"        = var.env
+    "managed-by" = "terraform"
+  }
+}
+
+resource "random_id" "downscaled2_suffix" {
+  byte_length = 4
+}
+resource "google_storage_bucket" "downscaled2" {
+  name                        = "downscaled-${random_id.downscaled2_suffix.hex}"
+  location                    = "us-west1"
+  storage_class               = "STANDARD"
+  uniform_bucket_level_access = true
+
+  labels = {
+    "env"        = var.env
+    "managed-by" = "terraform"
+  }
+}
+
+resource "random_id" "support2_suffix" {
+  byte_length = 4
+}
+resource "google_storage_bucket" "support2" {
+  name                        = "support-${random_id.support2_suffix.hex}"
+  location                    = "us-west1"
+  storage_class               = "STANDARD"
+  uniform_bucket_level_access = true
+
+  labels = {
+    "env"        = var.env
+    "managed-by" = "terraform"
+  }
+}
+
+resource "random_id" "qualitycontrol2_suffix" {
+  byte_length = 4
+}
+resource "google_storage_bucket" "qualitycontrol2" {
+  name                        = "qualitycontrol-${random_id.qualitycontrol2_suffix.hex}"
+  location                    = "us-west1"
+  storage_class               = "STANDARD"
+  uniform_bucket_level_access = true
+
+  labels = {
+    "env"        = var.env
+    "managed-by" = "terraform"
+  }
+}
