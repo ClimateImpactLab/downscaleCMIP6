@@ -17,7 +17,7 @@ spec:
   arguments:
     parameters:
       - name: in-zarr
-        value: "gs://downscaled-288ec5ac/stage/ScenarioMIP/NOAA-GFDL/GFDL-ESM4/ssp370/r1i1p1f1/day/tasmax/gr1/v20211022013318.zarr"
+        value: "gs://downscaled-48ec31ab/stage/ScenarioMIP/NOAA-GFDL/GFDL-ESM4/ssp370/r1i1p1f1/day/tasmax/gr1/v20211022013318.zarr"
       # Must be "tasmax", "tasmin", "dtr", "pr".
       - name: variable
         value: "tasmax"

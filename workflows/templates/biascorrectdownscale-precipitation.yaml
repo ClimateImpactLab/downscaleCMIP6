@@ -92,9 +92,9 @@ spec:
             value: "conservative"
           - name: first-year
           - name: domainfile1x1
-            value: "gs://support-c23ff1a3/domain.1x1.zarr"
+            value: "gs://support-f8a48a9e/domain.1x1.zarr"
           - name: domainfile0p25x0p25
-            value: "gs://support-c23ff1a3/domain.0p25x0p25.zarr"
+            value: "gs://support-f8a48a9e/domain.0p25x0p25.zarr"
           - name: qdm-kind
             value: "multiplicative"
           - name: correct-wetday-frequency
@@ -102,11 +102,11 @@ spec:
           - name: apply-dtr-minimum-threshold
             value: "false"
           - name: qdm-reference-zarr
-            value: "gs://support-c23ff1a3/qdm-reference/pr/v20220201000555.zarr"
+            value: "gs://support-f8a48a9e/qdm-reference/pr/v20220201000555.zarr"
           - name: qplad-fine-reference-zarr
-            value: "gs://support-c23ff1a3/qplad-fine-reference/pr/v20220201000555.zarr"
+            value: "gs://support-f8a48a9e/qplad-fine-reference/pr/v20220201000555.zarr"
           - name: qplad-coarse-reference-zarr
-            value: "gs://support-c23ff1a3/qplad-coarse-reference/pr/v20220201000555.zarr"
+            value: "gs://support-f8a48a9e/qplad-coarse-reference/pr/v20220201000555.zarr"
       dag:
         tasks:
           - name: get-input-clean-training-url
@@ -134,7 +134,7 @@ spec:
                 - name: version
                   value: "{{=jsonpath(inputs.parameters.historical, '$.version')}}"
                 - name: base-url
-                  value: "gs://clean-b1dbca25/cmip6"
+                  value: "gs://clean-f1e04ef5/cmip6"
           - name: get-input-clean-simulation-url
             templateRef:
               name: catalog
@@ -160,7 +160,7 @@ spec:
                 - name: version
                   value: "{{=jsonpath(inputs.parameters.simulation, '$.version')}}"
                 - name: base-url
-                  value: "gs://clean-b1dbca25/cmip6"
+                  value: "gs://clean-f1e04ef5/cmip6"
           - name: get-output-biascorrected-url
             templateRef:
               name: catalog
@@ -186,7 +186,7 @@ spec:
                 - name: version
                   value: "{{workflow.creationTimestamp.Y}}{{workflow.creationTimestamp.m}}{{workflow.creationTimestamp.d}}{{workflow.creationTimestamp.H}}{{workflow.creationTimestamp.M}}{{workflow.creationTimestamp.S}}"
                 - name: base-url
-                  value: "gs://biascorrected-492e989a/stage"
+                  value: "gs://biascorrected-4a21ed18/stage"
           - name: get-output-downscaled-url
             templateRef:
               name: catalog
@@ -212,7 +212,7 @@ spec:
                 - name: version
                   value: "{{workflow.creationTimestamp.Y}}{{workflow.creationTimestamp.m}}{{workflow.creationTimestamp.d}}{{workflow.creationTimestamp.H}}{{workflow.creationTimestamp.M}}{{workflow.creationTimestamp.S}}"
                 - name: base-url
-                  value: "gs://downscaled-288ec5ac/stage"
+                  value: "gs://downscaled-48ec31ab/stage"
           - name: get-biascorrected-last-year
             template: get-biascorrected-last-year
             depends: get-input-clean-simulation-url
@@ -273,7 +273,7 @@ spec:
                 - name: simulation-zarr
                   value: "{{ tasks.preprocess-simulation.outputs.parameters.out-zarr }}"
                 - name: out-zarr
-                  value: "gs://scratch-170cd6ec/{{ workflow.uid }}/{{ pod.name }}/qdm-adjusted.zarr"
+                  value: "gs://impactlab-data-scratch/{{ workflow.uid }}/{{ pod.name }}/qdm-adjusted.zarr"
                 - name: kind
                   value: "{{ inputs.parameters.qdm-kind }}"
                 - name: first-year
@@ -349,7 +349,7 @@ spec:
                 - name: qdm-kind
                   value: "{{ inputs.parameters.qdm-kind }}"
                 - name: out-zarr
-                  value: "gs://scratch-170cd6ec/{{ workflow.uid }}/{{ pod.name }}/qplad-adjusted.zarr"
+                  value: "gs://impactlab-data-scratch/{{ workflow.uid }}/{{ pod.name }}/qplad-adjusted.zarr"
                 - name: correct-wetday-frequency
                   value: "{{ inputs.parameters.correct-wetday-frequency }}"
           - name: cap-max-downscaled-precip
@@ -442,7 +442,7 @@ spec:
         parameters:
           - name: in-zarr
           - name: out-zarr
-            value: "gs://scratch-170cd6ec/{{ workflow.uid }}/{{ pod.name }}/capped-precip.zarr"
+            value: "gs://impactlab-data-scratch/{{ workflow.uid }}/{{ pod.name }}/capped-precip.zarr"
       outputs:
         parameters:
           - name: out-zarr
