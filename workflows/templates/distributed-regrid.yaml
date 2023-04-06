@@ -19,7 +19,7 @@ spec:
       - name: regrid-method
         value: "bilinear"
       - name: domain-file
-        value: "gs://support-c23ff1a3/domain.0p25x0p25.zarr"
+        value: "gs://support-f8a48a9e/domain.0p25x0p25.zarr"
   templates:
 
     - name: main
@@ -82,7 +82,7 @@ spec:
           - name: regrid-method
           - name: domain-file
           - name: out-zarr
-            value: "gs://scratch-170cd6ec/{{ workflow.uid }}/{{ pod.name }}/regridded.zarr"
+            value: "gs://impactlab-data-scratch/{{ workflow.uid }}/{{ pod.name }}/regridded.zarr"
       outputs:
         parameters:
           - name: out-zarr

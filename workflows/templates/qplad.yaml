@@ -14,21 +14,21 @@ spec:
   arguments:
     parameters:
       - name: biascorrected-zarr
-        value: "gs://biascorrected-492e989a/stage/ScenarioMIP/NOAA-GFDL/GFDL-ESM4/ssp370/r1i1p1f1/day/tasmax/gr1/v20211103182935.zarr"
+        value: "gs://biascorrected-4a21ed18/stage/ScenarioMIP/NOAA-GFDL/GFDL-ESM4/ssp370/r1i1p1f1/day/tasmax/gr1/v20211103182935.zarr"
       - name: variable-id
         value: "tasmax"
       - name: reference-zarr
-        value: "gs://clean-b1dbca25/reanalysis/ERA-5/F320/tasmax.1995-2015.F320.zarr"
+        value: "gs://clean-f1e04ef5/reanalysis/ERA-5/F320/tasmax.1995-2015.F320.zarr"
       - name: out-zarr
-        value: "gs://scratch-170cd6ec/{{ workflow.uid }}/{{ pod.name }}/downscaled.zarr"
+        value: "gs://impactlab-data-scratch/{{ workflow.uid }}/{{ pod.name }}/downscaled.zarr"
       - name: regrid-method
         value: "bilinear"
       - name: qdm-kind
         value: "additive"
       - name: domainfile1x1
-        value: "gs://support-c23ff1a3/domain.1x1.zarr"
+        value: "gs://support-f8a48a9e/domain.1x1.zarr"
       - name: domainfile0p25x0p25
-        value: "gs://support-c23ff1a3/domain.0p25x0p25.zarr"
+        value: "gs://support-f8a48a9e/domain.0p25x0p25.zarr"
       - name: correct-wetday-frequency
         value: "false"
   templates:
@@ -449,7 +449,7 @@ spec:
           - name: time-sel-stop
             value: "2015-01-15"
           - name: out-zarr
-            value: "gs://scratch-170cd6ec/{{ workflow.uid }}/{{ pod.name }}/qplad-model.zarr"
+            value: "gs://impactlab-data-scratch/{{ workflow.uid }}/{{ pod.name }}/qplad-model.zarr"
       outputs:
         parameters:
           - name: out-zarr
@@ -494,7 +494,7 @@ spec:
           - name: lat-slice-max
           - name: correct-wetday-frequency
           - name: out-zarr
-            value: "gs://scratch-170cd6ec/{{ workflow.uid }}/{{ pod.name }}/qplad_adjusted.zarr"
+            value: "gs://impactlab-data-scratch/{{ workflow.uid }}/{{ pod.name }}/qplad_adjusted.zarr"
         artifacts:
           - name: global-attrs-json
             path: /tmp/global_attrs.json
@@ -534,7 +534,7 @@ spec:
           - name: simulation-zarr
           - name: variable
           - name: out-zarr
-            value: "gs://scratch-170cd6ec/{{ workflow.uid }}/{{ pod.name }}/downscaled.zarr"
+            value: "gs://impactlab-data-scratch/{{ workflow.uid }}/{{ pod.name }}/downscaled.zarr"
         artifacts:
           - name: global-attrs-json
             path: /tmp/global_attrs.json
@@ -593,7 +593,7 @@ spec:
         parameters:
           - name: in-zarr
           - name: out-zarr
-            value: "gs://scratch-170cd6ec/{{ workflow.uid }}/{{ pod.name }}/wdf-corrected.zarr"
+            value: "gs://impactlab-data-scratch/{{ workflow.uid }}/{{ pod.name }}/wdf-corrected.zarr"
       outputs:
         parameters:
           - name: out-zarr

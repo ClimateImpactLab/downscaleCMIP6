@@ -17,7 +17,7 @@ spec:
   arguments:
     parameters:
       - name: in-zarr
-        value: "gs://clean-b1dbca25/cmip6/ScenarioMIP/NOAA-GFDL/GFDL-ESM4/ssp370/r1i1p1f1/day/tasmax/gr1/v20180701.zarr"
+        value: "gs://clean-f1e04ef5/cmip6/ScenarioMIP/NOAA-GFDL/GFDL-ESM4/ssp370/r1i1p1f1/day/tasmax/gr1/v20180701.zarr"
       - name: workflowstep
         value: downscale
   templates:

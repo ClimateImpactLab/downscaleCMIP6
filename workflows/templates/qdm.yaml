@@ -14,21 +14,21 @@ spec:
   arguments:
     parameters:
       - name: simulation-zarr
-        value: "gs://clean-b1dbca25/cmip6/ScenarioMIP/NOAA-GFDL/GFDL-ESM4/ssp370/r1i1p1f1/day/tasmax/gr1/v20180701.zarr"
+        value: "gs://clean-f1e04ef5/cmip6/ScenarioMIP/NOAA-GFDL/GFDL-ESM4/ssp370/r1i1p1f1/day/tasmax/gr1/v20180701.zarr"
       - name: variable-id
         value: "tasmax"
       - name: training-zarr
-        value: "gs://clean-b1dbca25/cmip6/CMIP/NOAA-GFDL/GFDL-ESM4/training/r1i1p1f1/day/tasmax/gr1/v20190726.zarr"
+        value: "gs://clean-f1e04ef5/cmip6/CMIP/NOAA-GFDL/GFDL-ESM4/training/r1i1p1f1/day/tasmax/gr1/v20190726.zarr"
       - name: reference-zarr
-        value: "gs://clean-b1dbca25/reanalysis/ERA-5/F320/tasmax.1995-2015.F320.zarr"
+        value: "gs://clean-f1e04ef5/reanalysis/ERA-5/F320/tasmax.1995-2015.F320.zarr"
       - name: out-zarr
-        value: "gs://scratch-170cd6ec/{{ workflow.uid }}/{{ pod.name }}/biascorrected.zarr"
+        value: "gs://impactlab-data-scratch/{{ workflow.uid }}/{{ pod.name }}/biascorrected.zarr"
       - name: regrid-method
         value: "bilinear"
       - name: qdm-kind
         value: "additive"
       - name: domainfile1x1
-        value: "gs://support-c23ff1a3/domain.1x1.zarr"
+        value: "gs://support-f8a48a9e/domain.1x1.zarr"
       - name: correct-wetday-frequency
         value: "false"
       - name: apply-dtr-minimum-threshold
@@ -294,7 +294,7 @@ spec:
           - name: first-year
           - name: last-year
           - name: out-zarr
-            value: "gs://scratch-170cd6ec/{{ workflow.uid }}/{{ pod.name }}/qdm_adjusted.zarr"
+            value: "gs://impactlab-data-scratch/{{ workflow.uid }}/{{ pod.name }}/qdm_adjusted.zarr"
         artifacts:
           - name: global-attrs-json
             path: /tmp/global_attrs.json
@@ -340,7 +340,7 @@ spec:
           - name: time-sel-stop
             value: "2015-01-15"
           - name: out-zarr
-            value: "gs://scratch-170cd6ec/{{ workflow.uid }}/{{ pod.name }}/qdm_model.zarr"
+            value: "gs://impactlab-data-scratch/{{ workflow.uid }}/{{ pod.name }}/qdm_model.zarr"
       outputs:
         parameters:
           - name: out-zarr
@@ -385,7 +385,7 @@ spec:
           - name: lat-slice-min
           - name: lat-slice-max
           - name: out-zarr
-            value: "gs://scratch-170cd6ec/{{ workflow.uid }}/{{ pod.name }}/qdm_adjusted.zarr"
+            value: "gs://impactlab-data-scratch/{{ workflow.uid }}/{{ pod.name }}/qdm_adjusted.zarr"
         artifacts:
           - name: global-attrs-json
             path: /tmp/global_attrs.json

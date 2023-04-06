@@ -17,7 +17,7 @@ spec:
         parameters:
           - name: in-zarr
           - name: out-zarr
-            value: "gs://scratch-170cd6ec/{{ workflow.uid }}/{{ pod.name }}/rechunked.zarr"
+            value: "gs://impactlab-data-scratch/{{ workflow.uid }}/{{ pod.name }}/rechunked.zarr"
           - name: time-chunk
             value: 365
           - name: lat-chunk

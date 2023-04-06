@@ -124,7 +124,7 @@ spec:
                 - name: version
                   value: "{{=jsonpath(inputs.parameters.historical, '$.version')}}"
                 - name: base-url
-                  value: "gs://raw-305d04da/cmip6"
+                  value: "gs://raw-957d115e/cmip6"
           - name: get-input-raw-ssp-url
             templateRef:
               name: catalog
@@ -150,7 +150,7 @@ spec:
                 - name: version
                   value: "{{=jsonpath(inputs.parameters.ssp, '$.version')}}"
                 - name: base-url
-                  value: "gs://raw-305d04da/cmip6"
+                  value: "gs://raw-957d115e/cmip6"
           - name: get-output-clean-training-url
             templateRef:
               name: catalog
@@ -176,7 +176,7 @@ spec:
                 - name: version
                   value: "{{=jsonpath(inputs.parameters.historical, '$.version')}}"
                 - name: base-url
-                  value: "gs://clean-b1dbca25/cmip6"
+                  value: "gs://clean-f1e04ef5/cmip6"
             # We're slicing historical to time period of interest to reduce memory in later steps.
         - - name: crop-historical-time
             template: timeslicezarr
@@ -284,7 +284,7 @@ spec:
                 - name: version
                   value: "{{=jsonpath(inputs.parameters['target-json'], '$.version')}}"
                 - name: base-url
-                  value: "gs://clean-b1dbca25/cmip6"
+                  value: "gs://clean-f1e04ef5/cmip6"
           - name: remove-late-ssp
             template: timeslicezarr
             arguments:
@@ -359,7 +359,7 @@ spec:
                 - name: version
                   value: "{{=jsonpath(inputs.parameters['target-json'], '$.version')}}"
                 - name: base-url
-                  value: "gs://clean-b1dbca25/cmip6"
+                  value: "gs://clean-f1e04ef5/cmip6"
           - name: remove-early-historical
             template: timeslicezarr
             arguments:
@@ -402,7 +402,7 @@ spec:
         parameters:
           - name: in-zarr
           - name: out-zarr
-            value: "gs://scratch-170cd6ec/{{ workflow.uid }}/{{ pod.name }}/standardized.zarr"
+            value: "gs://impactlab-data-scratch/{{ workflow.uid }}/{{ pod.name }}/standardized.zarr"
       outputs:
         parameters:
           - name: out-zarr
@@ -437,7 +437,7 @@ spec:
           - name: from-time
           - name: to-time
           - name: out-zarr
-            value: "gs://scratch-170cd6ec/{{ workflow.uid }}/{{ pod.name }}/timesliced.zarr"
+            value: "gs://impactlab-data-scratch/{{ workflow.uid }}/{{ pod.name }}/timesliced.zarr"
       outputs:
         parameters:
           - name: out-zarr
@@ -504,7 +504,7 @@ spec:
           - name: in1-zarr
           - name: in2-zarr
           - name: out-zarr
-            value: "gs://scratch-170cd6ec/{{ workflow.uid }}/{{ pod.name }}/concatenated.zarr"
+            value: "gs://impactlab-data-scratch/{{ workflow.uid }}/{{ pod.name }}/concatenated.zarr"
       outputs:
         parameters:
           - name: out-zarr

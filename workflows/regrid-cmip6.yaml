@@ -80,7 +80,7 @@ spec:
           - name: historical
           - name: regrid-method
           - name: domainfile1x1
-            value: "gs://support-c23ff1a3/domain.1x1.zarr"
+            value: "gs://support-f8a48a9e/domain.1x1.zarr"
       steps:
         - - name: historical
             template: regrid-cmip6
@@ -139,7 +139,7 @@ spec:
                 - name: version
                   value: "{{=jsonpath(inputs.parameters.simulation, '$.version')}}"
                 - name: base-url
-                  value: "gs://clean-b1dbca25/cmip6"
+                  value: "gs://clean-f1e04ef5/cmip6"
           - name: get-output-regridded-url
             templateRef:
               name: catalog
@@ -165,7 +165,7 @@ spec:
                 - name: version
                   value: "{{workflow.creationTimestamp.Y}}{{workflow.creationTimestamp.m}}{{workflow.creationTimestamp.d}}{{workflow.creationTimestamp.H}}{{workflow.creationTimestamp.M}}{{workflow.creationTimestamp.S}}"
                 - name: base-url
-                  value: "gs://support-c23ff1a3/regrid-cmip6"
+                  value: "gs://support-f8a48a9e/regrid-cmip6"
           - name: check-to-add-cyclic-pixels
             templateRef:
               name: qdm-preprocess

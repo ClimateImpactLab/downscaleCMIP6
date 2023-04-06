@@ -20,7 +20,7 @@ spec:
   arguments:
     parameters:
       - name: in-zarr
-        value: "gs://clean-b1dbca25/reanalysis/ERA-5/F320/pr.1995-2015.F320.zarr"
+        value: "gs://clean-f1e04ef5/reanalysis/ERA-5/F320/pr.1995-2015.F320.zarr"
   templates:
 
     - name: create-pr-references
@@ -28,17 +28,17 @@ spec:
         parameters:
           - name: in-zarr
           - name: out-qdm-reference
-            value: "gs://support-c23ff1a3/qdm-reference/pr/v{{ inputs.parameters.version }}.zarr"
+            value: "gs://support-f8a48a9e/qdm-reference/pr/v{{ inputs.parameters.version }}.zarr"
           - name: out-qplad-fine-reference
-            value: "gs://support-c23ff1a3/qplad-fine-reference/pr/v{{ inputs.parameters.version }}.zarr"
+            value: "gs://support-f8a48a9e/qplad-fine-reference/pr/v{{ inputs.parameters.version }}.zarr"
           - name: out-qplad-coarse-reference
-            value: "gs://support-c23ff1a3/qplad-coarse-reference/pr/v{{ inputs.parameters.version }}.zarr"
+            value: "gs://support-f8a48a9e/qplad-coarse-reference/pr/v{{ inputs.parameters.version }}.zarr"
           - name: regrid-method
             value: "conservative"
           - name: domainfile1x1
-            value: "gs://support-c23ff1a3/domain.1x1.zarr"
+            value: "gs://support-f8a48a9e/domain.1x1.zarr"
           - name: domainfile0p25x0p25
-            value: "gs://support-c23ff1a3/domain.0p25x0p25.zarr"
+            value: "gs://support-f8a48a9e/domain.0p25x0p25.zarr"
           - name: version
             value: "{{workflow.creationTimestamp.Y}}{{workflow.creationTimestamp.m}}{{workflow.creationTimestamp.d}}{{workflow.creationTimestamp.H}}{{workflow.creationTimestamp.M}}{{workflow.creationTimestamp.S}}"
       dag:
@@ -213,7 +213,7 @@ spec:
         parameters:
           - name: fineref-zarr
           - name: out-zarr
-            value: "gs://scratch-170cd6ec/{{ workflow.uid }}/{{ pod.name }}/wdf_precorrection.zarr"
+            value: "gs://impactlab-data-scratch/{{ workflow.uid }}/{{ pod.name }}/wdf_precorrection.zarr"
           - name: variable
             value: "pr"
       outputs:
@@ -287,7 +287,7 @@ spec:
           - name: ref-zarr
           - name: wdf-correction-zarr
           - name: out-zarr
-            value: "gs://scratch-170cd6ec/{{ workflow.uid }}/{{ pod.name }}/wdf_precorrected.zarr"
+            value: "gs://impactlab-data-scratch/{{ workflow.uid }}/{{ pod.name }}/wdf_precorrected.zarr"
           - name: variable
             value: "pr"
       outputs:
@@ -359,7 +359,7 @@ spec:
         parameters:
           - name: in-zarr
           - name: out-zarr
-            value: "gs://scratch-170cd6ec/{{ workflow.uid }}/{{ pod.name }}/wdf-corrected.zarr"
+            value: "gs://impactlab-data-scratch/{{ workflow.uid }}/{{ pod.name }}/wdf-corrected.zarr"
       outputs:
         parameters:
           - name: out-zarr

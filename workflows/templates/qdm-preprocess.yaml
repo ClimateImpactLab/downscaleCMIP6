@@ -18,11 +18,11 @@ spec:
   arguments:
     parameters:
       - name: in-zarr
-        value: "gs://clean-b1dbca25/cmip6/ScenarioMIP/NOAA-GFDL/GFDL-ESM4/ssp370/r1i1p1f1/day/tasmax/gr1/v20180701.zarr"
+        value: "gs://clean-f1e04ef5/cmip6/ScenarioMIP/NOAA-GFDL/GFDL-ESM4/ssp370/r1i1p1f1/day/tasmax/gr1/v20180701.zarr"
       - name: regrid-method
         value: "bilinear"
       - name: domain-file
-        value: "gs://support-c23ff1a3/domain.1x1.zarr"
+        value: "gs://support-f8a48a9e/domain.1x1.zarr"
       - name: correct-wetday-frequency
         value: "false"
       - name: apply-dtr-minimum-threshold
@@ -148,7 +148,7 @@ spec:
         parameters:
           - name: in-zarr
           - name: out-zarr
-            value: "gs://scratch-170cd6ec/{{ workflow.uid }}/{{ pod.name }}/wdf-corrected.zarr"
+            value: "gs://impactlab-data-scratch/{{ workflow.uid }}/{{ pod.name }}/wdf-corrected.zarr"
       outputs:
         parameters:
           - name: out-zarr
@@ -208,7 +208,7 @@ spec:
         parameters:
           - name: in-zarr
           - name: out-zarr
-            value: "gs://scratch-170cd6ec/{{ workflow.uid }}/{{ pod.name }}/cyclic-added.zarr"
+            value: "gs://impactlab-data-scratch/{{ workflow.uid }}/{{ pod.name }}/cyclic-added.zarr"
           - name: add-cyclic
             value: "lon"
       outputs:
@@ -256,7 +256,7 @@ spec:
         parameters:
           - name: in-zarr
           - name: out-zarr
-            value: "gs://scratch-170cd6ec/{{ workflow.uid }}/{{ pod.name }}/thresholded.zarr"
+            value: "gs://impactlab-data-scratch/{{ workflow.uid }}/{{ pod.name }}/thresholded.zarr"
       outputs:
         parameters:
           - name: out-zarr
