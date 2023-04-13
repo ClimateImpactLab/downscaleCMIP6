@@ -1,0 +1,6 @@
+kubernetes-external-secrets:
+  serviceAccount:
+    create: false
+    name: "kubernetes-external-secrets-grabber"
+  env:
+    POLLER_INTERVAL_MILLISECONDS: 300000
