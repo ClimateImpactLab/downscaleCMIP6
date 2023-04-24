@@ -731,6 +731,11 @@ EC-Earth3-pr:
     clean: gs://clean-b1dbca25/cmip6/ScenarioMIP/EC-Earth-Consortium/EC-Earth3/ssp370/r1i1p1f1/day/pr/gr/v20200310.zarr
     downscaled: gs://downscaled-288ec5ac/stage/ScenarioMIP/EC-Earth-Consortium/EC-Earth3/ssp370/r1i1p1f1/day/pr/gr/v20220217012505.zarr
     downscaled_delivered: gs://downscaled-288ec5ac/outputs/ScenarioMIP/EC-Earth-Consortium/EC-Earth3/ssp370/r1i1p1f1/day/pr/v1.1.zarr
+  ssp585:
+    biascorrected: gs://biascorrected-492e989a/stage/ScenarioMIP/EC-Earth-Consortium/EC-Earth3/ssp585/r1i1p1f1/day/pr/gr/v20220307025028.zarr
+    clean: gs://clean-b1dbca25/cmip6/ScenarioMIP/EC-Earth-Consortium/EC-Earth3/ssp585/r1i1p1f1/day/pr/gr/v20200310.zarr
+    downscaled: gs://downscaled-288ec5ac/stage/ScenarioMIP/EC-Earth-Consortium/EC-Earth3/ssp585/r1i1p1f1/day/pr/gr/v20220307025028.zarr
+    downscaled_delivered: gs://downscaled-288ec5ac/outputs/ScenarioMIP/EC-Earth-Consortium/EC-Earth3/ssp585/r1i1p1f1/day/pr/v1.1.zarr
 EC-Earth3-tasmax:
   historical:
     biascorrected: gs://biascorrected-492e989a/stage/CMIP/EC-Earth-Consortium/EC-Earth3/historical/r1i1p1f1/day/tasmax/gr/v20220215031248.zarr
