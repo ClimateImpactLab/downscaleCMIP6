@@ -166,11 +166,11 @@ def get_diagnostics_filepath(diag_type, data_type, institutions, ensemble_member
     
     if data_type == 'reanalysis':
         if validation_period: 
-            filepath = ('gs://downscaled-288ec5ac/diagnostics/RELEASE-v1.1/{diag_folder}/reanalysis/ERA5/0p25x0p25/{variable}/v1.1.zarr').format(diag_folder=diag_folder, variable=file_var_name)
+            filepath = ('gs://downscaled-48ec31ab/diagnostics/RELEASE-v1.1/{diag_folder}/reanalysis/ERA5/0p25x0p25/{variable}/v1.1.zarr').format(diag_folder=diag_folder, variable=file_var_name)
         else: 
-            filepath = ('gs://downscaled-288ec5ac/diagnostics/RELEASE-v1.1/{diag_folder}/reanalysis/ERA5/F320/{variable}/v1.1.zarr').format(diag_folder=diag_folder, variable=file_var_name)
+            filepath = ('gs://downscaled-48ec31ab/diagnostics/RELEASE-v1.1/{diag_folder}/reanalysis/ERA5/F320/{variable}/v1.1.zarr').format(diag_folder=diag_folder, variable=file_var_name)
     else:
-        filepath = ('gs://downscaled-288ec5ac/diagnostics/RELEASE-v1.1/{diag_folder}/{experiment}/{institution}/{model}/{ssp}/{ensemble_member}/day/{variable}/v1.1.zarr').format(diag_folder=diag_folder, experiment=experiment, institution=institutions[model], model=model, ssp=ssp, ensemble_member=ensemble_members[model], variable=file_var_name)
+        filepath = ('gs://downscaled-48ec31ab/diagnostics/RELEASE-v1.1/{diag_folder}/{experiment}/{institution}/{model}/{ssp}/{ensemble_member}/day/{variable}/v1.1.zarr').format(diag_folder=diag_folder, experiment=experiment, institution=institutions[model], model=model, ssp=ssp, ensemble_member=ensemble_members[model], variable=file_var_name)
         
     return filepath
 
