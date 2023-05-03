@@ -126,7 +126,8 @@ def get_ds_filepath(varname, model, stage, scen):
     return filepath 
 
 def load_zarr(filepath):
-    ds = read_gcs_zarr(filepath)
+    # ds = read_gcs_zarr(filepath)
+    ds = xr.open_zarr(filepath)
     return ds 
 
 def get_diagnostics_filepath(diag_type, data_type, institutions, ensemble_members, variable, model, ssp, 
@@ -193,3 +194,6 @@ def convert_longitudes(ds, lon_name):
     ds = ds.rename({'_longitude_adjusted': lon_name})
     
     return ds 
+
+def get_diagnostic_cities():
+    return ['Tokyo', 'Delhi', 'Shanghai', 'Sao Paulo', 'Mexico City', 'Cairo', 'Dhaka', 'New York', 'Buenos Aires', 'Istanbul', 'Lagos', 'Paris', 'Moscow', 'Miami', 'Mumbai', 'Manila', 'London']
