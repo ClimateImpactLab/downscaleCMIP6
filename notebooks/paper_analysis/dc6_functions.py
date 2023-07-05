@@ -1,5 +1,6 @@
 import gcsfs
 import xarray as xr 
+import yaml
 def read_gcs_zarr(zarr_url, token='/home/jovyan/impactlab-data.json', check=False):
     """
     takes in a GCSFS zarr url, bucket token, and returns a dataset 
@@ -11,6 +12,14 @@ def read_gcs_zarr(zarr_url, token='/home/jovyan/impactlab-data.json', check=Fals
     ds = xr.open_zarr(store_path)
     
     return ds 
+
+def get_clean_cmip_version_number(zarr_path):
+    """
+    takes in a GCSFS zarr url for cleaned GCM data, parses the string to get the version number 
+    for that CMIP experiment 
+    """
+    return zarr_path.split("/")[-1].split(".")[0]
+
 def get_cmip6_models():
     models_dict = {'BCC-CSM2-MR': ['historical', 'ssp126', 'ssp245', 'ssp370', 'ssp585'],
              'FGOALS-g3': ['historical', 'ssp245', 'ssp370', 'ssp585'],
@@ -126,7 +135,8 @@ def get_ds_filepath(varname, model, stage, scen):
     return filepath 
 
 def load_zarr(filepath):
-    ds = read_gcs_zarr(filepath)
+    # ds = read_gcs_zarr(filepath)
+    ds = xr.open_zarr(filepath)
     return ds 
 
 def get_diagnostics_filepath(diag_type, data_type, institutions, ensemble_members, variable, model, ssp, 
@@ -147,6 +157,13 @@ def get_diagnostics_filepath(diag_type, data_type, institutions, ensemble_member
         file_var_name = variable
         var_name = variable
         
+    # load data paths 
+    # load data paths
+    with open('/home/jovyan/downscaleCMIP6/notebooks/downscaling_pipeline/post_processing_and_delivery/data_paths.yaml', 'r') as f:
+        fps = yaml.load(f, yaml.Loader)
+        
+    grids = get_cmip6_grids()
+        
     if diag_type == 'city':
         agg_period = 'daily'
     elif diag_type == 'annual':
@@ -166,11 +183,22 @@ def get_diagnostics_filepath(diag_type, data_type, institutions, ensemble_member
     
     if data_type == 'reanalysis':
         if validation_period: 
-            filepath = ('gs://downscaled-288ec5ac/diagnostics/RELEASE-v1.1/{diag_folder}/reanalysis/ERA5/0p25x0p25/{variable}/v1.1.zarr').format(diag_folder=diag_folder, variable=file_var_name)
+            filepath = ('gs://downscaled-48ec31ab/diagnostics/RELEASE-v1.1/{diag_folder}/reanalysis/ERA5/0p25x0p25/{variable}/v1.1.zarr').format(diag_folder=diag_folder, variable=file_var_name)
         else: 
-            filepath = ('gs://downscaled-288ec5ac/diagnostics/RELEASE-v1.1/{diag_folder}/reanalysis/ERA5/F320/{variable}/v1.1.zarr').format(diag_folder=diag_folder, variable=file_var_name)
+            filepath = ('gs://downscaled-48ec31ab/diagnostics/RELEASE-v1.1/{diag_folder}/reanalysis/ERA5/F320/{variable}/v1.1.zarr').format(diag_folder=diag_folder, variable=file_var_name)
+    elif data_type == "clean":
+        if variable == 'precip':
+            var_fp_name = 'pr'
+        else:
+            var_fp_name = variable 
+        fp_clean = fps[f"{model}-{var_fp_name}"]['historical']['clean']
+        # get model version number for filepath from cleaned data file paths 
+        version = fp_clean.split("/")[-1].split(".")[0]
+        # gs://downscaled-48ec31ab/diagnostics/RELEASE-v1.1/clean-daily-tasmax-diagnostics/CMIP/NCC/NorESM2-MM/historical/r1i1p1f1/day/tasmax/gn/v20191108.zarr
+        filepath = ('gs://downscaled-48ec31ab/diagnostics/RELEASE-v1.1/{diag_folder}/{experiment}/{institution}/{model}/{ssp}/{ensemble_member}/day/{variable}/{grid}/{version}.zarr').format(diag_folder=diag_folder, experiment=experiment, institution=institutions[model], model=model, ssp=ssp, ensemble_member=ensemble_members[model], variable=file_var_name, version=version, grid=grids[model])
+    
     else:
-        filepath = ('gs://downscaled-288ec5ac/diagnostics/RELEASE-v1.1/{diag_folder}/{experiment}/{institution}/{model}/{ssp}/{ensemble_member}/day/{variable}/v1.1.zarr').format(diag_folder=diag_folder, experiment=experiment, institution=institutions[model], model=model, ssp=ssp, ensemble_member=ensemble_members[model], variable=file_var_name)
+        filepath = ('gs://downscaled-48ec31ab/diagnostics/RELEASE-v1.1/{diag_folder}/{experiment}/{institution}/{model}/{ssp}/{ensemble_member}/day/{variable}/v1.1.zarr').format(diag_folder=diag_folder, experiment=experiment, institution=institutions[model], model=model, ssp=ssp, ensemble_member=ensemble_members[model], variable=file_var_name)
         
     return filepath
 
@@ -193,3 +221,6 @@ def convert_longitudes(ds, lon_name):
     ds = ds.rename({'_longitude_adjusted': lon_name})
     
     return ds 
+
+def get_diagnostic_cities():
+    return ['Tokyo', 'Delhi', 'Shanghai', 'Sao Paulo', 'Mexico City', 'Cairo', 'Dhaka', 'New York', 'Buenos Aires', 'Istanbul', 'Lagos', 'Paris', 'Moscow', 'Miami', 'Mumbai', 'Manila', 'London']
