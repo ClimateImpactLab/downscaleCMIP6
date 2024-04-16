@@ -152,8 +152,9 @@ Projects making use of the data produced as part of the Climate Impact Lab Globa
 CIL GDPCIR
 ----------
 
-Users are requested to cite this project in derived works. This project does not yet have a public DOI or citation - check back for details.
+Users are requested to cite this project in derived works.
 
+Gergel, D. R., Malevich, S. B., McCusker, K. E., Tenezakis, E., Delgado, M. T., Fish, M. A., and Kopp, R. E.: Global Downscaled Projections for Climate Impacts Research (GDPCIR): preserving quantile trends for modeling future climate impacts, Geosci. Model Dev., 17, 191–227, https://doi.org/10.5194/gmd-17-191-2024, 2024.
 
 .. _ERA5:
 
